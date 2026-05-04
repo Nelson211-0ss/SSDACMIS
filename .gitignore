@@ -5,6 +5,9 @@ storage/logs/*
 !storage/logs/.gitkeep
 storage/uploads/*
 !storage/uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/.htaccess
 /vendor/
 /node_modules/
 *.log
