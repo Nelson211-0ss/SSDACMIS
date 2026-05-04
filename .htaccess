@@ -1,0 +1,13 @@
+# If the host's document root points to the project root (not /public),
+# this file forwards every request into /public/ so app/, config/, .env stay
+# unreachable from the web. Prefer setting the document root to /public.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Hard-deny direct access to sensitive files at the root
+<FilesMatch "^(\.env|composer\.(json|lock)|README\.md|CHECKLIST\.md)$">
+    Require all denied
+</FilesMatch>

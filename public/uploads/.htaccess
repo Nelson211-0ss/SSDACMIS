@@ -1,0 +1,14 @@
+# Hardening for the public/uploads directory.
+# Files are publicly readable (so logos can be served directly) but no
+# script types may execute here, even if a malicious upload slips through.
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+<FilesMatch "\.(php|phtml|phar|pl|py|jsp|asp|sh|cgi|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+Options -Indexes -ExecCGI
+AddType text/plain .php .phtml .phar .pl .py .jsp .asp .sh .cgi
