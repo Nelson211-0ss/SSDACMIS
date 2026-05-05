@@ -36,6 +36,7 @@ $sectionDay      = (int) ($sectionBreakdown['day']      ?? 0);
 $sectionBoarding = (int) ($sectionBreakdown['boarding'] ?? 0);
 $streamScience   = (int) ($streamBreakdown['science']   ?? 0);
 $streamArts      = (int) ($streamBreakdown['arts']      ?? 0);
+$sectionTotal    = $sectionDay + $sectionBoarding;
 ?>
 
 <?php
@@ -183,12 +184,12 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     <div class="section-block__head">
       <div>
         <h3 class="section-block__title"><i class="bi bi-graph-up-arrow"></i> Insights</h3>
-        <p class="section-block__sub">Enrollment distribution and student demographics.</p>
+        <p class="section-block__sub">Enrollment, demographics, and section distribution.</p>
       </div>
     </div>
   </div>
   <div class="row g-3 mb-4">
-    <div class="col-xl-8">
+    <div class="col-xl-6">
       <div class="card chart-card h-100">
         <div class="card-body">
           <div class="chart-card__head">
@@ -219,7 +220,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </div>
     </div>
 
-    <div class="col-xl-4">
+    <div class="col-md-6 col-xl-3">
       <div class="card chart-card h-100">
         <div class="card-body">
           <div class="chart-card__head">
@@ -275,6 +276,40 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
               <div class="mini-stat__value"><?= number_format($streamArts) ?></div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+      <div class="card chart-card h-100">
+        <div class="card-body">
+          <div class="chart-card__head">
+            <div>
+              <h3 class="chart-card__title">Section split</h3>
+              <p class="chart-card__sub">Day vs Boarding &middot; <?= number_format($sectionTotal) ?> total</p>
+            </div>
+          </div>
+
+          <div class="chart-wrap chart-wrap--sm">
+            <?php if ($sectionTotal === 0): ?>
+              <div class="chart-empty">No section data yet.</div>
+            <?php else: ?>
+              <canvas id="sectionChart" aria-label="Section distribution" role="img"></canvas>
+            <?php endif; ?>
+          </div>
+
+          <ul class="donut-legend mt-2">
+            <li>
+              <span class="donut-legend__swatch" style="background:#14b8a6"></span>
+              <span class="donut-legend__label">Day</span>
+              <span class="donut-legend__value"><?= number_format($sectionDay) ?></span>
+            </li>
+            <li>
+              <span class="donut-legend__swatch" style="background:#f59e0b"></span>
+              <span class="donut-legend__label">Boarding</span>
+              <span class="donut-legend__value"><?= number_format($sectionBoarding) ?></span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -468,7 +503,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   </div>
 <?php endif; ?>
 
-<?php if ($isAdminish && ($classTotal > 0 || $gTotal > 0)): ?>
+<?php if ($isAdminish && ($classTotal > 0 || $gTotal > 0 || $sectionTotal > 0)): ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
 <script>
   // Theme-aware Chart.js bootstrapping. Reads CSS vars at draw time so
@@ -488,7 +523,12 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       'data'   => array_values(array_filter([$gMale, $gFemale, $gOther > 0 ? $gOther : null], fn($v) => $v !== null)),
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
-    var charts = { enrollment: null, gender: null };
+    var sectionData = <?= json_encode([
+      'labels' => ['Day', 'Boarding'],
+      'data'   => [$sectionDay, $sectionBoarding],
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    var charts = { enrollment: null, gender: null, section: null };
 
     function readTheme() {
       var css = getComputedStyle(document.documentElement);
@@ -634,12 +674,56 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       });
     }
 
+    function buildSection(theme) {
+      var el = document.getElementById('sectionChart');
+      if (!el || !window.Chart) return;
+
+      charts.section = new Chart(el, {
+        type: 'doughnut',
+        data: {
+          labels: sectionData.labels,
+          datasets: [{
+            data: sectionData.data,
+            backgroundColor: ['#14b8a6', '#f59e0b'],
+            borderColor: theme.surface,
+            borderWidth: 3,
+            hoverOffset: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: theme.surface,
+              titleColor: theme.text,
+              bodyColor: theme.muted,
+              borderColor: theme.border,
+              borderWidth: 1,
+              padding: 10,
+              displayColors: true,
+              callbacks: {
+                label: function (ctx) {
+                  var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                  var pct = total ? Math.round((ctx.parsed / total) * 100) : 0;
+                  return ' ' + ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
     function renderAll() {
       if (!window.Chart) return;
       destroyAll();
       var theme = readTheme();
       buildEnrollment(theme);
       buildGender(theme);
+      buildSection(theme);
     }
 
     function whenChartReady(cb) {
