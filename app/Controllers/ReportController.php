@@ -179,7 +179,7 @@ class ReportController extends Controller
     /**
      * Subjects the school currently offers, narrowed to what a student at the
      * given level/stream is expected to study (admin “Subjects offered” / `is_offered`).
-     * Used as the pool before trimming to subjects that have marks in the class matrix (`classReport`).
+     * Report cards list all of these for the cohort, including rows not yet marked.
      *
      *   - Form 1 / Form 2: every offered subject.
      *   - Form 3/4 Science: offered subjects EXCEPT the Arts category.
@@ -346,7 +346,6 @@ class ReportController extends Controller
         $matrix = []; // [student_id][subject_id] = ['mid'=>?, 'end'=>?, 'avg'=>?]
         foreach ($students as $s) $matrix[(int) $s['id']] = [];
 
-        $markedSubjectIds = [];
         if ($students) {
             $rows = Database::query(
                 "SELECT g.student_id, g.subject_id, g.exam_type, g.score
@@ -356,9 +355,6 @@ class ReportController extends Controller
                    AND g.student_id IN (SELECT id FROM students WHERE class_id = ?)",
                 [$year, $term, $classId]
             )->fetchAll();
-            foreach ($rows as $r) {
-                $markedSubjectIds[(int) $r['subject_id']] = true;
-            }
             foreach ($rows as $r) {
                 $sid = (int) $r['student_id'];
                 $bid = (int) $r['subject_id'];
@@ -445,10 +441,6 @@ class ReportController extends Controller
                 }
             }
         }
-
-        $subjects = array_values(array_filter($subjects, static function (array $s) use ($markedSubjectIds): bool {
-            return isset($markedSubjectIds[(int) $s['id']]);
-        }));
 
         // Group students for the view (so Form 3/4 reports get Science + Arts sections).
         $groups = [];

@@ -194,14 +194,7 @@ class ResultsController extends Controller
             [$classId, $year, $term]
         )->fetchAll();
 
-        $subjectCols = Database::query(
-            "SELECT DISTINCT sub.id, sub.name, sub.code, sub.category
-             FROM term_subject_results tsu
-             JOIN subjects sub ON sub.id = tsu.subject_id AND sub.is_offered = 1
-             WHERE tsu.class_id = ? AND tsu.academic_year = ? AND tsu.term = ?
-             ORDER BY FIELD(sub.category, 'core','science','arts','optional'), sub.name",
-            [$classId, $year, $term]
-        )->fetchAll();
+        $subjectCols = AcademicMarking::offeredSubjectsForSchoolReport();
 
         $cells = [];
         if ($subjectCols !== []) {

@@ -164,9 +164,23 @@ final class AcademicMarking
     }
 
     /**
+     * All subjects the school has ticked as offered (`is_offered`), for class-wide column layouts
+     * (e.g. term results table) — same ordering as subject management.
+     *
+     * @return list<array{id:int,name:string,code:?string,category:string}>
+     */
+    public static function offeredSubjectsForSchoolReport(): array
+    {
+        return Database::query(
+            "SELECT id, name, code, category FROM subjects WHERE is_offered = 1
+             ORDER BY FIELD(category, 'core','science','arts','optional'), name"
+        )->fetchAll();
+    }
+
+    /**
      * Build score sheet: total per subject = mid + end; average = sum(totals) / subjects counted.
-     * Only includes subjects the school offers (`is_offered`) and where at least one component
-     * (mid and/or end) has been recorded for this year and term — unmarked subjects are omitted.
+     * Lists every subject the school offers for this student (`is_offered`, with stream rules);
+     * cells stay empty (—) until marks are entered.
      *
      * @return array{
      *   groups: array<string,array{label:string,rows:list<array<string,mixed>>}>,
@@ -223,14 +237,8 @@ final class AcademicMarking
 
         foreach ($subjects as $sub) {
             $sid = (int) $sub['id'];
-            if (!isset($byId[$sid])) {
-                continue;
-            }
             $mid = $byId[$sid]['midterm'] ?? null;
             $end = $byId[$sid]['endterm'] ?? null;
-            if ($mid === null && $end === null) {
-                continue;
-            }
             $total = self::subjectTotal($mid, $end);
 
             if ($total !== null) {
@@ -255,15 +263,14 @@ final class AcademicMarking
         $order = ['core', 'science', 'arts', 'optional'];
         $sorted = [];
         foreach ($order as $k) {
-            if (isset($grouped[$k]) && ($grouped[$k]['rows'] ?? []) !== []) {
+            if (isset($grouped[$k])) {
                 $sorted[$k] = $grouped[$k];
             }
         }
         foreach ($grouped as $k => $v) {
-            if (isset($sorted[$k]) || ($v['rows'] ?? []) === []) {
-                continue;
+            if (!isset($sorted[$k])) {
+                $sorted[$k] = $v;
             }
-            $sorted[$k] = $v;
         }
 
         $average = $subjectCount > 0 ? round($totalSum / $subjectCount, 2) : null;

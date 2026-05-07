@@ -117,8 +117,8 @@ $nMatrix = count($matrixPeers);
     <div class="alert alert-info">No students in this class.</div>
   <?php elseif (empty($subjects)): ?>
     <div class="alert alert-info">
-      No results to list for this period: either no subjects are enabled under <em>Subjects</em>,
-      or no marks have been recorded for <?= View::e($class['name']) ?> in <?= View::e($year) ?> · <?= View::e($term) ?>.
+      No subjects are currently offered for <?= View::e($class['name']) ?>. Ask the school
+      administrator to enable subjects under <em>Subjects</em>.
     </div>
   <?php else: ?>
     <?php foreach ($groups as $groupKey => $group):
