@@ -16,9 +16,9 @@ $hasMarks = $gradeCount > 0;
         <i class="bi bi-activity"></i> Analytics
       </div>
       <h1 class="hod-overview-hero__title">Student performance overview</h1>
-      <p class="hod-overview-hero__lead">
-        Live snapshots for your department subjects: averages, spread, and class trends
-        for <strong><?= View::e($year) ?></strong> &middot; <strong><?= View::e($term) ?></strong>.
+      <p class="hod-overview-hero__lead mb-0">
+        Five chart types: bar, pie, doughnut, radar, and line — all scoped to your departments for
+        <strong><?= View::e($year) ?></strong> &middot; <strong><?= View::e($term) ?></strong>.
       </p>
       <div class="hod-overview-hero__chips">
         <?php if (!empty($isSharedHod) && !empty($hodDepartmentLabel)): ?>
@@ -168,7 +168,7 @@ $hasMarks = $gradeCount > 0;
             <h2 class="hod-overview-card__title">
               <i class="bi bi-journal-text text-primary"></i> Average by subject
             </h2>
-            <p class="hod-overview-card__sub">Mean score for each department subject in this term.</p>
+            <p class="hod-overview-card__sub">Horizontal bar — mean score per subject.</p>
           </div>
         </div>
         <div class="hod-overview-card__body chart-surface" style="height:min(420px, 55vh);">
@@ -181,13 +181,13 @@ $hasMarks = $gradeCount > 0;
         <div class="hod-overview-card__head">
           <div>
             <h2 class="hod-overview-card__title">
-              <i class="bi bi-pie-chart-fill text-warning"></i> Grade spread
+              <i class="bi bi-pie-chart text-warning"></i> Grade spread
             </h2>
-            <p class="hod-overview-card__sub">How marks cluster across performance bands.</p>
+            <p class="hod-overview-card__sub">Performance bands — pie chart.</p>
           </div>
         </div>
         <div class="hod-overview-card__body chart-surface" style="height:min(360px, 45vh);">
-          <canvas id="hodBandChart" aria-label="Doughnut chart of grade distribution"></canvas>
+          <canvas id="hodBandChart" aria-label="Pie chart of grade distribution"></canvas>
         </div>
         <?php if ($bandTotal > 0): ?>
           <div class="hod-overview-card__footer small text-muted">
@@ -198,15 +198,15 @@ $hasMarks = $gradeCount > 0;
     </div>
   </div>
 
-  <div class="row g-4 mb-4">
-    <div class="col-xl-8">
+  <div class="row g-4 mb-2">
+    <div class="col-xl-7">
       <div class="hod-overview-card h-100">
         <div class="hod-overview-card__head">
           <div>
             <h2 class="hod-overview-card__title">
               <i class="bi bi-building text-info"></i> Average by class
             </h2>
-            <p class="hod-overview-card__sub">Cross-class comparison for the same department scope.</p>
+            <p class="hod-overview-card__sub">Vertical bar — compare class means.</p>
           </div>
         </div>
         <div class="hod-overview-card__body chart-surface" style="height:min(340px, 50vh);">
@@ -214,34 +214,71 @@ $hasMarks = $gradeCount > 0;
         </div>
       </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-xl-5">
       <div class="hod-overview-card h-100">
         <div class="hod-overview-card__head">
           <div>
             <h2 class="hod-overview-card__title">
-              <i class="bi bi-lightning-charge text-success"></i> Exam focus
+              <i class="bi bi-patch-check text-success"></i> Mid-term vs end-term
             </h2>
-            <p class="hod-overview-card__sub">Mid-term vs end-of-term averages.</p>
+            <p class="hod-overview-card__sub">Doughnut — share of marks by exam type.</p>
           </div>
         </div>
-        <div class="hod-overview-card__body">
-          <div class="hod-exam-compare">
-            <div class="hod-exam-compare__item hod-exam-compare__item--mid">
-              <span class="hod-exam-compare__label">Mid-term</span>
-              <span class="hod-exam-compare__val">
-                <?= $midAvg !== null ? View::e(rtrim(rtrim(number_format($midAvg, 2, '.', ''), '0'), '.')) : '—' ?>
-              </span>
+        <div class="hod-overview-card__body chart-surface" style="height:min(240px, 38vh);">
+          <canvas id="hodExamMixChart" aria-label="Doughnut chart of marks by exam type"></canvas>
+        </div>
+        <div class="hod-overview-card__body pt-0">
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="hod-exam-compare__item hod-exam-compare__item--mid mb-0">
+                <span class="hod-exam-compare__label">Mid-term avg</span>
+                <span class="hod-exam-compare__val hod-exam-compare__val--sm">
+                  <?= $midAvg !== null ? View::e(rtrim(rtrim(number_format($midAvg, 2, '.', ''), '0'), '.')) : '—' ?>
+                </span>
+              </div>
             </div>
-            <div class="hod-exam-compare__item hod-exam-compare__item--end">
-              <span class="hod-exam-compare__label">End of term</span>
-              <span class="hod-exam-compare__val">
-                <?= $endAvg !== null ? View::e(rtrim(rtrim(number_format($endAvg, 2, '.', ''), '0'), '.')) : '—' ?>
-              </span>
+            <div class="col-6">
+              <div class="hod-exam-compare__item hod-exam-compare__item--end mb-0">
+                <span class="hod-exam-compare__label">End-term avg</span>
+                <span class="hod-exam-compare__val hod-exam-compare__val--sm">
+                  <?= $endAvg !== null ? View::e(rtrim(rtrim(number_format($endAvg, 2, '.', ''), '0'), '.')) : '—' ?>
+                </span>
+              </div>
             </div>
           </div>
-          <p class="small text-muted mt-3 mb-0">
-            When only one exam type has entries, the other shows &ldquo;—&rdquo;. Encourage entry for both to compare focus areas.
-          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-6">
+      <div class="hod-overview-card h-100">
+        <div class="hod-overview-card__head">
+          <div>
+            <h2 class="hod-overview-card__title">
+              <i class="bi bi-bullseye text-danger"></i> By category
+            </h2>
+            <p class="hod-overview-card__sub">Radar — mean score per subject category you head.</p>
+          </div>
+        </div>
+        <div class="hod-overview-card__body chart-surface" style="height:min(340px, 48vh);">
+          <canvas id="hodCategoryRadarChart" aria-label="Radar chart of averages by category"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6">
+      <div class="hod-overview-card h-100">
+        <div class="hod-overview-card__head">
+          <div>
+            <h2 class="hod-overview-card__title">
+              <i class="bi bi-graph-up text-primary"></i> Mark volume
+            </h2>
+            <p class="hod-overview-card__sub">Line chart — marks recorded per subject.</p>
+          </div>
+        </div>
+        <div class="hod-overview-card__body chart-surface" style="height:min(340px, 48vh);">
+          <canvas id="hodSubjectVolumeChart" aria-label="Line chart of mark counts by subject"></canvas>
         </div>
       </div>
     </div>
@@ -305,7 +342,17 @@ $hasMarks = $gradeCount > 0;
       'data'   => $bandData,
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
-    var charts = { subject: null, band: null, klass: null };
+    var examPayload = <?= json_encode([
+      'labels' => $chartExamLabels,
+      'data'   => $chartExamCounts,
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    var radarPayload = <?= json_encode([
+      'labels' => $chartRadarLabels,
+      'data'   => $chartRadarAvgs,
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    var charts = { subject: null, band: null, klass: null, exam: null, radar: null, volume: null };
 
     function readTheme() {
       var css = getComputedStyle(document.documentElement);
@@ -393,21 +440,20 @@ $hasMarks = $gradeCount > 0;
       if (!el || !window.Chart) return;
       var palette = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'];
       charts.band = new Chart(el, {
-        type: 'doughnut',
+        type: 'pie',
         data: {
           labels: bandPayload.labels,
           datasets: [{
             data: bandPayload.data,
             backgroundColor: palette,
             borderColor: theme.surface,
-            borderWidth: 3,
+            borderWidth: 2,
             hoverOffset: 10,
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '62%',
           plugins: {
             legend: {
               position: 'bottom',
@@ -422,7 +468,7 @@ $hasMarks = $gradeCount > 0;
               callbacks: {
                 label: function (ctx) {
                   var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
-                  var v = ctx.parsed;
+                  var v = ctx.raw;
                   var pct = total ? Math.round((v / total) * 100) : 0;
                   return ' ' + v + ' marks (' + pct + '%)';
                 }
@@ -493,6 +539,167 @@ $hasMarks = $gradeCount > 0;
       });
     }
 
+    function buildExam(theme) {
+      var el = document.getElementById('hodExamMixChart');
+      if (!el || !window.Chart) return;
+      charts.exam = new Chart(el, {
+        type: 'doughnut',
+        data: {
+          labels: examPayload.labels,
+          datasets: [{
+            data: examPayload.data,
+            backgroundColor: ['#f59e0b', theme.accent],
+            borderColor: theme.surface,
+            borderWidth: 3,
+            hoverOffset: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '58%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: theme.muted, boxWidth: 10, padding: 12 }
+            },
+            tooltip: {
+              backgroundColor: theme.surface,
+              titleColor: theme.text,
+              bodyColor: theme.muted,
+              borderColor: theme.border,
+              borderWidth: 1,
+              callbacks: {
+                label: function (ctx) {
+                  var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                  var v = ctx.raw;
+                  var pct = total ? Math.round((v / total) * 100) : 0;
+                  return ' ' + v + ' marks (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function buildRadar(theme) {
+      var el = document.getElementById('hodCategoryRadarChart');
+      if (!el || !window.Chart) return;
+      var accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '37, 99, 235';
+      charts.radar = new Chart(el, {
+        type: 'radar',
+        data: {
+          labels: radarPayload.labels,
+          datasets: [{
+            label: 'Average',
+            data: radarPayload.data,
+            borderColor: theme.accent,
+            backgroundColor: 'rgba(' + accentRgb + ', 0.22)',
+            pointBackgroundColor: theme.accent,
+            pointBorderColor: theme.surface,
+            pointHoverBackgroundColor: theme.accent,
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              min: 0,
+              max: 100,
+              angleLines: { color: theme.border },
+              grid: { color: theme.border },
+              pointLabels: { color: theme.muted, font: { size: 11 } },
+              ticks: {
+                color: theme.muted,
+                backdropColor: 'transparent',
+                showLabelBackdrop: false,
+                stepSize: 20
+              }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: theme.surface,
+              titleColor: theme.text,
+              bodyColor: theme.muted,
+              borderColor: theme.border,
+              borderWidth: 1,
+              callbacks: {
+                label: function (ctx) {
+                  return ' Average: ' + ctx.raw;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function buildVolume(theme) {
+      var el = document.getElementById('hodSubjectVolumeChart');
+      if (!el || !window.Chart) return;
+      charts.volume = new Chart(el, {
+        type: 'line',
+        data: {
+          labels: subjectPayload.labels,
+          datasets: [{
+            label: 'Marks',
+            data: subjectPayload.counts,
+            borderColor: theme.accent,
+            backgroundColor: theme.accentSofter,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: theme.surface,
+              titleColor: theme.text,
+              bodyColor: theme.muted,
+              borderColor: theme.border,
+              borderWidth: 1,
+              displayColors: false,
+              callbacks: {
+                label: function (ctx) {
+                  var n = ctx.parsed.y;
+                  return n + (n === 1 ? ' mark' : ' marks');
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: theme.border },
+              ticks: { color: theme.muted, font: { size: 11 }, precision: 0 }
+            },
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: theme.muted,
+                font: { size: 10 },
+                maxRotation: 50,
+                minRotation: 35,
+                autoSkip: true,
+                maxTicksLimit: 10
+              }
+            }
+          }
+        }
+      });
+    }
+
     function renderAll() {
       if (!window.Chart) return;
       destroyAll();
@@ -500,6 +707,9 @@ $hasMarks = $gradeCount > 0;
       buildSubject(theme);
       buildBand(theme);
       buildClass(theme);
+      buildExam(theme);
+      buildRadar(theme);
+      buildVolume(theme);
     }
 
     function whenChartReady(cb) {

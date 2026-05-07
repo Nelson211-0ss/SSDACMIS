@@ -5272,6 +5272,9 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
+.hod-exam-compare__val--sm {
+  font-size: 1.2rem;
+}
 
 .hod-overview-empty__icon {
   width: 3.5rem;
