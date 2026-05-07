@@ -3815,11 +3815,42 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .app-main > .d-flex,
 .app-main > h1, .app-main > h2, .app-main > h3, .app-main > h4,
 .app-main > form,
-.app-main > .d-grid {
+.app-main > .d-grid,
+.app-main > div.hod-overview-page > *,
+.app-main > div.bursar-dash > * {
   animation: ssd-fade-up .35s ease both;
 }
+
+/* Light stagger for full-page dashboard shells (HOD overview, Bursar home) */
+.app-main > div.hod-overview-page > *:nth-child(1),
+.app-main > div.bursar-dash > *:nth-child(1) { animation-delay: 0.02s; }
+.app-main > div.hod-overview-page > *:nth-child(2),
+.app-main > div.bursar-dash > *:nth-child(2) { animation-delay: 0.05s; }
+.app-main > div.hod-overview-page > *:nth-child(3),
+.app-main > div.bursar-dash > *:nth-child(3) { animation-delay: 0.08s; }
+.app-main > div.hod-overview-page > *:nth-child(4),
+.app-main > div.bursar-dash > *:nth-child(4) { animation-delay: 0.11s; }
+.app-main > div.hod-overview-page > *:nth-child(5),
+.app-main > div.bursar-dash > *:nth-child(5) { animation-delay: 0.14s; }
+.app-main > div.hod-overview-page > *:nth-child(6),
+.app-main > div.bursar-dash > *:nth-child(6) { animation-delay: 0.17s; }
+.app-main > div.hod-overview-page > *:nth-child(7),
+.app-main > div.bursar-dash > *:nth-child(7) { animation-delay: 0.2s; }
+.app-main > div.hod-overview-page > *:nth-child(8),
+.app-main > div.bursar-dash > *:nth-child(8) { animation-delay: 0.23s; }
+.app-main > div.hod-overview-page > *:nth-child(9),
+.app-main > div.bursar-dash > *:nth-child(9) { animation-delay: 0.26s; }
+.app-main > div.hod-overview-page > *:nth-child(10),
+.app-main > div.bursar-dash > *:nth-child(10) { animation-delay: 0.29s; }
+.app-main > div.hod-overview-page > *:nth-child(11),
+.app-main > div.bursar-dash > *:nth-child(11) { animation-delay: 0.32s; }
+.app-main > div.hod-overview-page > *:nth-child(12),
+.app-main > div.bursar-dash > *:nth-child(12) { animation-delay: 0.35s; }
+
 @media (prefers-reduced-motion: reduce) {
   .app-main > * { animation: none !important; }
+  .app-main > div.hod-overview-page > *,
+  .app-main > div.bursar-dash > * { animation: none !important; }
 }
 
 /* ---------- Page-title polish: neutral icon chip ---------- */
@@ -5020,6 +5051,8 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 /* ---------- Print: disable any decoration ---------- */
 @media print {
   .app-main > * { animation: none !important; }
+  .app-main > div.hod-overview-page > *,
+  .app-main > div.bursar-dash > * { animation: none !important; }
   .card { box-shadow: none !important; }
 }
 
@@ -5305,33 +5338,15 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .hod-overview-card {
   position: relative;
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--border) 85%, rgba(139, 92, 246, 0.25));
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow:
-    0 0 0 1px rgba(var(--accent-rgb), 0.04) inset,
-    0 16px 48px -28px rgba(99, 102, 241, 0.22),
-    0 8px 32px -28px rgba(236, 72, 153, 0.12);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 10px 34px -26px rgba(15, 23, 42, 0.18);
   overflow: hidden;
 }
-.hod-overview-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #06b6d4, #22c55e);
-  opacity: 0.92;
-}
 [data-bs-theme="dark"] .hod-overview-card {
-  background: rgba(30, 41, 59, 0.45);
-  border-color: rgba(139, 92, 246, 0.22);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 20px 56px -32px rgba(0, 0, 0, 0.5);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 12px 40px -28px rgba(0, 0, 0, 0.35);
 }
 .hod-overview-card__head {
   padding: 1rem 1.15rem 0.35rem;

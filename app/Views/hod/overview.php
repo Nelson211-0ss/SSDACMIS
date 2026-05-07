@@ -90,6 +90,29 @@ $hasMarks = $gradeCount > 0;
   </a>
 </div>
 
+<div class="row g-2 mb-3 hod-overview-kpis hod-overview-kpis--compact">
+  <?php
+    $kpis = [
+      ['Overall average', $avgOverall !== null ? rtrim(rtrim(number_format($avgOverall, 2, '.', ''), '0'), '.') : '—', 'bi-bullseye', 'purple', 'Department mean'],
+      ['Marks recorded', number_format($gradeCount), 'bi-clipboard-data', 'blue', 'This period'],
+      ['Students assessed', number_format($studentsTouch), 'bi-people-fill', 'green', 'With ≥1 mark'],
+      ['Subjects tracked', number_format($subjectsOffered), 'bi-book-half', 'orange', 'Offered in scope'],
+    ];
+    foreach ($kpis as [$label, $value, $icon, $tone, $hint]):
+  ?>
+    <div class="col-6 col-xl-3">
+      <div class="hod-overview-kpi hod-overview-kpi--<?= View::e($tone) ?> hod-overview-kpi--compact">
+        <div class="hod-overview-kpi__icon hod-overview-kpi__icon--<?= View::e($tone) ?>">
+          <i class="bi <?= View::e($icon) ?>"></i>
+        </div>
+        <div class="hod-overview-kpi__label"><?= View::e($label) ?></div>
+        <div class="hod-overview-kpi__value"><?= View::e((string) $value) ?></div>
+        <div class="hod-overview-kpi__hint"><?= View::e($hint) ?></div>
+      </div>
+    </div>
+  <?php endforeach; ?>
+</div>
+
 <?php if (!$hasMarks): ?>
   <div class="hod-overview-empty card border-0 shadow-sm">
     <div class="card-body text-center py-5 px-4">
@@ -210,29 +233,6 @@ $hasMarks = $gradeCount > 0;
   </div>
 
 <?php endif ?>
-
-<div class="row g-2 mb-3 hod-overview-kpis hod-overview-kpis--compact">
-  <?php
-    $kpis = [
-      ['Overall average', $avgOverall !== null ? rtrim(rtrim(number_format($avgOverall, 2, '.', ''), '0'), '.') : '—', 'bi-bullseye', 'purple', 'Department mean'],
-      ['Marks recorded', number_format($gradeCount), 'bi-clipboard-data', 'blue', 'This period'],
-      ['Students assessed', number_format($studentsTouch), 'bi-people-fill', 'green', 'With ≥1 mark'],
-      ['Subjects tracked', number_format($subjectsOffered), 'bi-book-half', 'orange', 'Offered in scope'],
-    ];
-    foreach ($kpis as [$label, $value, $icon, $tone, $hint]):
-  ?>
-    <div class="col-6 col-xl-3">
-      <div class="hod-overview-kpi hod-overview-kpi--<?= View::e($tone) ?> hod-overview-kpi--compact">
-        <div class="hod-overview-kpi__icon hod-overview-kpi__icon--<?= View::e($tone) ?>">
-          <i class="bi <?= View::e($icon) ?>"></i>
-        </div>
-        <div class="hod-overview-kpi__label"><?= View::e($label) ?></div>
-        <div class="hod-overview-kpi__value"><?= View::e((string) $value) ?></div>
-        <div class="hod-overview-kpi__hint"><?= View::e($hint) ?></div>
-      </div>
-    </div>
-  <?php endforeach; ?>
-</div>
 
 <?php if ($hasMarks): ?>
   <?php if (!empty($subjectRows)): ?>
