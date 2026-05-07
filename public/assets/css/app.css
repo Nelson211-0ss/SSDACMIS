@@ -78,7 +78,7 @@
   --bs-border-radius-lg: var(--radius);
 }
 
-[data-bs-theme="dark"] {
+html[data-bs-theme="dark"] {
   --bg:            #0f1115;
   --surface:       #171a21;
   --surface-2:     #1d2129;
@@ -101,7 +101,20 @@
   --bs-border-color: var(--border);
   --bs-secondary-bg: var(--surface-2);
   --bs-tertiary-bg: var(--hover);
-  /* Sidebar tokens are inherited from :root (same colored panel in both modes) */
+
+  /* Dark sidebar rail — overrides per-school :root injection (higher specificity) */
+  --sidebar-bg:              #0a0c10;
+  --sidebar-border:          rgba(255, 255, 255, .08);
+  --sidebar-text:            rgba(255, 255, 255, .74);
+  --sidebar-text-strong:     #f9fafb;
+  --sidebar-text-subtle:     rgba(255, 255, 255, .40);
+  --sidebar-hover-bg:        rgba(255, 255, 255, .07);
+  --sidebar-active-bg:       #f3f4f6;
+  --sidebar-active-text:     #0f1115;
+  --sidebar-active-shadow:   0 1px 3px rgba(0, 0, 0, .35);
+  --sidebar-icon:            rgba(255, 255, 255, .55);
+  --sidebar-active-icon:     var(--accent);
+  --sidebar-brand-icon:      #ffffff;
 }
 
 /* ---------- Base ---------- */
