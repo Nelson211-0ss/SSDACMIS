@@ -263,21 +263,17 @@ class HodController extends Controller
 
         $selYear = trim((string) $this->input('year'));
         $selTerm = trim((string) $this->input('term'));
-        $periodSet = ($selYear !== '' && $selTerm !== ''
+        $periodExplicit = ($selYear !== '' && $selTerm !== ''
             && in_array($selYear, $availableYears, true)
             && in_array($selTerm, $availableTerms, true));
-        if ($periodSet) {
+        if ($periodExplicit) {
             $year = $selYear;
             $term = $selTerm;
         } else {
             $year = $defaultYear;
-            $termMap = [
-                1 => 'Term 1', 2 => 'Term 1', 3 => 'Term 1',
-                4 => 'Term 2', 5 => 'Term 2', 6 => 'Term 2',
-                7 => 'Term 3', 8 => 'Term 3', 9 => 'Term 3',
-                10 => 'Term 3', 11 => 'Term 3', 12 => 'Term 3',
-            ];
-            $term = $termMap[(int) date('n')] ?? 'Term 1';
+            $term = 'Term 1';
+            $selYear = $year;
+            $selTerm = $term;
         }
 
         $summaryParams = $bindPeriod([$year, $term]);
@@ -413,7 +409,7 @@ class HodController extends Controller
             'defaultYear'          => $defaultYear,
             'selYear'              => $selYear,
             'selTerm'              => $selTerm,
-            'periodSet'            => $periodSet,
+            'periodExplicit'       => $periodExplicit,
             'year'                 => $year,
             'term'                 => $term,
             'avgOverall'           => $avgOverall,

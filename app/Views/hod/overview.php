@@ -11,7 +11,7 @@ $hasMarks = $gradeCount > 0;
 
 <form method="get"
       action="<?= $base ?>/hod/overview"
-      class="period-bar hod-overview-period <?= $periodSet ? 'period-bar--ok' : 'period-bar--warn' ?> mb-2">
+      class="period-bar hod-overview-period period-bar--ok mb-2">
 
   <span class="period-bar__icon">
     <i class="bi bi-calendar-event"></i>
@@ -20,9 +20,9 @@ $hasMarks = $gradeCount > 0;
   <div class="period-bar__lead">
     <div class="period-bar__title">Reporting period</div>
     <div class="period-bar__hint">
-      <?= $periodSet
+      <?= $periodExplicit
         ? 'Charts and metrics use this year and term.'
-        : 'Showing sensible defaults — confirm year and term to match your reporting cycle.' ?>
+        : 'Default is the current academic year and Term 1 — change and Apply if needed.' ?>
     </div>
   </div>
 
@@ -59,18 +59,12 @@ $hasMarks = $gradeCount > 0;
     <i class="bi bi-graph-up-arrow"></i>
     <span>
       <strong><?= View::e($year) ?></strong> &middot; <?= View::e($term) ?>
-      <?php if (!$periodSet): ?>
+      <?php if (!$periodExplicit): ?>
         <span class="text-muted">(default)</span>
       <?php endif; ?>
     </span>
   </span>
 </form>
-
-<div class="hod-overview-deck hod-overview-deck--tight justify-content-end">
-  <a href="<?= $base ?>/hod" class="btn btn-sm hod-overview-deck__btn">
-    <i class="bi bi-mortarboard"></i> Department dashboard
-  </a>
-</div>
 
 <div class="row g-2 mb-3 hod-overview-kpis hod-overview-kpis--compact">
   <?php
