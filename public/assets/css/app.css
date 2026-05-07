@@ -5419,3 +5419,72 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   border-bottom-color: var(--border);
 }
 
+/* Compact 2×2 chart grid (four charts visible without long scroll) */
+.hod-overview-deck--tight {
+  margin-bottom: 0.45rem;
+  padding: 0.35rem 0;
+}
+.hod-overview-charts-quad > .col {
+  min-height: 0;
+}
+.hod-overview-card--compact {
+  min-height: 0;
+}
+.hod-overview-card__head--compact {
+  padding: 0.5rem 0.75rem 0.12rem !important;
+}
+.hod-overview-card__head--compact .hod-overview-card__title {
+  font-size: 0.88rem;
+  margin-bottom: 0.02rem;
+}
+.hod-overview-card__head--compact .hod-overview-card__sub {
+  font-size: 0.66rem;
+  line-height: 1.25;
+  margin-bottom: 0;
+}
+.hod-overview-card__body--chart {
+  min-height: 0;
+}
+.hod-overview-chart-surface--quad {
+  position: relative;
+  height: clamp(170px, 22vh, 220px);
+  min-height: 160px;
+}
+.hod-overview-chart-surface--doughnut {
+  height: clamp(130px, 17vh, 170px);
+  min-height: 120px;
+}
+.hod-overview-card__footer--compact {
+  padding: 0 0.6rem 0.4rem !important;
+  font-size: 0.66rem;
+}
+.hod-overview-kpis--compact {
+  margin-bottom: 0.65rem !important;
+}
+.hod-overview-kpi--compact {
+  padding: 0.6rem 0.7rem !important;
+}
+.hod-overview-kpi--compact .hod-overview-kpi__icon {
+  width: 1.95rem;
+  height: 1.95rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  border-radius: 0.55rem;
+}
+.hod-overview-kpi--compact .hod-overview-kpi__value {
+  font-size: 1.12rem;
+}
+.hod-overview-kpi--compact .hod-overview-kpi__label {
+  font-size: 0.65rem;
+}
+.hod-overview-kpi--compact .hod-overview-kpi__hint {
+  font-size: 0.65rem;
+}
+.hod-exam-compare__item--compact {
+  padding: 0.35rem 0.45rem !important;
+}
+.hod-exam-compare__val--xs {
+  font-size: 0.98rem !important;
+  line-height: 1.15;
+}
+

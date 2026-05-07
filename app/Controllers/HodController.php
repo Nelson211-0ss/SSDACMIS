@@ -364,28 +364,6 @@ class HodController extends Controller
             }
         }
 
-        $categoryRows = Database::query(
-            "SELECT sub.category, AVG(g.score) AS avg_score, COUNT(*) AS n
-             FROM grades g
-             JOIN subjects sub ON sub.id = g.subject_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
-               AND g.academic_year = ? AND g.term = ?
-             GROUP BY sub.category",
-            $summaryParams
-        )->fetchAll();
-
-        $catShortForRadar = ['core' => 'Core', 'science' => 'Science', 'arts' => 'Arts', 'optional' => 'Optional'];
-        $catAvgByKey = [];
-        foreach ($categoryRows as $cr) {
-            $catAvgByKey[(string) $cr['category']] = round((float) $cr['avg_score'], 2);
-        }
-        $chartRadarLabels = [];
-        $chartRadarAvgs = [];
-        foreach ($categories as $c) {
-            $chartRadarLabels[] = $catShortForRadar[$c] ?? ucfirst($c);
-            $chartRadarAvgs[] = $catAvgByKey[$c] ?? 0;
-        }
-
         $chartExamLabels = ['Mid-term', 'End of term'];
         $chartExamCounts = [$examMidN, $examEndN];
 
@@ -454,8 +432,6 @@ class HodController extends Controller
             'chartClassLabels'     => $chartClassLabels,
             'chartClassAvgs'       => $chartClassAvgs,
             'chartClassMeta'       => $chartClassMeta,
-            'chartRadarLabels'     => $chartRadarLabels,
-            'chartRadarAvgs'       => $chartRadarAvgs,
             'chartExamLabels'      => $chartExamLabels,
             'chartExamCounts'      => $chartExamCounts,
         ]);

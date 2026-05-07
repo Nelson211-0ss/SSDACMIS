@@ -12,7 +12,7 @@ $hasMarks = $gradeCount > 0;
 
 <form method="get"
       action="<?= $base ?>/hod/overview"
-      class="period-bar hod-overview-period <?= $periodSet ? 'period-bar--ok' : 'period-bar--warn' ?> mb-4">
+      class="period-bar hod-overview-period <?= $periodSet ? 'period-bar--ok' : 'period-bar--warn' ?> mb-2">
 
   <span class="period-bar__icon">
     <i class="bi bi-calendar-event"></i>
@@ -67,12 +67,12 @@ $hasMarks = $gradeCount > 0;
   </span>
 </form>
 
-<div class="hod-overview-deck">
+<div class="hod-overview-deck hod-overview-deck--tight">
   <div class="hod-overview-deck__chips">
     <span class="hod-overview-deck__hint">
       <i class="bi bi-flower2"></i>
       <?= View::e($year) ?> · <?= View::e($term) ?>
-      · bar, pie, doughnut, radar &amp; line
+      · four charts at a glance
     </span>
     <?php if (!empty($isSharedHod) && !empty($hodDepartmentLabel)): ?>
       <span class="hod-overview-chip hod-overview-chip--accent">
@@ -88,29 +88,6 @@ $hasMarks = $gradeCount > 0;
   <a href="<?= $base ?>/hod" class="btn btn-sm hod-overview-deck__btn">
     <i class="bi bi-mortarboard"></i> Department dashboard
   </a>
-</div>
-
-<div class="row g-3 mb-4">
-  <?php
-    $kpis = [
-      ['Overall average', $avgOverall !== null ? rtrim(rtrim(number_format($avgOverall, 2, '.', ''), '0'), '.') : '—', 'bi-bullseye', 'purple', 'Mean score, department subjects'],
-      ['Marks recorded', number_format($gradeCount), 'bi-clipboard-data', 'blue', 'Rows in this period'],
-      ['Students assessed', number_format($studentsTouch), 'bi-people-fill', 'green', 'Unique learners with ≥1 mark'],
-      ['Subjects tracked', number_format($subjectsOffered), 'bi-book-half', 'orange', 'Offered in your categories'],
-    ];
-    foreach ($kpis as [$label, $value, $icon, $tone, $hint]):
-  ?>
-    <div class="col-6 col-xl-3">
-      <div class="hod-overview-kpi hod-overview-kpi--<?= View::e($tone) ?>">
-        <div class="hod-overview-kpi__icon hod-overview-kpi__icon--<?= View::e($tone) ?>">
-          <i class="bi <?= View::e($icon) ?>"></i>
-        </div>
-        <div class="hod-overview-kpi__label"><?= View::e($label) ?></div>
-        <div class="hod-overview-kpi__value"><?= View::e((string) $value) ?></div>
-        <div class="hod-overview-kpi__hint"><?= View::e($hint) ?></div>
-      </div>
-    </div>
-  <?php endforeach; ?>
 </div>
 
 <?php if (!$hasMarks): ?>
@@ -136,25 +113,27 @@ $hasMarks = $gradeCount > 0;
   </div>
 <?php else: ?>
 
-  <div class="row g-4 mb-2">
-    <div class="col-xl-7">
-      <div class="hod-overview-card h-100">
-        <div class="hod-overview-card__head">
+  <div class="row hod-overview-charts-quad g-2 mb-2 row-cols-1 row-cols-lg-2">
+    <div class="col d-flex">
+      <div class="hod-overview-card hod-overview-card--compact w-100 d-flex flex-column">
+        <div class="hod-overview-card__head hod-overview-card__head--compact">
           <div>
             <h2 class="hod-overview-card__title">
-              <i class="bi bi-journal-text text-primary"></i> Average by subject
+              <i class="bi bi-bar-chart-fill text-primary"></i> Mean score per subject
             </h2>
-            <p class="hod-overview-card__sub">Horizontal bar — mean score per subject.</p>
+            <p class="hod-overview-card__sub">Vertical bars — one color per subject.</p>
           </div>
         </div>
-        <div class="hod-overview-card__body chart-surface" style="height:min(420px, 55vh);">
-          <canvas id="hodSubjectAvgChart" aria-label="Bar chart of average scores by subject"></canvas>
+        <div class="hod-overview-card__body hod-overview-card__body--chart flex-grow-1 p-2 pt-0">
+          <div class="hod-overview-chart-surface hod-overview-chart-surface--quad">
+            <canvas id="hodSubjectAvgChart" aria-label="Vertical bar chart of mean score by subject"></canvas>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-xl-5">
-      <div class="hod-overview-card h-100">
-        <div class="hod-overview-card__head">
+    <div class="col d-flex">
+      <div class="hod-overview-card hod-overview-card--compact w-100 d-flex flex-column">
+        <div class="hod-overview-card__head hod-overview-card__head--compact">
           <div>
             <h2 class="hod-overview-card__title">
               <i class="bi bi-pie-chart text-warning"></i> Grade spread
@@ -162,61 +141,64 @@ $hasMarks = $gradeCount > 0;
             <p class="hod-overview-card__sub">Performance bands — pie chart.</p>
           </div>
         </div>
-        <div class="hod-overview-card__body chart-surface" style="height:min(360px, 45vh);">
-          <canvas id="hodBandChart" aria-label="Pie chart of grade distribution"></canvas>
+        <div class="hod-overview-card__body hod-overview-card__body--chart flex-grow-1 p-2 pt-0">
+          <div class="hod-overview-chart-surface hod-overview-chart-surface--quad">
+            <canvas id="hodBandChart" aria-label="Pie chart of grade distribution"></canvas>
+          </div>
         </div>
         <?php if ($bandTotal > 0): ?>
-          <div class="hod-overview-card__footer small text-muted">
-            Total marks in bands: <strong><?= number_format($bandTotal) ?></strong>
+          <div class="hod-overview-card__footer hod-overview-card__footer--compact small text-muted">
+            Total: <strong><?= number_format($bandTotal) ?></strong> marks
           </div>
         <?php endif; ?>
       </div>
     </div>
-  </div>
-
-  <div class="row g-4 mb-2">
-    <div class="col-xl-7">
-      <div class="hod-overview-card h-100">
-        <div class="hod-overview-card__head">
+    <div class="col d-flex">
+      <div class="hod-overview-card hod-overview-card--compact w-100 d-flex flex-column">
+        <div class="hod-overview-card__head hod-overview-card__head--compact">
           <div>
             <h2 class="hod-overview-card__title">
               <i class="bi bi-building text-info"></i> Average by class
             </h2>
-            <p class="hod-overview-card__sub">Vertical bar — compare class means.</p>
+            <p class="hod-overview-card__sub">Vertical bars — mean by class.</p>
           </div>
         </div>
-        <div class="hod-overview-card__body chart-surface" style="height:min(340px, 50vh);">
-          <canvas id="hodClassAvgChart" aria-label="Bar chart of average scores by class"></canvas>
+        <div class="hod-overview-card__body hod-overview-card__body--chart flex-grow-1 p-2 pt-0">
+          <div class="hod-overview-chart-surface hod-overview-chart-surface--quad">
+            <canvas id="hodClassAvgChart" aria-label="Bar chart of average scores by class"></canvas>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-xl-5">
-      <div class="hod-overview-card h-100">
-        <div class="hod-overview-card__head">
+    <div class="col d-flex">
+      <div class="hod-overview-card hod-overview-card--compact w-100 d-flex flex-column">
+        <div class="hod-overview-card__head hod-overview-card__head--compact">
           <div>
             <h2 class="hod-overview-card__title">
               <i class="bi bi-patch-check text-success"></i> Mid-term vs end-term
             </h2>
-            <p class="hod-overview-card__sub">Doughnut — share of marks by exam type.</p>
+            <p class="hod-overview-card__sub">Doughnut — share of marks by exam.</p>
           </div>
         </div>
-        <div class="hod-overview-card__body chart-surface" style="height:min(240px, 38vh);">
-          <canvas id="hodExamMixChart" aria-label="Doughnut chart of marks by exam type"></canvas>
+        <div class="hod-overview-card__body hod-overview-card__body--chart flex-grow-1 p-2 pt-0">
+          <div class="hod-overview-chart-surface hod-overview-chart-surface--quad hod-overview-chart-surface--doughnut">
+            <canvas id="hodExamMixChart" aria-label="Doughnut chart of marks by exam type"></canvas>
+          </div>
         </div>
-        <div class="hod-overview-card__body pt-0">
-          <div class="row g-2">
+        <div class="hod-overview-card__footer hod-overview-card__footer--compact pt-0">
+          <div class="row g-1 hod-overview-exam-mini">
             <div class="col-6">
-              <div class="hod-exam-compare__item hod-exam-compare__item--mid mb-0">
+              <div class="hod-exam-compare__item hod-exam-compare__item--mid mb-0 hod-exam-compare__item--compact">
                 <span class="hod-exam-compare__label">Mid-term avg</span>
-                <span class="hod-exam-compare__val hod-exam-compare__val--sm">
+                <span class="hod-exam-compare__val hod-exam-compare__val--xs">
                   <?= $midAvg !== null ? View::e(rtrim(rtrim(number_format($midAvg, 2, '.', ''), '0'), '.')) : '—' ?>
                 </span>
               </div>
             </div>
             <div class="col-6">
-              <div class="hod-exam-compare__item hod-exam-compare__item--end mb-0">
+              <div class="hod-exam-compare__item hod-exam-compare__item--end mb-0 hod-exam-compare__item--compact">
                 <span class="hod-exam-compare__label">End-term avg</span>
-                <span class="hod-exam-compare__val hod-exam-compare__val--sm">
+                <span class="hod-exam-compare__val hod-exam-compare__val--xs">
                   <?= $endAvg !== null ? View::e(rtrim(rtrim(number_format($endAvg, 2, '.', ''), '0'), '.')) : '—' ?>
                 </span>
               </div>
@@ -227,39 +209,32 @@ $hasMarks = $gradeCount > 0;
     </div>
   </div>
 
-  <div class="row g-4 mb-4">
-    <div class="col-xl-6">
-      <div class="hod-overview-card h-100">
-        <div class="hod-overview-card__head">
-          <div>
-            <h2 class="hod-overview-card__title">
-              <i class="bi bi-bullseye text-danger"></i> By category
-            </h2>
-            <p class="hod-overview-card__sub">Radar — mean score per subject category you head.</p>
-          </div>
-        </div>
-        <div class="hod-overview-card__body chart-surface" style="height:min(340px, 48vh);">
-          <canvas id="hodCategoryRadarChart" aria-label="Radar chart of averages by category"></canvas>
-        </div>
-      </div>
-    </div>
-    <div class="col-xl-6">
-      <div class="hod-overview-card h-100">
-        <div class="hod-overview-card__head">
-          <div>
-            <h2 class="hod-overview-card__title">
-              <i class="bi bi-graph-up text-primary"></i> Mark volume
-            </h2>
-            <p class="hod-overview-card__sub">Line chart — marks recorded per subject.</p>
-          </div>
-        </div>
-        <div class="hod-overview-card__body chart-surface" style="height:min(340px, 48vh);">
-          <canvas id="hodSubjectVolumeChart" aria-label="Line chart of mark counts by subject"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
+<?php endif ?>
 
+<div class="row g-2 mb-3 hod-overview-kpis hod-overview-kpis--compact">
+  <?php
+    $kpis = [
+      ['Overall average', $avgOverall !== null ? rtrim(rtrim(number_format($avgOverall, 2, '.', ''), '0'), '.') : '—', 'bi-bullseye', 'purple', 'Department mean'],
+      ['Marks recorded', number_format($gradeCount), 'bi-clipboard-data', 'blue', 'This period'],
+      ['Students assessed', number_format($studentsTouch), 'bi-people-fill', 'green', 'With ≥1 mark'],
+      ['Subjects tracked', number_format($subjectsOffered), 'bi-book-half', 'orange', 'Offered in scope'],
+    ];
+    foreach ($kpis as [$label, $value, $icon, $tone, $hint]):
+  ?>
+    <div class="col-6 col-xl-3">
+      <div class="hod-overview-kpi hod-overview-kpi--<?= View::e($tone) ?> hod-overview-kpi--compact">
+        <div class="hod-overview-kpi__icon hod-overview-kpi__icon--<?= View::e($tone) ?>">
+          <i class="bi <?= View::e($icon) ?>"></i>
+        </div>
+        <div class="hod-overview-kpi__label"><?= View::e($label) ?></div>
+        <div class="hod-overview-kpi__value"><?= View::e((string) $value) ?></div>
+        <div class="hod-overview-kpi__hint"><?= View::e($hint) ?></div>
+      </div>
+    </div>
+  <?php endforeach; ?>
+</div>
+
+<?php if ($hasMarks): ?>
   <?php if (!empty($subjectRows)): ?>
     <div class="hod-overview-card mb-4">
       <div class="hod-overview-card__head">
@@ -323,12 +298,7 @@ $hasMarks = $gradeCount > 0;
       'data'   => $chartExamCounts,
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
-    var radarPayload = <?= json_encode([
-      'labels' => $chartRadarLabels,
-      'data'   => $chartRadarAvgs,
-    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-
-    var charts = { subject: null, band: null, klass: null, exam: null, radar: null, volume: null };
+    var charts = { subject: null, band: null, klass: null, exam: null };
 
     function readTheme() {
       var css = getComputedStyle(document.documentElement);
@@ -357,23 +327,26 @@ $hasMarks = $gradeCount > 0;
     function buildSubject(theme) {
       var el = document.getElementById('hodSubjectAvgChart');
       if (!el || !window.Chart) return;
+      var palette = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#0ea5e9', '#ef4444', '#22c55e', '#a855f7', '#f97316', '#06b6d4', '#84cc16'];
+      var colors = subjectPayload.labels.map(function (_, i) {
+        return palette[i % palette.length];
+      });
       charts.subject = new Chart(el, {
         type: 'bar',
         data: {
           labels: subjectPayload.labels,
           datasets: [{
-            label: 'Average',
+            label: 'Mean',
             data: subjectPayload.avgs,
-            backgroundColor: theme.accentSoft,
-            borderColor: theme.accent,
+            backgroundColor: colors,
+            borderColor: colors.map(function (c) { return c; }),
             borderWidth: 1,
-            borderRadius: 12,
+            borderRadius: 8,
             borderSkipped: false,
-            maxBarThickness: 48,
+            maxBarThickness: 36,
           }]
         },
         options: {
-          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
@@ -384,27 +357,34 @@ $hasMarks = $gradeCount > 0;
               bodyColor: theme.muted,
               borderColor: theme.border,
               borderWidth: 1,
-              padding: 10,
-              displayColors: false,
+              padding: 8,
+              displayColors: true,
               callbacks: {
                 label: function (ctx) {
                   var i = ctx.dataIndex;
                   var c = subjectPayload.counts[i] != null ? subjectPayload.counts[i] : '';
-                  return 'Avg: ' + ctx.parsed.x + (c !== '' ? ' · ' + c + ' marks' : '');
+                  return ' Mean: ' + ctx.parsed.y + (c !== '' ? ' · ' + c + ' marks' : '');
                 }
               }
             }
           },
           scales: {
-            x: {
+            y: {
               min: 0,
               max: 100,
               grid: { color: theme.border },
-              ticks: { color: theme.muted, font: { size: 11 } }
+              ticks: { color: theme.muted, font: { size: 10 } }
             },
-            y: {
+            x: {
               grid: { display: false },
-              ticks: { color: theme.muted, font: { size: 11 } }
+              ticks: {
+                color: theme.muted,
+                font: { size: 9 },
+                maxRotation: 55,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 12
+              }
             }
           }
         }
@@ -433,7 +413,7 @@ $hasMarks = $gradeCount > 0;
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: theme.muted, boxWidth: 10, padding: 14 }
+              labels: { color: theme.muted, boxWidth: 8, padding: 6, font: { size: 10 } }
             },
             tooltip: {
               backgroundColor: theme.surface,
@@ -472,7 +452,7 @@ $hasMarks = $gradeCount > 0;
             backgroundColor: colors,
             borderRadius: 10,
             borderSkipped: false,
-            maxBarThickness: 52,
+            maxBarThickness: 40,
           }]
         },
         options: {
@@ -504,11 +484,17 @@ $hasMarks = $gradeCount > 0;
               min: 0,
               max: 100,
               grid: { color: theme.border },
-              ticks: { color: theme.muted, font: { size: 11 } }
+              ticks: { color: theme.muted, font: { size: 10 } }
             },
             x: {
               grid: { display: false },
-              ticks: { color: theme.muted, font: { size: 11 } }
+              ticks: {
+                color: theme.muted,
+                font: { size: 9 },
+                maxRotation: 45,
+                autoSkip: true,
+                maxTicksLimit: 8
+              }
             }
           }
         }
@@ -537,7 +523,7 @@ $hasMarks = $gradeCount > 0;
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: theme.muted, boxWidth: 10, padding: 12 }
+              labels: { color: theme.muted, boxWidth: 8, padding: 5, font: { size: 10 } }
             },
             tooltip: {
               backgroundColor: theme.surface,
@@ -559,123 +545,6 @@ $hasMarks = $gradeCount > 0;
       });
     }
 
-    function buildRadar(theme) {
-      var el = document.getElementById('hodCategoryRadarChart');
-      if (!el || !window.Chart) return;
-      var accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '37, 99, 235';
-      charts.radar = new Chart(el, {
-        type: 'radar',
-        data: {
-          labels: radarPayload.labels,
-          datasets: [{
-            label: 'Average',
-            data: radarPayload.data,
-            borderColor: theme.accent,
-            backgroundColor: 'rgba(' + accentRgb + ', 0.22)',
-            pointBackgroundColor: theme.accent,
-            pointBorderColor: theme.surface,
-            pointHoverBackgroundColor: theme.accent,
-            borderWidth: 2,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              min: 0,
-              max: 100,
-              angleLines: { color: theme.border },
-              grid: { color: theme.border },
-              pointLabels: { color: theme.muted, font: { size: 11 } },
-              ticks: {
-                color: theme.muted,
-                backdropColor: 'transparent',
-                showLabelBackdrop: false,
-                stepSize: 20
-              }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: theme.surface,
-              titleColor: theme.text,
-              bodyColor: theme.muted,
-              borderColor: theme.border,
-              borderWidth: 1,
-              callbacks: {
-                label: function (ctx) {
-                  return ' Average: ' + ctx.raw;
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function buildVolume(theme) {
-      var el = document.getElementById('hodSubjectVolumeChart');
-      if (!el || !window.Chart) return;
-      charts.volume = new Chart(el, {
-        type: 'line',
-        data: {
-          labels: subjectPayload.labels,
-          datasets: [{
-            label: 'Marks',
-            data: subjectPayload.counts,
-            borderColor: theme.accent,
-            backgroundColor: theme.accentSofter,
-            fill: true,
-            tension: 0.35,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            borderWidth: 2,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: theme.surface,
-              titleColor: theme.text,
-              bodyColor: theme.muted,
-              borderColor: theme.border,
-              borderWidth: 1,
-              displayColors: false,
-              callbacks: {
-                label: function (ctx) {
-                  var n = ctx.parsed.y;
-                  return n + (n === 1 ? ' mark' : ' marks');
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: { color: theme.border },
-              ticks: { color: theme.muted, font: { size: 11 }, precision: 0 }
-            },
-            x: {
-              grid: { display: false },
-              ticks: {
-                color: theme.muted,
-                font: { size: 10 },
-                maxRotation: 50,
-                minRotation: 35,
-                autoSkip: true,
-                maxTicksLimit: 10
-              }
-            }
-          }
-        }
-      });
-    }
-
     function renderAll() {
       if (!window.Chart) return;
       destroyAll();
@@ -684,8 +553,6 @@ $hasMarks = $gradeCount > 0;
       buildBand(theme);
       buildClass(theme);
       buildExam(theme);
-      buildRadar(theme);
-      buildVolume(theme);
     }
 
     function whenChartReady(cb) {
