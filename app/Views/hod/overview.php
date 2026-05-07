@@ -8,58 +8,11 @@ $catLabel = ['core' => 'Compulsory Core', 'science' => 'Science', 'arts' => 'Art
 $hasMarks = $gradeCount > 0;
 ?>
 
-<section class="hod-overview-hero">
-  <div class="hod-overview-hero__mesh" aria-hidden="true"></div>
-  <div class="hod-overview-hero__inner row g-4 align-items-center">
-    <div class="col-lg-7">
-      <div class="hod-overview-hero__eyebrow">
-        <i class="bi bi-activity"></i> Analytics
-      </div>
-      <h1 class="hod-overview-hero__title">Student performance overview</h1>
-      <p class="hod-overview-hero__lead mb-0">
-        Five chart types: bar, pie, doughnut, radar, and line — all scoped to your departments for
-        <strong><?= View::e($year) ?></strong> &middot; <strong><?= View::e($term) ?></strong>.
-      </p>
-      <div class="hod-overview-hero__chips">
-        <?php if (!empty($isSharedHod) && !empty($hodDepartmentLabel)): ?>
-          <span class="hod-overview-chip hod-overview-chip--accent">
-            <i class="bi bi-bookmark-star-fill"></i> <?= View::e($hodDepartmentLabel) ?>
-          </span>
-        <?php endif; ?>
-        <?php foreach ($categories as $cat): ?>
-          <span class="hod-overview-chip hod-overview-chip--<?= View::e($cat) ?>">
-            <?= View::e($catLabel[$cat] ?? $cat) ?>
-          </span>
-        <?php endforeach; ?>
-      </div>
-    </div>
-    <div class="col-lg-5">
-      <div class="hod-overview-hero__panel">
-        <div class="hod-overview-hero__stat-row">
-          <span class="text-muted small">Department mean</span>
-          <span class="hod-overview-hero__stat-num">
-            <?= $avgOverall !== null ? View::e(rtrim(rtrim(number_format($avgOverall, 2, '.', ''), '0'), '.')) : '—' ?>
-          </span>
-        </div>
-        <div class="hod-overview-hero__stat-row">
-          <span class="text-muted small">Marks in view</span>
-          <span class="hod-overview-hero__stat-num"><?= number_format($gradeCount) ?></span>
-        </div>
-        <div class="hod-overview-hero__stat-row">
-          <span class="text-muted small">Students with marks</span>
-          <span class="hod-overview-hero__stat-num"><?= number_format($studentsTouch) ?></span>
-        </div>
-        <a href="<?= $base ?>/hod" class="btn btn-light btn-sm w-100 mt-2">
-          <i class="bi bi-mortarboard"></i> Open department dashboard
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
+<div class="hod-overview-page">
 
 <form method="get"
       action="<?= $base ?>/hod/overview"
-      class="period-bar <?= $periodSet ? 'period-bar--ok' : 'period-bar--warn' ?> mt-4 mb-4">
+      class="period-bar hod-overview-period <?= $periodSet ? 'period-bar--ok' : 'period-bar--warn' ?> mb-4">
 
   <span class="period-bar__icon">
     <i class="bi bi-calendar-event"></i>
@@ -114,6 +67,29 @@ $hasMarks = $gradeCount > 0;
   </span>
 </form>
 
+<div class="hod-overview-deck">
+  <div class="hod-overview-deck__chips">
+    <span class="hod-overview-deck__hint">
+      <i class="bi bi-flower2"></i>
+      <?= View::e($year) ?> · <?= View::e($term) ?>
+      · bar, pie, doughnut, radar &amp; line
+    </span>
+    <?php if (!empty($isSharedHod) && !empty($hodDepartmentLabel)): ?>
+      <span class="hod-overview-chip hod-overview-chip--accent">
+        <i class="bi bi-bookmark-star-fill"></i> <?= View::e($hodDepartmentLabel) ?>
+      </span>
+    <?php endif; ?>
+    <?php foreach ($categories as $cat): ?>
+      <span class="hod-overview-chip hod-overview-chip--<?= View::e($cat) ?>">
+        <?= View::e($catLabel[$cat] ?? $cat) ?>
+      </span>
+    <?php endforeach; ?>
+  </div>
+  <a href="<?= $base ?>/hod" class="btn btn-sm hod-overview-deck__btn">
+    <i class="bi bi-mortarboard"></i> Department dashboard
+  </a>
+</div>
+
 <div class="row g-3 mb-4">
   <?php
     $kpis = [
@@ -125,7 +101,7 @@ $hasMarks = $gradeCount > 0;
     foreach ($kpis as [$label, $value, $icon, $tone, $hint]):
   ?>
     <div class="col-6 col-xl-3">
-      <div class="hod-overview-kpi">
+      <div class="hod-overview-kpi hod-overview-kpi--<?= View::e($tone) ?>">
         <div class="hod-overview-kpi__icon hod-overview-kpi__icon--<?= View::e($tone) ?>">
           <i class="bi <?= View::e($icon) ?>"></i>
         </div>
@@ -738,3 +714,5 @@ $hasMarks = $gradeCount > 0;
   })();
 </script>
 <?php endif; ?>
+
+</div>
