@@ -165,6 +165,8 @@ final class AcademicMarking
 
     /**
      * Build score sheet: total per subject = mid + end; average = sum(totals) / subjects counted.
+     * Only includes subjects the school offers (`is_offered`) and where at least one component
+     * (mid and/or end) has been recorded for this year and term — unmarked subjects are omitted.
      *
      * @return array{
      *   groups: array<string,array{label:string,rows:list<array<string,mixed>>}>,
@@ -188,12 +190,13 @@ final class AcademicMarking
         }
 
         $grades = Database::query(
-            "SELECT subject_id,
-                    MAX(CASE WHEN exam_type = 'midterm' THEN score END) AS midterm,
-                    MAX(CASE WHEN exam_type = 'endterm' THEN score END) AS endterm
-             FROM grades
-             WHERE student_id = ? AND academic_year = ? AND term = ?
-             GROUP BY subject_id",
+            "SELECT g.subject_id,
+                    MAX(CASE WHEN g.exam_type = 'midterm' THEN g.score END) AS midterm,
+                    MAX(CASE WHEN g.exam_type = 'endterm' THEN g.score END) AS endterm
+             FROM grades g
+             INNER JOIN subjects sub ON sub.id = g.subject_id AND sub.is_offered = 1
+             WHERE g.student_id = ? AND g.academic_year = ? AND g.term = ?
+             GROUP BY g.subject_id",
             [$studentId, $year, $term]
         )->fetchAll();
 
@@ -220,8 +223,14 @@ final class AcademicMarking
 
         foreach ($subjects as $sub) {
             $sid = (int) $sub['id'];
+            if (!isset($byId[$sid])) {
+                continue;
+            }
             $mid = $byId[$sid]['midterm'] ?? null;
             $end = $byId[$sid]['endterm'] ?? null;
+            if ($mid === null && $end === null) {
+                continue;
+            }
             $total = self::subjectTotal($mid, $end);
 
             if ($total !== null) {
@@ -246,14 +255,15 @@ final class AcademicMarking
         $order = ['core', 'science', 'arts', 'optional'];
         $sorted = [];
         foreach ($order as $k) {
-            if (isset($grouped[$k])) {
+            if (isset($grouped[$k]) && ($grouped[$k]['rows'] ?? []) !== []) {
                 $sorted[$k] = $grouped[$k];
             }
         }
         foreach ($grouped as $k => $v) {
-            if (!isset($sorted[$k])) {
-                $sorted[$k] = $v;
+            if (isset($sorted[$k]) || ($v['rows'] ?? []) === []) {
+                continue;
             }
+            $sorted[$k] = $v;
         }
 
         $average = $subjectCount > 0 ? round($totalSum / $subjectCount, 2) : null;

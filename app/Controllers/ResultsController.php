@@ -197,7 +197,7 @@ class ResultsController extends Controller
         $subjectCols = Database::query(
             "SELECT DISTINCT sub.id, sub.name, sub.code, sub.category
              FROM term_subject_results tsu
-             JOIN subjects sub ON sub.id = tsu.subject_id
+             JOIN subjects sub ON sub.id = tsu.subject_id AND sub.is_offered = 1
              WHERE tsu.class_id = ? AND tsu.academic_year = ? AND tsu.term = ?
              ORDER BY FIELD(sub.category, 'core','science','arts','optional'), sub.name",
             [$classId, $year, $term]
@@ -206,9 +206,10 @@ class ResultsController extends Controller
         $cells = [];
         if ($subjectCols !== []) {
             $sr = Database::query(
-                'SELECT student_id, subject_id, total_marks, letter_grade
-                 FROM term_subject_results
-                 WHERE class_id = ? AND academic_year = ? AND term = ?',
+                'SELECT tsr.student_id, tsr.subject_id, tsr.total_marks, tsr.letter_grade
+                 FROM term_subject_results tsr
+                 INNER JOIN subjects sub ON sub.id = tsr.subject_id AND sub.is_offered = 1
+                 WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ?',
                 [$classId, $year, $term]
             )->fetchAll();
             foreach ($sr as $r) {
