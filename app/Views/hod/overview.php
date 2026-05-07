@@ -4,7 +4,6 @@ use App\Core\View;
 $layout = 'app';
 $title  = 'Performance overview';
 
-$catLabel = ['core' => 'Compulsory Core', 'science' => 'Science', 'arts' => 'Arts', 'optional' => 'Optional'];
 $hasMarks = $gradeCount > 0;
 ?>
 
@@ -67,24 +66,7 @@ $hasMarks = $gradeCount > 0;
   </span>
 </form>
 
-<div class="hod-overview-deck hod-overview-deck--tight">
-  <div class="hod-overview-deck__chips">
-    <span class="hod-overview-deck__hint">
-      <i class="bi bi-flower2"></i>
-      <?= View::e($year) ?> · <?= View::e($term) ?>
-      · four charts at a glance
-    </span>
-    <?php if (!empty($isSharedHod) && !empty($hodDepartmentLabel)): ?>
-      <span class="hod-overview-chip hod-overview-chip--accent">
-        <i class="bi bi-bookmark-star-fill"></i> <?= View::e($hodDepartmentLabel) ?>
-      </span>
-    <?php endif; ?>
-    <?php foreach ($categories as $cat): ?>
-      <span class="hod-overview-chip hod-overview-chip--<?= View::e($cat) ?>">
-        <?= View::e($catLabel[$cat] ?? $cat) ?>
-      </span>
-    <?php endforeach; ?>
-  </div>
+<div class="hod-overview-deck hod-overview-deck--tight justify-content-end">
   <a href="<?= $base ?>/hod" class="btn btn-sm hod-overview-deck__btn">
     <i class="bi bi-mortarboard"></i> Department dashboard
   </a>
