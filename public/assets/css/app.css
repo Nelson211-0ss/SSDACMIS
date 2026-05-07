@@ -59,8 +59,12 @@
   --sidebar-active-icon:     var(--sidebar-bg);
   --sidebar-brand-icon:      #ffffff;
 
+  /* Clean sans-serif stack (dashboards + app UI) */
+  --font-sans-clean: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
   /* Bootstrap variable overrides */
-  --bs-body-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --bs-body-font-family: var(--font-sans-clean);
   --bs-body-font-size: .9375rem;
   --bs-body-color: var(--text);
   --bs-body-bg: var(--bg);
@@ -763,7 +767,7 @@ body:has(.report-student-layout) {
 
 /* ---------- Auth (login / HOD) ---------- */
 .auth-page {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans-clean);
   letter-spacing: 0;
   background: #2e0f57;
   min-height: 100dvh;
@@ -774,7 +778,7 @@ body:has(.report-student-layout) {
 }
 .auth-page .auth-page-frame--wave,
 .auth-page .auth-page-frame--wave * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans-clean);
 }
 /* Wave page: lock the body to the viewport (no scrolling) and let the
    credit line sit transparently over the wave at the bottom. */
@@ -1131,7 +1135,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   margin: 0 0 0.3rem;
   padding: 0;
   border: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans-clean);
   line-height: 1.15;
 }
 .auth-card__wave-sub {
@@ -1186,7 +1190,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   background-image: none !important;
   font-size: 0.92rem;
   color: #2d2438;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans-clean);
   font-weight: 500;
   box-shadow: none !important;
   border-radius: 9999px;
@@ -1646,7 +1650,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   box-shadow: 0 10px 22px -10px rgba(240, 191, 31, 0.6);
   text-shadow: none;
   line-height: 1;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans-clean);
   transition: transform 0.12s, box-shadow 0.12s, background-color 0.12s;
 }
 .auth-btn.auth-btn--wave i { font-size: 0.95rem; }
@@ -2607,6 +2611,14 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
    Hero, KPI cards, charts, recent enrollments, quick actions.
    Uses theme tokens so light/dark modes adapt automatically.
    ============================================================ */
+
+/* Crisp sans on dashboard surfaces (stack from :root --bs-body-font-family) */
+.dash-hero,
+.hod-overview-page,
+.bursar-dash {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 /* ---------- Hero greeting (compact) ---------- */
 .dash-hero {

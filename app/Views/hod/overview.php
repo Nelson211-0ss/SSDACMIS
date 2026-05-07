@@ -315,6 +315,7 @@ $hasMarks = $gradeCount > 0;
         muted:        v('--text-muted', '#6b7280'),
         text:         v('--text', '#1f2937'),
         surface:      v('--surface', '#ffffff'),
+        chartFont:    v('--bs-body-font-family', 'system-ui, sans-serif'),
       };
     }
 
@@ -373,13 +374,13 @@ $hasMarks = $gradeCount > 0;
               min: 0,
               max: 100,
               grid: { color: theme.border },
-              ticks: { color: theme.muted, font: { size: 10 } }
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 10 } }
             },
             x: {
               grid: { display: false },
               ticks: {
                 color: theme.muted,
-                font: { size: 9 },
+                font: { family: theme.chartFont, size: 9 },
                 maxRotation: 55,
                 minRotation: 0,
                 autoSkip: true,
@@ -413,7 +414,7 @@ $hasMarks = $gradeCount > 0;
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: theme.muted, boxWidth: 8, padding: 6, font: { size: 10 } }
+              labels: { color: theme.muted, boxWidth: 8, padding: 6, font: { family: theme.chartFont, size: 10 } }
             },
             tooltip: {
               backgroundColor: theme.surface,
@@ -484,13 +485,13 @@ $hasMarks = $gradeCount > 0;
               min: 0,
               max: 100,
               grid: { color: theme.border },
-              ticks: { color: theme.muted, font: { size: 10 } }
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 10 } }
             },
             x: {
               grid: { display: false },
               ticks: {
                 color: theme.muted,
-                font: { size: 9 },
+                font: { family: theme.chartFont, size: 9 },
                 maxRotation: 45,
                 autoSkip: true,
                 maxTicksLimit: 8
@@ -523,7 +524,7 @@ $hasMarks = $gradeCount > 0;
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: theme.muted, boxWidth: 8, padding: 5, font: { size: 10 } }
+              labels: { color: theme.muted, boxWidth: 8, padding: 5, font: { family: theme.chartFont, size: 10 } }
             },
             tooltip: {
               backgroundColor: theme.surface,

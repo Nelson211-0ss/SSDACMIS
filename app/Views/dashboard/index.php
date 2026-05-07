@@ -545,6 +545,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         muted:        v('--text-muted', '#6b7280'),
         text:         v('--text', '#1f2937'),
         surface:      v('--surface', '#ffffff'),
+        chartFont:    v('--bs-body-font-family', 'system-ui, sans-serif'),
       };
     }
 
@@ -616,12 +617,12 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           scales: {
             x: {
               grid: { display: false, drawBorder: false },
-              ticks: { color: theme.muted, font: { size: 11 } }
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 } }
             },
             y: {
               beginAtZero: true,
               grid: { color: theme.border, drawBorder: false },
-              ticks: { color: theme.muted, font: { size: 11 }, precision: 0 }
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 }, precision: 0 }
             }
           }
         }
