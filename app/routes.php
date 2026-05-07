@@ -37,6 +37,7 @@ $router->get('/dashboard', 'DashboardController@index', [$auth]);
 
 // HOD landing page (auto-redirected from /dashboard for HODs)
 $router->get('/hod',          'HodController@dashboard', [$staffAdminOrHod]);
+$router->get('/hod/overview', 'HodController@overview', [$staffAdminOrHod]);
 $router->get('/hod/students', 'HodController@students',  [$staffAdminOrHod]);
 
 // Students

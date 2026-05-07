@@ -90,7 +90,10 @@ $greetTone = $h < 12 ? 'orange' : ($h < 17 ? 'yellow' : 'purple');
   </div>
 
   <div class="dash-hero__actions">
-    <a href="<?= $base ?>/hod/marks" class="btn btn-primary btn-sm">
+    <a href="<?= $base ?>/hod/overview" class="btn btn-primary btn-sm">
+      <i class="bi bi-bar-chart-steps"></i> Performance overview
+    </a>
+    <a href="<?= $base ?>/hod/marks" class="btn btn-outline-primary btn-sm">
       <i class="bi bi-pencil-square"></i> Department marks
     </a>
     <a href="<?= $base ?>/hod/reports" class="btn btn-outline-secondary btn-sm">

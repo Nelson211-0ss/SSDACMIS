@@ -26,6 +26,7 @@ $theme       = Settings::activeTheme();
  * staff/students see the full school nav.
  */
 $hodNav = [
+    ['Overview',          'bi-bar-chart-steps',  '/hod/overview',      ['staff','hod'], '/hod/overview'],
     ['HOD Dashboard',     'bi-mortarboard',       '/hod',               ['staff','hod'], '/hod'],
     ['Students',          'bi-people',            '/hod/students',      ['staff','hod'], '/hod/students'],
     ['Department Marks',  'bi-pencil-square',     '/hod/marks',         ['staff','hod'], '/hod/marks'],

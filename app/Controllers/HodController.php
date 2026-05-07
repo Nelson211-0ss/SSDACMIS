@@ -188,6 +188,247 @@ class HodController extends Controller
     }
 
     /**
+     * Performance overview: charts and KPIs for grades in the HOD's subject
+     * departments (scoped academic year + term).
+     *
+     *   GET /hod/overview[?year=&term=]
+     */
+    public function overview(): string
+    {
+        $user = Auth::user();
+        $isAdmin     = ($user['role'] ?? '') === 'admin';
+        $isSharedHod = ($user['role'] ?? '') === 'hod';
+
+        $hodDepartmentLabel = '';
+        if ($isSharedHod && !empty($user['id'])) {
+            try {
+                $row = Database::query(
+                    "SELECT department FROM users WHERE id = ? LIMIT 1",
+                    [(int) $user['id']]
+                )->fetch();
+                if ($row && !empty($row['department'])) {
+                    $hodDepartmentLabel = trim((string) $row['department']);
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        if ($isAdmin) {
+            $this->redirect('/dashboard');
+            return '';
+        }
+
+        $staffId = null;
+        if ($user) {
+            $row = Database::query(
+                "SELECT id FROM staff WHERE user_id = ? LIMIT 1",
+                [(int) $user['id']]
+            )->fetch();
+            $staffId = $row ? (int) $row['id'] : null;
+        }
+
+        if ($isSharedHod) {
+            $categories = ['core', 'science', 'arts', 'optional'];
+        } else {
+            if (!$staffId) {
+                http_response_code(403);
+                return $this->view('errors/403');
+            }
+            $rows = Database::query(
+                "SELECT category FROM department_heads WHERE staff_id = ? ORDER BY category",
+                [$staffId]
+            )->fetchAll();
+            $categories = array_map(static fn ($r) => (string) $r['category'], $rows);
+            if (!$categories) {
+                http_response_code(403);
+                return $this->view('errors/403');
+            }
+        }
+
+        $place = implode(',', array_fill(0, count($categories), '?'));
+        $bindPeriod = static fn (array $extra = []) => array_merge($categories, $extra);
+
+        // Default academic year / term (same rules as HOD dashboard).
+        $defaultYear = (date('n') >= 9)
+            ? date('Y') . '/' . (date('Y') + 1)
+            : (date('Y') - 1) . '/' . date('Y');
+        [$startStr] = explode('/', $defaultYear);
+        $start = (int) $startStr;
+        $availableYears = [];
+        for ($i = -2; $i <= 2; $i++) {
+            $a = $start + $i;
+            $availableYears[] = $a . '/' . ($a + 1);
+        }
+        $availableTerms = ['Term 1', 'Term 2', 'Term 3'];
+
+        $selYear = trim((string) $this->input('year'));
+        $selTerm = trim((string) $this->input('term'));
+        $periodSet = ($selYear !== '' && $selTerm !== ''
+            && in_array($selYear, $availableYears, true)
+            && in_array($selTerm, $availableTerms, true));
+        if ($periodSet) {
+            $year = $selYear;
+            $term = $selTerm;
+        } else {
+            $year = $defaultYear;
+            $termMap = [
+                1 => 'Term 1', 2 => 'Term 1', 3 => 'Term 1',
+                4 => 'Term 2', 5 => 'Term 2', 6 => 'Term 2',
+                7 => 'Term 3', 8 => 'Term 3', 9 => 'Term 3',
+                10 => 'Term 3', 11 => 'Term 3', 12 => 'Term 3',
+            ];
+            $term = $termMap[(int) date('n')] ?? 'Term 1';
+        }
+
+        $summaryParams = $bindPeriod([$year, $term]);
+
+        $summaryRow = Database::query(
+            "SELECT COUNT(*) AS grade_count,
+                    COUNT(DISTINCT g.student_id) AS students_count,
+                    AVG(g.score) AS avg_score
+             FROM grades g
+             JOIN subjects sub ON sub.id = g.subject_id
+             WHERE sub.category IN ($place) AND sub.is_offered = 1
+               AND g.academic_year = ? AND g.term = ?",
+            $summaryParams
+        )->fetch();
+
+        $gradeCount   = (int) ($summaryRow['grade_count'] ?? 0);
+        $studentsTouch = (int) ($summaryRow['students_count'] ?? 0);
+        $avgOverall   = $summaryRow['avg_score'] !== null
+            ? round((float) $summaryRow['avg_score'], 2) : null;
+
+        $subjectRows = Database::query(
+            "SELECT sub.name AS subject_name,
+                    AVG(g.score) AS avg_score,
+                    COUNT(*) AS n
+             FROM grades g
+             JOIN subjects sub ON sub.id = g.subject_id
+             WHERE sub.category IN ($place) AND sub.is_offered = 1
+               AND g.academic_year = ? AND g.term = ?
+             GROUP BY sub.id, sub.name
+             ORDER BY sub.name",
+            $summaryParams
+        )->fetchAll();
+
+        $classRows = Database::query(
+            "SELECT c.id, c.name AS class_name, c.level,
+                    AVG(g.score) AS avg_score,
+                    COUNT(*) AS n
+             FROM grades g
+             JOIN students s ON s.id = g.student_id
+             JOIN classes c ON c.id = s.class_id
+             JOIN subjects sub ON sub.id = g.subject_id
+             WHERE sub.category IN ($place) AND sub.is_offered = 1
+               AND g.academic_year = ? AND g.term = ?
+             GROUP BY c.id, c.name, c.level
+             ORDER BY c.level, c.name",
+            $summaryParams
+        )->fetchAll();
+
+        $bandRow = Database::query(
+            "SELECT
+                COALESCE(SUM(CASE WHEN g.score >= 80 THEN 1 ELSE 0 END), 0) AS band_a,
+                COALESCE(SUM(CASE WHEN g.score >= 60 AND g.score < 80 THEN 1 ELSE 0 END), 0) AS band_b,
+                COALESCE(SUM(CASE WHEN g.score >= 40 AND g.score < 60 THEN 1 ELSE 0 END), 0) AS band_c,
+                COALESCE(SUM(CASE WHEN g.score < 40 THEN 1 ELSE 0 END), 0) AS band_d
+             FROM grades g
+             JOIN subjects sub ON sub.id = g.subject_id
+             WHERE sub.category IN ($place) AND sub.is_offered = 1
+               AND g.academic_year = ? AND g.term = ?",
+            $summaryParams
+        )->fetch() ?: ['band_a' => 0, 'band_b' => 0, 'band_c' => 0, 'band_d' => 0];
+
+        $examRows = Database::query(
+            "SELECT g.exam_type, AVG(g.score) AS avg_score, COUNT(*) AS n
+             FROM grades g
+             JOIN subjects sub ON sub.id = g.subject_id
+             WHERE sub.category IN ($place) AND sub.is_offered = 1
+               AND g.academic_year = ? AND g.term = ?
+             GROUP BY g.exam_type",
+            $summaryParams
+        )->fetchAll();
+
+        $midAvg = null;
+        $endAvg = null;
+        foreach ($examRows as $er) {
+            $t = (string) ($er['exam_type'] ?? '');
+            if ($t === 'midterm') {
+                $midAvg = round((float) $er['avg_score'], 2);
+            } elseif ($t === 'endterm') {
+                $endAvg = round((float) $er['avg_score'], 2);
+            }
+        }
+
+        $subjectCountTracked = Database::query(
+            "SELECT COUNT(*) AS c FROM subjects sub
+             WHERE sub.category IN ($place) AND sub.is_offered = 1",
+            $categories
+        )->fetch();
+        $subjectsOffered = (int) ($subjectCountTracked['c'] ?? 0);
+
+        $chartSubjectLabels = [];
+        $chartSubjectAvgs   = [];
+        $chartSubjectNs     = [];
+        foreach ($subjectRows as $sr) {
+            $chartSubjectLabels[] = (string) $sr['subject_name'];
+            $chartSubjectAvgs[]   = round((float) $sr['avg_score'], 2);
+            $chartSubjectNs[]     = (int) $sr['n'];
+        }
+
+        $chartClassLabels = [];
+        $chartClassAvgs   = [];
+        $chartClassMeta   = [];
+        foreach ($classRows as $cr) {
+            $chartClassLabels[] = (string) $cr['class_name'];
+            $chartClassAvgs[]   = round((float) $cr['avg_score'], 2);
+            $chartClassMeta[]   = (string) ($cr['level'] ?? '');
+        }
+
+        $bandTotal = (int) $bandRow['band_a'] + (int) $bandRow['band_b']
+            + (int) $bandRow['band_c'] + (int) $bandRow['band_d'];
+        $bandLabels = ['80+ (Strong)', '60–79', '40–59', 'Below 40'];
+        $bandData   = [
+            (int) $bandRow['band_a'],
+            (int) $bandRow['band_b'],
+            (int) $bandRow['band_c'],
+            (int) $bandRow['band_d'],
+        ];
+
+        return $this->view('hod/overview', [
+            'title'                => 'Performance overview',
+            'user'                 => $user,
+            'isSharedHod'          => $isSharedHod,
+            'hodDepartmentLabel'   => $hodDepartmentLabel,
+            'categories'           => $categories,
+            'availableYears'       => $availableYears,
+            'availableTerms'       => $availableTerms,
+            'defaultYear'          => $defaultYear,
+            'selYear'              => $selYear,
+            'selTerm'              => $selTerm,
+            'periodSet'            => $periodSet,
+            'year'                 => $year,
+            'term'                 => $term,
+            'avgOverall'           => $avgOverall,
+            'gradeCount'           => $gradeCount,
+            'studentsTouch'        => $studentsTouch,
+            'subjectsOffered'      => $subjectsOffered,
+            'subjectRows'          => $subjectRows,
+            'midAvg'               => $midAvg,
+            'endAvg'               => $endAvg,
+            'bandLabels'           => $bandLabels,
+            'bandData'             => $bandData,
+            'bandTotal'            => $bandTotal,
+            'chartSubjectLabels'   => $chartSubjectLabels,
+            'chartSubjectAvgs'     => $chartSubjectAvgs,
+            'chartSubjectNs'       => $chartSubjectNs,
+            'chartClassLabels'     => $chartClassLabels,
+            'chartClassAvgs'       => $chartClassAvgs,
+            'chartClassMeta'       => $chartClassMeta,
+        ]);
+    }
+
+    /**
      * Read-only "students admitted in each class" listing for HODs.
      *
      *   GET /hod/students[?class_id=]
