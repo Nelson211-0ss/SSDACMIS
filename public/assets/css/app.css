@@ -355,6 +355,28 @@ body:has(.report-student-layout) {
   grid-area: main;
   padding: 1.75rem 2rem 3rem;
   min-width: 0;
+  position: relative;
+  /* Shared dashboard canvas (same aesthetic as HOD performance overview) */
+  background:
+    radial-gradient(ellipse 120% 80% at 100% -30%, rgba(139, 92, 246, 0.28), transparent 55%),
+    radial-gradient(ellipse 100% 70% at -10% 10%, rgba(236, 72, 153, 0.22), transparent 50%),
+    radial-gradient(ellipse 90% 60% at 50% 110%, rgba(6, 182, 212, 0.18), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 85% 60%, rgba(251, 191, 36, 0.12), transparent 45%),
+    var(--surface);
+}
+[data-bs-theme="dark"] .app-main {
+  background:
+    radial-gradient(ellipse 120% 80% at 100% -25%, rgba(139, 92, 246, 0.35), transparent 55%),
+    radial-gradient(ellipse 100% 70% at -10% 10%, rgba(236, 72, 153, 0.28), transparent 50%),
+    radial-gradient(ellipse 90% 60% at 50% 110%, rgba(6, 182, 212, 0.22), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 85% 55%, rgba(251, 191, 36, 0.14), transparent 45%),
+    var(--surface);
+}
+/* Report print routes: flat surface so A4/sheets stay clean */
+.app-main:has(.report-student-layout),
+.app-main:has(.report-booklet-layout),
+.app-main:has(.report-page--landscape) {
+  background: var(--surface);
 }
 
 /* Mobile */
@@ -2613,6 +2635,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
    ============================================================ */
 
 /* Crisp sans on dashboard surfaces (stack from :root --bs-body-font-family) */
+.app-main,
 .dash-hero,
 .hod-overview-page,
 .bursar-dash {
@@ -5065,6 +5088,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .app-main > * { animation: none !important; }
   .app-main > div.hod-overview-page > *,
   .app-main > div.bursar-dash > * { animation: none !important; }
+  .app-main { background: var(--surface) !important; }
   .card { box-shadow: none !important; }
 }
 
@@ -5081,34 +5105,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 
 /* ---------- HOD performance overview (/hod/overview) ---------- */
-.hod-overview-page {
-  margin: -1.75rem -2rem 0;
-  padding: 1.35rem 2rem 2.75rem;
-  border-radius: 0 0 1.35rem 1.35rem;
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 120% 80% at 100% -30%, rgba(139, 92, 246, 0.28), transparent 55%),
-    radial-gradient(ellipse 100% 70% at -10% 10%, rgba(236, 72, 153, 0.22), transparent 50%),
-    radial-gradient(ellipse 90% 60% at 50% 110%, rgba(6, 182, 212, 0.18), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 85% 60%, rgba(251, 191, 36, 0.12), transparent 45%),
-    var(--surface);
-}
-[data-bs-theme="dark"] .hod-overview-page {
-  background:
-    radial-gradient(ellipse 120% 80% at 100% -25%, rgba(139, 92, 246, 0.35), transparent 55%),
-    radial-gradient(ellipse 100% 70% at -10% 10%, rgba(236, 72, 153, 0.28), transparent 50%),
-    radial-gradient(ellipse 90% 60% at 50% 110%, rgba(6, 182, 212, 0.22), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 85% 55%, rgba(251, 191, 36, 0.14), transparent 45%),
-    var(--surface);
-}
-@media (max-width: 991.98px) {
-  .hod-overview-page {
-    margin: -1.25rem -1.25rem 0;
-    padding: 1.1rem 1.25rem 2rem;
-    border-radius: 0 0 1rem 1rem;
-  }
-}
+/* Shell uses .hod-overview-page for scoped components only; page canvas is .app-main */
 
 .hod-overview-period.period-bar {
   background: color-mix(in srgb, var(--surface) 82%, transparent);
