@@ -5,7 +5,32 @@ $layout = 'app';
 $title  = 'Dashboard';
 
 $role        = $auth['role'] ?? 'guest';
+$isAdmin     = !empty($isAdmin) || $role === 'admin';
 $isAdminish  = in_array($role, ['admin', 'staff'], true);
+$adminOps    = $adminOps ?? [];
+
+$hodCount            = (int) ($adminOps['hod_count'] ?? 0);
+$bursarCount         = (int) ($adminOps['bursar_count'] ?? 0);
+$teachingCount       = (int) ($adminOps['teaching_assignments'] ?? 0);
+$unassignedCount     = (int) ($adminOps['unassigned_students'] ?? 0);
+$attToday            = $adminOps['attendance_today'] ?? ['present' => 0, 'absent' => 0, 'late' => 0, 'total' => 0];
+$attPresent          = (int) ($attToday['present'] ?? 0);
+$attAbsent           = (int) ($attToday['absent'] ?? 0);
+$attLate             = (int) ($attToday['late'] ?? 0);
+$attTotal            = (int) ($attToday['total'] ?? 0);
+$attRate             = $attTotal > 0 ? (int) round(($attPresent / $attTotal) * 100) : null;
+
+$feesSnap            = $adminOps['fees'] ?? null;
+$feesExpected        = (float) ($feesSnap['expected'] ?? 0);
+$feesCollected       = (float) ($feesSnap['collected'] ?? 0);
+$feesOutstanding     = (float) ($feesSnap['outstanding'] ?? 0);
+$feesPaidCount       = (int) ($feesSnap['paid_count'] ?? 0);
+$feesPartialCount    = (int) ($feesSnap['partial_count'] ?? 0);
+$feesUnpaidCount     = (int) ($feesSnap['unpaid_count'] ?? 0);
+$feesYear            = (string) ($feesSnap['year'] ?? '');
+$feesTerm            = (string) ($feesSnap['term'] ?? '');
+$feesCollectedPct    = $feesExpected > 0 ? min(100, round(($feesCollected / $feesExpected) * 100, 1)) : 0;
+$recentPaymentsAdmin = $adminOps['recent_payments'] ?? [];
 
 $studentsTotal   = (int) ($stats['students'] ?? 0);
 $staffTotal      = (int) ($stats['staff']    ?? 0);
@@ -47,10 +72,12 @@ $greetIcon  = $h < 12 ? 'bi-sunrise'   : ($h < 17 ? 'bi-sun'         : 'bi-moon-
 $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
 ?>
 
+<div class="<?= $isAdmin ? 'admin-dash' : '' ?>">
+
 <!-- ============================================================
      Hero / greeting (compact, with inline quick actions)
      ============================================================ -->
-<section class="dash-hero">
+<section class="dash-hero<?= $isAdmin ? ' dash-hero--admin' : '' ?>">
   <div class="dash-hero__content d-flex align-items-center gap-3">
     <span class="icon-chip icon-chip--<?= $greetTone ?> d-none d-sm-inline-grid">
       <i class="bi <?= $greetIcon ?>"></i>
@@ -58,11 +85,20 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     <div class="flex-grow-1" style="min-width:0;">
       <h2 class="dash-hero__title">
         <?= $greeting ?>, <?= View::e($auth['name']) ?>.
+        <?php if ($isAdmin): ?>
+          <span class="dash-hero__role">Administrator</span>
+        <?php endif; ?>
       </h2>
       <p class="dash-hero__sub">
         <span class="dash-hero__date">
           <i class="bi bi-calendar3"></i><?= date('l, M j, Y') ?>
         </span>
+        <?php if ($isAdmin): ?>
+          <span class="dash-hero__inline">
+            <i class="bi bi-shield-check"></i>
+            School-wide control centre
+          </span>
+        <?php endif; ?>
         <?php if ($isAdminish): ?>
           <span class="dash-hero__inline">
             <i class="bi bi-people"></i>
@@ -84,14 +120,23 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       <a href="<?= $base ?>/students/create" class="btn btn-primary btn-sm">
         <i class="bi bi-person-plus"></i> Add student
       </a>
-      <a href="<?= $base ?>/attendance"
-         class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
-        <i class="bi bi-calendar-check"></i> Attendance
-      </a>
-      <a href="<?= $base ?>/marks"
-         class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
-        <i class="bi bi-pencil-square"></i> Marks
-      </a>
+      <?php if ($isAdmin): ?>
+        <a href="<?= $base ?>/teaching" class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
+          <i class="bi bi-diagram-3"></i> Teaching
+        </a>
+        <a href="<?= $base ?>/settings" class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      <?php else: ?>
+        <a href="<?= $base ?>/attendance"
+           class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
+          <i class="bi bi-calendar-check"></i> Attendance
+        </a>
+        <a href="<?= $base ?>/marks"
+           class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
+          <i class="bi bi-pencil-square"></i> Marks
+        </a>
+      <?php endif; ?>
       <a href="<?= $base ?>/announcements"
          class="btn btn-sm dash-hero__btn dash-hero__btn--announce">
         <i class="bi bi-megaphone"></i> Announce
@@ -99,6 +144,55 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
   <?php endif; ?>
 </section>
+
+<?php if ($isAdmin): ?>
+  <section class="admin-quick-panel mb-4">
+    <div class="admin-quick-panel__head">
+      <div>
+        <h3 class="admin-quick-panel__title"><i class="bi bi-lightning-charge-fill"></i> Quick access</h3>
+        <p class="admin-quick-panel__sub">Jump to the modules you manage most often.</p>
+      </div>
+    </div>
+    <div class="row g-2 g-md-3">
+      <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?= $base ?>/students" class="admin-quick-tile">
+          <span class="admin-quick-tile__ic admin-quick-tile__ic--orange"><i class="bi bi-people-fill"></i></span>
+          <span class="admin-quick-tile__label">Students</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?= $base ?>/staff" class="admin-quick-tile">
+          <span class="admin-quick-tile__ic admin-quick-tile__ic--green"><i class="bi bi-person-badge"></i></span>
+          <span class="admin-quick-tile__label">Staff</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?= $base ?>/hods" class="admin-quick-tile">
+          <span class="admin-quick-tile__ic admin-quick-tile__ic--purple"><i class="bi bi-mortarboard-fill"></i></span>
+          <span class="admin-quick-tile__label">HODs</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?= $base ?>/bursars" class="admin-quick-tile">
+          <span class="admin-quick-tile__ic admin-quick-tile__ic--teal"><i class="bi bi-cash-coin"></i></span>
+          <span class="admin-quick-tile__label">Bursars</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?= $base ?>/marks" class="admin-quick-tile">
+          <span class="admin-quick-tile__ic admin-quick-tile__ic--blue"><i class="bi bi-pencil-square"></i></span>
+          <span class="admin-quick-tile__label">Marks</span>
+        </a>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?= $base ?>/reports" class="admin-quick-tile">
+          <span class="admin-quick-tile__ic admin-quick-tile__ic--pink"><i class="bi bi-file-earmark-text"></i></span>
+          <span class="admin-quick-tile__label">Reports</span>
+        </a>
+      </div>
+    </div>
+  </section>
+<?php endif; ?>
 
 <?php if ($isAdminish): ?>
   <!-- ============================================================

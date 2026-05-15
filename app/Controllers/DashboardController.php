@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
+use App\Services\FeesService;
 
 class DashboardController extends Controller
 {
@@ -17,6 +18,7 @@ class DashboardController extends Controller
         }
 
         $role       = Auth::role() ?? 'guest';
+        $isAdmin    = $role === 'admin';
         $isAdminish = in_array($role, ['admin', 'staff'], true);
 
         // ---------- Top-line counts ----------
@@ -110,7 +112,72 @@ class DashboardController extends Controller
              LIMIT 5"
         )->fetchAll();
 
+        // ---------- Admin-only operational snapshot ----------
+        $adminOps = [
+            'hod_count'              => 0,
+            'bursar_count'           => 0,
+            'teaching_assignments'   => 0,
+            'unassigned_students'    => 0,
+            'attendance_today'       => ['present' => 0, 'absent' => 0, 'late' => 0, 'total' => 0],
+            'fees'                   => null,
+            'recent_payments'        => [],
+        ];
+
+        if ($isAdmin) {
+            $adminOps['hod_count'] = (int) (Database::query(
+                "SELECT COUNT(DISTINCT staff_id) c FROM department_heads"
+            )->fetch()['c'] ?? 0);
+            $adminOps['bursar_count'] = (int) (Database::query(
+                "SELECT COUNT(*) c FROM users WHERE role = 'bursar' AND status = 'active'"
+            )->fetch()['c'] ?? 0);
+            $adminOps['teaching_assignments'] = (int) (Database::query(
+                "SELECT COUNT(*) c FROM teaching_assignments"
+            )->fetch()['c'] ?? 0);
+            $adminOps['unassigned_students'] = (int) (Database::query(
+                "SELECT COUNT(*) c FROM students WHERE class_id IS NULL"
+            )->fetch()['c'] ?? 0);
+
+            foreach (Database::query(
+                "SELECT status, COUNT(*) c FROM attendance WHERE date = CURDATE() GROUP BY status"
+            )->fetchAll() as $row) {
+                $st = (string) ($row['status'] ?? '');
+                $cnt = (int) ($row['c'] ?? 0);
+                if (isset($adminOps['attendance_today'][$st])) {
+                    $adminOps['attendance_today'][$st] = $cnt;
+                }
+                $adminOps['attendance_today']['total'] += $cnt;
+            }
+
+            $feeYear = FeesService::currentYear();
+            $feeTerm = FeesService::currentTerm();
+            $adminOps['fees'] = Database::query(
+                "SELECT
+                    COUNT(*) AS students,
+                    COALESCE(SUM(total_amount), 0) AS expected,
+                    COALESCE(SUM(paid_amount), 0) AS collected,
+                    COALESCE(SUM(GREATEST(total_amount - paid_amount, 0)), 0) AS outstanding,
+                    SUM(status = 'paid') AS paid_count,
+                    SUM(status = 'partial') AS partial_count,
+                    SUM(status = 'not_paid') AS unpaid_count
+                 FROM student_fees
+                 WHERE academic_year = ? AND term = ?",
+                [$feeYear, $feeTerm]
+            )->fetch() ?: [];
+            $adminOps['fees']['year'] = $feeYear;
+            $adminOps['fees']['term'] = $feeTerm;
+
+            $adminOps['recent_payments'] = Database::query(
+                "SELECT p.amount, p.payment_date, p.receipt_no,
+                        s.first_name, s.last_name, s.admission_no
+                 FROM payments p
+                 JOIN students s ON s.id = p.student_id
+                 ORDER BY p.id DESC
+                 LIMIT 5"
+            )->fetchAll();
+        }
+
         return $this->view('dashboard/index', compact(
+            'isAdmin',
             'stats',
             'deltas',
             'classDistribution',
@@ -118,7 +185,8 @@ class DashboardController extends Controller
             'sectionBreakdown',
             'streamBreakdown',
             'recentStudents',
-            'announcements'
+            'announcements',
+            'adminOps'
         ));
     }
 }
