@@ -145,54 +145,6 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   <?php endif; ?>
 </section>
 
-<?php if ($isAdmin): ?>
-  <section class="admin-quick-panel mb-4">
-    <div class="admin-quick-panel__head">
-      <div>
-        <h3 class="admin-quick-panel__title"><i class="bi bi-lightning-charge-fill"></i> Quick access</h3>
-        <p class="admin-quick-panel__sub">Jump to the modules you manage most often.</p>
-      </div>
-    </div>
-    <div class="row g-2 g-md-3">
-      <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?= $base ?>/students" class="admin-quick-tile">
-          <span class="admin-quick-tile__ic admin-quick-tile__ic--orange"><i class="bi bi-people-fill"></i></span>
-          <span class="admin-quick-tile__label">Students</span>
-        </a>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?= $base ?>/staff" class="admin-quick-tile">
-          <span class="admin-quick-tile__ic admin-quick-tile__ic--green"><i class="bi bi-person-badge"></i></span>
-          <span class="admin-quick-tile__label">Staff</span>
-        </a>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?= $base ?>/hods" class="admin-quick-tile">
-          <span class="admin-quick-tile__ic admin-quick-tile__ic--purple"><i class="bi bi-mortarboard-fill"></i></span>
-          <span class="admin-quick-tile__label">HODs</span>
-        </a>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?= $base ?>/bursars" class="admin-quick-tile">
-          <span class="admin-quick-tile__ic admin-quick-tile__ic--teal"><i class="bi bi-cash-coin"></i></span>
-          <span class="admin-quick-tile__label">Bursars</span>
-        </a>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?= $base ?>/marks" class="admin-quick-tile">
-          <span class="admin-quick-tile__ic admin-quick-tile__ic--blue"><i class="bi bi-pencil-square"></i></span>
-          <span class="admin-quick-tile__label">Marks</span>
-        </a>
-      </div>
-      <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?= $base ?>/reports" class="admin-quick-tile">
-          <span class="admin-quick-tile__ic admin-quick-tile__ic--pink"><i class="bi bi-file-earmark-text"></i></span>
-          <span class="admin-quick-tile__label">Reports</span>
-        </a>
-      </div>
-    </div>
-  </section>
-<?php endif; ?>
 
 <?php if ($isAdminish): ?>
   <!-- ============================================================
@@ -202,12 +154,18 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     <div class="section-block__head">
       <div>
         <h3 class="section-block__title"><i class="bi bi-bar-chart-line"></i> At a glance</h3>
-        <p class="section-block__sub">Key counts across the school today.</p>
+        <p class="section-block__sub">
+          <?php if ($isAdmin): ?>
+            Key counts and operations across the school today.
+          <?php else: ?>
+            Key counts across the school today.
+          <?php endif; ?>
+        </p>
       </div>
     </div>
   </div>
-  <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
+  <div class="dash-kpi-grid mb-4<?= $isAdmin ? ' dash-kpi-grid--8' : ' dash-kpi-grid--4' ?>">
+    <div class="dash-kpi-grid__item">
       <a href="<?= $base ?>/students" class="kpi-card kpi-card--compact">
         <div class="kpi-card__icon kpi-card__icon--orange"><i class="bi bi-people-fill"></i></div>
         <div class="kpi-card__body">
@@ -224,7 +182,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </a>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
+    <div class="dash-kpi-grid__item">
       <a href="<?= $base ?>/staff" class="kpi-card kpi-card--compact">
         <div class="kpi-card__icon kpi-card__icon--green"><i class="bi bi-person-workspace"></i></div>
         <div class="kpi-card__body">
@@ -242,7 +200,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </a>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
+    <div class="dash-kpi-grid__item">
       <a href="<?= $base ?>/classes" class="kpi-card kpi-card--compact">
         <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-building-fill"></i></div>
         <div class="kpi-card__body">
@@ -256,7 +214,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </a>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
+    <div class="dash-kpi-grid__item">
       <a href="<?= $base ?>/subjects" class="kpi-card kpi-card--compact">
         <div class="kpi-card__icon kpi-card__icon--purple"><i class="bi bi-book-half"></i></div>
         <div class="kpi-card__body">
@@ -269,6 +227,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         </div>
       </a>
     </div>
+    <?php if ($isAdmin): include __DIR__ . '/_admin_kpi_ops.php'; endif; ?>
   </div>
 
   <?php if ($isAdmin): include __DIR__ . '/_admin_ops.php'; endif; ?>
