@@ -3654,6 +3654,168 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   color: var(--text-muted);
 }
 
+/* ---------- Admin dashboard enhancements ---------- */
+.dash-hero--admin {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+.dash-hero__role {
+  display: inline-block;
+  margin-left: .5rem;
+  padding: .15rem .55rem;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), .1);
+  border: 1px solid rgba(var(--accent-rgb), .22);
+  border-radius: 999px;
+}
+.admin-quick-panel {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+.admin-quick-panel__head { margin-bottom: .85rem; }
+.admin-quick-panel__title {
+  margin: 0;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.admin-quick-panel__title i { color: var(--accent); }
+.admin-quick-panel__sub {
+  margin: .2rem 0 0;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.admin-quick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .85rem .5rem;
+  min-height: 5.5rem;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface-2, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, .75rem);
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.admin-quick-tile:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+.admin-quick-tile__ic {
+  width: 2.35rem;
+  height: 2.35rem;
+  display: grid;
+  place-items: center;
+  border-radius: .65rem;
+  font-size: 1.1rem;
+}
+.admin-quick-tile__ic--orange { background: #ffe5d3; color: #ea7a3d; }
+.admin-quick-tile__ic--green  { background: #dcf2e0; color: #2f9e4f; }
+.admin-quick-tile__ic--purple { background: #ece8fa; color: #7c5ce5; }
+.admin-quick-tile__ic--teal   { background: #d6f0ee; color: #0d9488; }
+.admin-quick-tile__ic--blue   { background: #e1edff; color: #2f6ed8; }
+.admin-quick-tile__ic--pink   { background: #fde2e9; color: #db2777; }
+.admin-quick-tile__label {
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.admin-finance-card {
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+.admin-finance-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .85rem;
+}
+.admin-finance-card__label {
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+.admin-finance-card__amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--text);
+  line-height: 1.15;
+  margin-top: .15rem;
+}
+.admin-finance-card__pct {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.admin-finance-progress {
+  height: .5rem;
+  border-radius: 999px;
+  background: var(--surface-2, #f1f5f9);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.admin-finance-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width .4s ease;
+}
+.admin-finance-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .75rem;
+}
+@media (max-width: 576px) {
+  .admin-finance-stats { grid-template-columns: repeat(2, 1fr); }
+}
+.admin-finance-stat {
+  padding: .55rem .65rem;
+  border-radius: .55rem;
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.admin-finance-stat__n {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.admin-finance-stat__l {
+  display: block;
+  font-size: .68rem;
+  color: var(--text-muted);
+  margin-top: .15rem;
+}
+.recent-list--compact .recent-list__item {
+  padding: .65rem 1rem;
+}
+.recent-list--compact .recent-list__date {
+  font-size: .82rem;
+  white-space: nowrap;
+}
+
 /* ---------- Form-by-form mark-entry cards ---------- */
 .form-card {
   background: var(--surface);

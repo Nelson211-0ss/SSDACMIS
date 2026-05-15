@@ -271,6 +271,8 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
   </div>
 
+  <?php if ($isAdmin): include __DIR__ . '/_admin_ops.php'; endif; ?>
+
   <!-- ============================================================
        Charts row: Enrollment per class + Demographics
        ============================================================ -->
@@ -596,6 +598,8 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
   </div>
 <?php endif; ?>
+
+</div>
 
 <?php if ($isAdminish && ($classTotal > 0 || $gTotal > 0 || $sectionTotal > 0)): ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
