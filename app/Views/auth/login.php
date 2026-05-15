@@ -65,6 +65,10 @@ $schoolLogo  = Settings::logoUrl();
             <span class="auth-brand__feat-ic" aria-hidden="true"><i class="bi bi-file-earmark-pdf-fill"></i></span>
             <span><strong>Branded PDF report cards</strong> ready every term</span>
           </li>
+          <li>
+            <span class="auth-brand__feat-ic" aria-hidden="true"><i class="bi bi-cash-coin"></i></span>
+            <span><strong>Financial Module</strong> for fees, payments &amp; balances</span>
+          </li>
         </ul>
 
         <p class="auth-brand__foot">
