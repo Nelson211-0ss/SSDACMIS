@@ -876,16 +876,19 @@ body:has(.report-student-layout) {
   color: var(--ap-blue-deep);
   font-size: clamp(1.52rem, 3.15vw, 2.45rem);
   line-height: 1.18;
-  letter-spacing: -0.02em;
-  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-weight: 900;
+  -webkit-font-smoothing: antialiased;
 }
 .auth-page.auth-page--plain .auth-brand__t2-l1--smis .auth-brand__t2-line {
   display: block;
   white-space: nowrap;
+  font-weight: 900;
 }
 .auth-page.auth-page--plain .auth-brand__t2-em {
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: var(--ap-ink);
 }
 .auth-page.auth-page--plain .auth-brand__t2 {
   text-shadow: none;
