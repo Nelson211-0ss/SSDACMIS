@@ -40,8 +40,8 @@ $schoolLogo  = Settings::logoUrl();
           <span class="auth-brand__t1">Welcome to</span>
           <span class="auth-brand__t2">
             <span class="auth-brand__t2-l1 auth-brand__t2-l1--smis">
-              <span class="auth-brand__t2-line">Students Management Information System-</span>
-              <span class="auth-brand__t2-line auth-brand__t2-line--acronym">SSDACMIS</span>
+              <span class="auth-brand__t2-line">Students Management</span>
+              <span class="auth-brand__t2-line">Information System-<span class="auth-brand__t2-em">SSDACMIS</span></span>
             </span>
           </span>
         </h1>

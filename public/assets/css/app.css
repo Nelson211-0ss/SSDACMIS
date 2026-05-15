@@ -883,9 +883,9 @@ body:has(.report-student-layout) {
   display: block;
   white-space: nowrap;
 }
-.auth-page.auth-page--plain .auth-brand__t2-line--acronym {
+.auth-page.auth-page--plain .auth-brand__t2-em {
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 .auth-page.auth-page--plain .auth-brand__t2 {
   text-shadow: none;
