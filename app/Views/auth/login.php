@@ -39,7 +39,7 @@ $schoolLogo  = Settings::logoUrl();
         <h1 class="auth-brand__h1" id="auth-brand-title">
           <span class="auth-brand__t1">Welcome to</span>
           <span class="auth-brand__t2">
-            <span class="auth-brand__t2-title">Students Management Information System-<span class="auth-brand__t2-acronym">SSDSMIS</span></span>
+            <span class="auth-brand__t2-l1 auth-brand__t2-l1--smis">Students Management Information System-SSDSMIS</span>
           </span>
         </h1>
 
