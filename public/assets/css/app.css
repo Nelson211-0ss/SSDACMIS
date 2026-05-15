@@ -870,7 +870,7 @@ body:has(.report-student-layout) {
 }
 .auth-page.auth-page--plain .auth-brand__t2-l1--smis {
   color: var(--ap-blue-deep);
-  font-size: clamp(1.35rem, 2.8vw, 2.15rem);
+  font-size: clamp(1.52rem, 3.15vw, 2.45rem);
   line-height: 1.12;
   letter-spacing: -0.02em;
 }
