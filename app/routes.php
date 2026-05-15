@@ -64,7 +64,7 @@ $router->get('/staff/{id}/edit',    'StaffController@edit',   [$adminOnly]);
 $router->post('/staff/{id}',        'StaffController@update', [$adminOnly]);
 $router->post('/staff/{id}/delete', 'StaffController@destroy',[$adminOnly]);
 
-// HOD accounts (admin creates Heads of Department who can sign in at /hod/login)
+// HOD accounts (admin creates Heads of Department who sign in at /login)
 $router->get('/hods',              'HodAccountController@index',   [$adminOnly]);
 $router->get('/hods/create',       'HodAccountController@create',  [$adminOnly]);
 $router->post('/hods',             'HodAccountController@store',   [$adminOnly]);
@@ -139,7 +139,7 @@ $router->get('/hod/reports/class/{id}',         'ReportController@classReport', 
 // "My fees" link). The full Fees Management Module lives under /bursar/*.
 $router->get('/fees',  'FeeController@index', [$auth]);
 
-// Bursar accounts (admin creates Bursars who can sign in at /bursar/login).
+// Bursar accounts (admin creates Bursars who sign in at /login).
 $router->get('/bursars',              'BursarAccountController@index',   [$adminOnly]);
 $router->get('/bursars/create',       'BursarAccountController@create',  [$adminOnly]);
 $router->post('/bursars',             'BursarAccountController@store',   [$adminOnly]);
@@ -152,7 +152,7 @@ $router->post('/bursars/{id}/delete', 'BursarAccountController@destroy', [$admin
 // All URLs sit under /bursar/* so the portal-aware Auth keeps
 // the bursar session isolated from admin/HOD sessions in other
 // tabs. Direct-URL access without a bursar login redirects to
-// /bursar/login automatically.
+// /login automatically.
 // ============================================================
 $router->get('/bursar',                       'BursarController@dashboard',       [$bursarOnly]);
 $router->post('/bursar/period',               'BursarController@setPeriod',       [$bursarOnly]);

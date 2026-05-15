@@ -7,7 +7,7 @@ $title  = 'Bursars';
   <div>
     <h4 class="mb-1"><i class="bi bi-cash-coin"></i> Bursars</h4>
     <p class="text-muted small mb-0">
-      Bursar accounts sign in at <code class="small"><?= $base ?>/bursar/login</code> and run the Fees Management module (set fees, record payments, generate reports).
+      Bursar accounts sign in at <code class="small"><?= $base ?>/login</code> (same page as everyone else) and are taken to the Fees Management module after sign-in.
     </p>
   </div>
   <a class="btn btn-primary" href="<?= $base ?>/bursars/create">

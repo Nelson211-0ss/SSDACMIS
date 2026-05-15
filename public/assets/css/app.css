@@ -794,6 +794,156 @@ body:has(.report-student-layout) {
 .auth-page .auth-page-frame--wave * {
   font-family: var(--font-sans-clean);
 }
+
+/* Plain sign-in (no school theme colours — fixed neutrals on white). */
+.auth-page.auth-page--plain {
+  background: #ffffff !important;
+  min-height: 100dvh;
+}
+.auth-page.auth-page--plain .auth-wave-bg {
+  display: none !important;
+}
+.auth-page.auth-page--plain .auth-page-frame--wave {
+  background: #ffffff;
+}
+.auth-page.auth-page--plain .auth-shell--wave {
+  background: transparent !important;
+}
+.auth-page.auth-page--plain .auth-brand {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-brand__eyebrow {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+.auth-page.auth-page--plain .auth-brand__mark,
+.auth-page.auth-page--plain .auth-brand__mark:hover {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-brand__crown {
+  color: #334155;
+}
+.auth-page.auth-page--plain .auth-brand__h1,
+.auth-page.auth-page--plain .auth-brand__t1 {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-brand__t2 {
+  color: #1e293b;
+  text-shadow: none;
+}
+.auth-page.auth-page--plain .auth-brand__sub {
+  color: #475569;
+}
+.auth-page.auth-page--plain .auth-brand__sub strong {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-brand__features li {
+  color: #475569;
+}
+.auth-page.auth-page--plain .auth-brand__features li strong {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-brand__feat-ic {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #e2e8f0;
+}
+.auth-page.auth-page--plain .auth-brand__foot {
+  color: #64748b;
+}
+.auth-page.auth-page--plain .auth-brand__foot i {
+  color: #475569;
+}
+.auth-page.auth-page--plain .auth-card.auth-card--wave {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+.auth-page.auth-page--plain .auth-card__wave-h2 {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-card__wave-sub {
+  color: #64748b;
+}
+.auth-page.auth-page--plain .auth-input-wave {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.auth-page.auth-page--plain .auth-input-wave:hover {
+  background: #f1f5f9;
+}
+.auth-page.auth-page--plain .auth-input-wave:focus-within {
+  background: #ffffff;
+  border-color: #94a3b8;
+}
+.auth-page.auth-page--plain .auth-input-wave__ic {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.auth-page.auth-page--plain .auth-forgot {
+  color: #334155;
+}
+.auth-page.auth-page--plain .auth-forgot:hover,
+.auth-page.auth-page--plain .auth-forgot:focus {
+  color: #0f172a;
+}
+.auth-page.auth-page--plain .auth-form--wave
+  .auth-form__row
+  .form-check-input:checked {
+  background-color: #334155;
+  border-color: #334155;
+}
+.auth-page.auth-page--plain .auth-form--wave .form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.2);
+}
+.auth-page.auth-page--plain .auth-card__link--wave {
+  color: #1d4ed8;
+}
+.auth-page.auth-page--plain .auth-card__link--wave:hover {
+  color: #1e40af;
+}
+.auth-page.auth-page--plain .auth-below,
+.auth-page.auth-page--plain .auth-below__hint {
+  color: #64748b;
+}
+.auth-page.auth-page--plain .auth-below__hint i {
+  color: #64748b;
+}
+.auth-page.auth-page--plain .auth-below a {
+  color: #1d4ed8;
+  border-bottom-color: rgba(29, 78, 216, 0.35);
+}
+.auth-page.auth-page--plain .auth-below a:hover,
+.auth-page.auth-page--plain .auth-below a:focus {
+  color: #1e40af;
+  border-bottom-color: #1e40af;
+}
+.auth-page.auth-page--plain .auth-btn.auth-btn--wave {
+  background: #0f172a;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  letter-spacing: 0.12em;
+}
+.auth-page.auth-page--plain .auth-btn.auth-btn--wave:hover {
+  background: #1e293b;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+}
+.auth-page.auth-page--plain .auth-btn.auth-btn--wave:focus-visible {
+  outline-color: #334155;
+}
+body.auth-page.auth-page--plain:has(.auth-page-frame--wave) .auth-credit {
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+body.auth-page.auth-page--plain:has(.auth-page-frame--wave) .auth-credit strong {
+  color: #334155 !important;
+}
+body.auth-page.auth-page--plain:has(.auth-page-frame--wave) .auth-credit__sep {
+  color: #cbd5e1 !important;
+}
+
 /* Wave page: lock the body to the viewport (no scrolling) and let the
    credit line sit transparently over the wave at the bottom. */
 body.auth-page:has(.auth-page-frame--wave) {

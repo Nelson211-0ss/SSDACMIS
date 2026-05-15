@@ -4,17 +4,15 @@ namespace App\Core;
 /**
  * Portal-aware authentication.
  *
- * The school app exposes THREE independent sign-in surfaces in the same
- * browser at the same time:
+ * Everyone signs in at /login. The app still tracks three portal slots in the
+ * same browser session so roles can use separate areas without leaking state:
  *
  *   - "main"   portal: /login, /dashboard, /students, /staff, ... (admins,
  *              regular staff and students).
- *   - "hod"    portal: /hod/login plus everything under /hod/* (Heads of
- *              Department).
- *   - "bursar" portal: /bursar/login plus everything under /bursar/*
- *              (Fees Management Module — bursars only).
+ *   - "hod"    portal: /hod/* (Heads of Department — same sign-in page).
+ *   - "bursar" portal: /bursar/* (Fees Management — same sign-in page).
  *
- * All three logins share a single PHP session cookie, but their user records
+ * All three portals share a single PHP session cookie, but their user records
  * live in DIFFERENT slots inside that session ($_SESSION['users']['main'],
  * $_SESSION['users']['hod'], $_SESSION['users']['bursar']). The "active" slot
  * for a given request is derived from the URL prefix, so an admin can stay
@@ -94,6 +92,70 @@ class Auth
 
         $_SESSION['users'][self::portal()] = $user;
         return true;
+    }
+
+    /**
+     * Sign-in for the shared /login page: credentials are checked, then the
+     * session user is stored in the portal slot that matches the account —
+     * main, hod, or bursar — so /hod/* and /bursar/* routes see a logged-in
+     * user even though the form was posted from /login.
+     *
+     * @return string|null Portal slot ('main'|'hod'|'bursar') on success, null on failure
+     */
+    public static function attemptUnified(string $email, string $password): ?string
+    {
+        $stmt = Database::query(
+            'SELECT id, name, email, password, role, status FROM users WHERE email = ? LIMIT 1',
+            [$email]
+        );
+        $user = $stmt->fetch();
+
+        if (!$user || $user['status'] !== 'active') {
+            return null;
+        }
+        if (!password_verify($password, $user['password'])) {
+            return null;
+        }
+
+        unset($user['password']);
+
+        $slot = self::portalSlotForUserRow($user);
+
+        if (empty($_SESSION['_regenerated_for'])
+            || $_SESSION['_regenerated_for'] !== $slot) {
+            session_regenerate_id(true);
+            $_SESSION['_regenerated_for'] = $slot;
+            unset($_SESSION['_csrf']);
+        }
+
+        $_SESSION['users'][$slot] = $user;
+
+        return $slot;
+    }
+
+    /** @param array{id:int,role:string} $user */
+    private static function portalSlotForUserRow(array $user): string
+    {
+        $role = (string) ($user['role'] ?? '');
+        if ($role === 'hod') {
+            return 'hod';
+        }
+        if ($role === 'bursar') {
+            return 'bursar';
+        }
+        if ($role === 'staff') {
+            $row = Database::query(
+                'SELECT 1 FROM department_heads dh
+                 JOIN staff s ON s.id = dh.staff_id
+                 WHERE s.user_id = ? LIMIT 1',
+                [(int) $user['id']]
+            )->fetch();
+            if ($row) {
+                return 'hod';
+            }
+        }
+
+        return 'main';
     }
 
     public static function user(): ?array
@@ -275,17 +337,10 @@ class Auth
     }
 
     /**
-     * Pick the right login URL to redirect a guest to. Anyone hitting an
-     * HOD-only path (/hod*) gets bounced to the HOD login portal, anyone
-     * hitting /bursar* gets the bursar login, and everyone else lands on
-     * the main school sign-in.
+     * Login URL for unauthenticated guests (single page for every role).
      */
     private static function loginHintFromRequest(): string
     {
-        return match (self::portal()) {
-            'hod'    => '/hod/login',
-            'bursar' => '/bursar/login',
-            default  => '/login',
-        };
+        return '/login';
     }
 }

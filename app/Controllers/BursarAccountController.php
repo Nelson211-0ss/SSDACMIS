@@ -15,7 +15,7 @@ use App\Core\Flash;
  *   POST /bursars/{id}         -> update name/email/status (+ optional password)
  *   POST /bursars/{id}/delete  -> delete the user row
  *
- * Bursars created here sign in at /bursar/login and land on /bursar (the
+ * Bursars created here sign in at /login and land on /bursar (the
  * Fees Management portal). The Bursar portal is fully isolated from the
  * main school nav and HOD nav — bursars only see Fees module pages.
  *
@@ -80,7 +80,7 @@ class BursarAccountController extends Controller
             ]
         );
 
-        Flash::set('success', 'Bursar account created. They can sign in at /bursar/login.');
+        Flash::set('success', 'Bursar account created. They can sign in at /login.');
         $this->redirect('/bursars');
         return '';
     }

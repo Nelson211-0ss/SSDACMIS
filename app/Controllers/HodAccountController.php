@@ -15,7 +15,7 @@ use App\Core\Flash;
  *   POST /hods/{id}          -> update name/dept/email/status (+ optional password)
  *   POST /hods/{id}/delete   -> delete the user row
  *
- * HODs created here log in via /hod/login and land on /hod (HOD portal).
+ * HODs created here sign in at /login and land on /hod (HOD portal).
  * They have full Form 1–4 mark-entry access for every subject because
  * users.role='hod' already grants the same shared-HOD privileges that
  * MarksController and ReportController honour.
@@ -85,7 +85,7 @@ class HodAccountController extends Controller
             ]
         );
 
-        Flash::set('success', 'HOD account created. They can sign in at the HOD portal (/hod/login).');
+        Flash::set('success', 'HOD account created. They can sign in at /login.');
         $this->redirect('/hods');
         return '';
     }

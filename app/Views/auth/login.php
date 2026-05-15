@@ -67,7 +67,7 @@ $schoolLogo  = Settings::logoUrl();
 
         <p class="auth-brand__foot">
           <i class="bi bi-shield-check" aria-hidden="true"></i>
-          Role‑based access for admins, HODs &amp; teachers · Secure by design
+          One sign-in for administrators, HODs, bursars, staff &amp; students
         </p>
       </div>
     </section>
@@ -77,24 +77,12 @@ $schoolLogo  = Settings::logoUrl();
         <div class="auth-wrap auth-wrap--wave">
           <div class="auth-card auth-card--wave">
             <h2 class="auth-card__wave-h2" id="login-title">Login</h2>
-            <p class="auth-card__wave-sub">Sign in to continue your work</p>
+            <p class="auth-card__wave-sub">Sign in to continue — you'll open the workspace that matches your role</p>
 
             <?php if (!empty($error)): ?>
               <div class="auth-alert auth-alert--danger" role="alert">
                 <i class="bi bi-exclamation-circle flex-shrink-0"></i>
-                <div>
-                  <?= View::e($error) ?>
-                  <?php if (!empty($hodHint)): ?>
-                    <div class="mt-2">
-                      <a class="auth-card__link auth-card__link--wave" href="<?= $base ?>/hod/login">HOD portal <i class="bi bi-arrow-right small"></i></a>
-                    </div>
-                  <?php endif; ?>
-                  <?php if (!empty($bursarHint)): ?>
-                    <div class="mt-2">
-                      <a class="auth-card__link auth-card__link--wave" href="<?= $base ?>/bursar/login">Bursar portal <i class="bi bi-arrow-right small"></i></a>
-                    </div>
-                  <?php endif; ?>
-                </div>
+                <div><?= View::e($error) ?></div>
               </div>
             <?php endif; ?>
 
@@ -144,18 +132,6 @@ $schoolLogo  = Settings::logoUrl();
               </button>
             </form>
 
-            <div class="auth-card__foot auth-card__foot--wave">
-              <p class="auth-foot-note">
-                <i class="bi bi-mortarboard-fill" aria-hidden="true"></i>
-                Head of Department?
-                <a class="auth-card__link auth-card__link--wave" href="<?= $base ?>/hod/login">Sign in to HOD portal</a>
-              </p>
-              <p class="auth-foot-note">
-                <i class="bi bi-cash-coin" aria-hidden="true"></i>
-                Bursar?
-                <a class="auth-card__link auth-card__link--wave" href="<?= $base ?>/bursar/login">Sign in to Bursar portal</a>
-              </p>
-            </div>
           </div>
 
           <p class="auth-below">

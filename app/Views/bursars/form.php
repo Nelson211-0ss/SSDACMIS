@@ -79,7 +79,7 @@ $action  = $editing
             </div>
             <div class="entity-form__panel small mb-2">
               <p class="mb-2"><strong class="text-body">Sign-in URL</strong><br>
-                <code class="small"><?= $base ?>/bursar/login</code>
+                <code class="small"><?= $base ?>/login</code>
               </p>
               <p class="mb-0 text-muted">
                 Bursars set fees per Form &amp; section, record student payments,

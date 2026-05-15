@@ -7,7 +7,7 @@ $title  = 'Heads of Department';
   <div>
     <h4 class="mb-1"><i class="bi bi-mortarboard-fill"></i> Heads of Department</h4>
     <p class="text-muted small mb-0">
-      HOD accounts sign in at <code class="small"><?= $base ?>/hod/login</code> and can enter marks for every subject across Form&nbsp;1–4.
+      HOD accounts sign in at <code class="small"><?= $base ?>/login</code> (same page as everyone else) and can enter marks for every subject across Form&nbsp;1–4.
     </p>
   </div>
   <a class="btn btn-primary" href="<?= $base ?>/hods/create">

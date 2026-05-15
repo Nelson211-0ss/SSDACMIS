@@ -6,7 +6,6 @@ use App\Core\Settings;
 $schoolName  = Settings::get('school_name') ?: App::config('app.name');
 $schoolMotto = Settings::get('school_motto') ?? '';
 $schoolLogo  = Settings::logoUrl();
-$theme       = Settings::activeTheme();
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -23,17 +22,8 @@ $theme       = Settings::activeTheme();
   <?php if ($schoolLogo): ?>
     <link rel="icon" type="image/png" href="<?= $base ?>/<?= View::e($schoolLogo) ?>">
   <?php endif; ?>
-  <style>
-    :root {
-      --accent:           <?= View::e($theme['accent']) ?>;
-      --accent-hover:     <?= View::e($theme['accent_hover']) ?>;
-      --accent-soft:      <?= View::e($theme['accent_soft']) ?>;
-      --accent-rgb:       <?= View::e($theme['accent_rgb']) ?>;
-      --sidebar-bg:       <?= View::e($theme['sidebar_bg']) ?>;
-    }
-  </style>
 </head>
-<body class="auth-page">
+<body class="auth-page auth-page--plain">
   <?= $content ?>
   <footer class="auth-credit" role="contentinfo">
     &copy; <?= date('Y') ?> <?= View::e($schoolName) ?> &middot;

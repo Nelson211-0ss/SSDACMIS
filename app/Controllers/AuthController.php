@@ -3,58 +3,55 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Controller;
-use App\Core\Database;
 use App\Core\Flash;
 
 /**
- * Two parallel sign-in surfaces:
+ * Single sign-in at /login for admins, staff, students, Heads of Department,
+ * and bursars. After authentication, users are routed to the dashboard that
+ * matches their role (/dashboard, /hod, or /bursar).
  *
- *   /login          - school portal for admins, regular staff and students.
- *                     HODs are not allowed in here; they're nudged toward
- *                     /hod/login.
- *   /hod/login      - dedicated HOD portal. Heads of Department (rows in
- *                     `department_heads`) and the shared `hod` user role
- *                     (one login for all HODs) may sign in here.
- *   /bursar/login   - dedicated Fees Management portal. Only users.role
- *                     'bursar' (created by admins) may sign in here.
- *
- * Logout sends each user back to the portal that fits them (HODs to
- * /hod/login, bursars to /bursar/login, everyone else to /login), so each
- * role only ever sees the branding for their portal.
+ * Legacy URLs /hod/login and /bursar/login still resolve (GET redirects to
+ * /login; POST is processed the same as /login) so old bookmarks keep working.
  */
 class AuthController extends Controller
 {
     /**
      * Soft brute-force throttle. Keyed per browser session so a single
-     * attacker can't hammer either portal indefinitely without rotating
+     * attacker can't hammer sign-in indefinitely without rotating
      * cookies (and rotating cookies costs them their CSRF token too).
      */
     private const MAX_ATTEMPTS = 8;
     private const LOCK_SECONDS = 300; // 5 minutes
 
-    private function throttleSlot(string $portal): string
+    private const THROTTLE_PORTAL = 'unified';
+
+    private function throttleSlot(): string
     {
-        return '_login_throttle_' . $portal;
+        return '_login_throttle_' . self::THROTTLE_PORTAL;
     }
 
-    private function checkThrottle(string $portal): ?string
+    private function checkThrottle(): ?string
     {
-        $slot = $this->throttleSlot($portal);
-        $t = $_SESSION[$slot] ?? null;
-        if (!$t || empty($t['locked_until'])) return null;
+        $slot = $this->throttleSlot();
+        $t    = $_SESSION[$slot] ?? null;
+        if (!$t || empty($t['locked_until'])) {
+            return null;
+        }
         $left = (int) $t['locked_until'] - time();
         if ($left <= 0) {
             unset($_SESSION[$slot]);
+
             return null;
         }
         $mins = max(1, (int) ceil($left / 60));
+
         return 'Too many failed sign-in attempts. Try again in ' . $mins . ' minute' . ($mins === 1 ? '' : 's') . '.';
     }
 
-    private function recordFailure(string $portal): void
+    private function recordFailure(): void
     {
-        $slot = $this->throttleSlot($portal);
-        $t = $_SESSION[$slot] ?? ['attempts' => 0, 'locked_until' => 0];
+        $slot = $this->throttleSlot();
+        $t    = $_SESSION[$slot] ?? ['attempts' => 0, 'locked_until' => 0];
         $t['attempts'] = (int) $t['attempts'] + 1;
         if ($t['attempts'] >= self::MAX_ATTEMPTS) {
             $t['locked_until'] = time() + self::LOCK_SECONDS;
@@ -63,42 +60,86 @@ class AuthController extends Controller
         $_SESSION[$slot] = $t;
     }
 
-    private function clearFailures(string $portal): void
+    private function clearFailures(): void
     {
-        unset($_SESSION[$this->throttleSlot($portal)]);
-    }
-
-    /* -- main school portal (admin / staff / student) -------------------- */
-
-    public function showLogin(): string
-    {
-        if (Auth::check()) {
-            $this->redirect(Auth::isCurrentHod() ? '/hod' : '/dashboard');
-        }
-        return $this->view('auth/login');
+        unset($_SESSION[$this->throttleSlot()]);
     }
 
     /**
-     * Resolves where a freshly-authenticated user belongs after sign-in:
-     * HODs → /hod, bursars → /bursar, everyone else → /dashboard. Used by
-     * each portal's login flow so users never land in the wrong place.
+     * Landing URL right after a successful sign-in (current portal only).
      */
-    private function homeForRole(string $role): string
+    private function homeAfterLogin(): string
     {
-        return match ($role) {
+        if (Auth::isCurrentHod()) {
+            return '/hod';
+        }
+
+        return match ((string) Auth::role()) {
+            'bursar' => '/bursar',
+            default  => '/dashboard',
+        };
+    }
+
+    private function homeAfterUnifiedSlot(string $slot): string
+    {
+        return match ($slot) {
             'hod'    => '/hod',
             'bursar' => '/bursar',
             default  => '/dashboard',
         };
     }
 
+    private function flashForDestination(string $dest): void
+    {
+        $msg = match ($dest) {
+            '/hod'    => 'Welcome to your department portal.',
+            '/bursar' => 'Welcome to the Fees Management portal.',
+            default   => 'Welcome back!',
+        };
+        Flash::set('success', $msg);
+    }
+
+    public function showLogin(): string
+    {
+        if (Auth::check()) {
+            $this->redirect($this->homeAfterLogin());
+        }
+
+        return $this->view('auth/login');
+    }
+
+    public function showBursarLogin(): void
+    {
+        $this->redirect('/login');
+    }
+
+    public function showHodLogin(): void
+    {
+        $this->redirect('/login');
+    }
+
     public function login(): string
+    {
+        return $this->processLoginForm();
+    }
+
+    public function bursarLogin(): string
+    {
+        return $this->processLoginForm();
+    }
+
+    public function hodLogin(): string
+    {
+        return $this->processLoginForm();
+    }
+
+    private function processLoginForm(): string
     {
         $this->validateCsrf();
         $email    = trim((string) $this->input('email'));
         $password = (string) $this->input('password');
 
-        if ($lock = $this->checkThrottle('main')) {
+        if ($lock = $this->checkThrottle()) {
             return $this->view('auth/login', ['error' => $lock, 'old' => compact('email')]);
         }
 
@@ -106,148 +147,26 @@ class AuthController extends Controller
             return $this->view('auth/login', ['error' => 'Email and password are required.', 'old' => compact('email')]);
         }
 
-        if (!Auth::attempt($email, $password)) {
-            $this->recordFailure('main');
+        $slot = Auth::attemptUnified($email, $password);
+        if ($slot === null) {
+            $this->recordFailure();
+
             return $this->view('auth/login', ['error' => 'Invalid credentials.', 'old' => compact('email')]);
         }
-        $this->clearFailures('main');
+        $this->clearFailures();
 
-        // HODs have a dedicated portal — they shouldn't enter through the
-        // main school login. Drop the auth record and steer them to
-        // /hod/login. Use softLogout so the new CSRF token we mint for the
-        // re-rendered form lives in a real session.
-        if (Auth::isCurrentHod()) {
-            Auth::softLogout();
-            return $this->view('auth/login', [
-                'error' => 'You are a Head of Department. Please use the HOD portal to sign in.',
-                'old'   => compact('email'),
-                'hodHint' => true,
-            ]);
-        }
+        $dest = $this->homeAfterUnifiedSlot($slot);
+        $this->flashForDestination($dest);
+        $this->redirect($dest);
 
-        // Bursars have their own Fees Management portal — refuse them here.
-        if (Auth::role() === 'bursar') {
-            Auth::softLogout();
-            return $this->view('auth/login', [
-                'error' => 'This account belongs to the Bursar portal. Please use the Bursar sign-in.',
-                'old'   => compact('email'),
-                'bursarHint' => true,
-            ]);
-        }
-
-        Flash::set('success', 'Welcome back!');
-        $this->redirect('/dashboard');
         return '';
     }
-
-    /* -- Bursar (Fees Management) portal -------------------------------- */
-
-    public function showBursarLogin(): string
-    {
-        if (Auth::check()) {
-            $this->redirect($this->homeForRole((string) Auth::role()));
-        }
-        return $this->view('auth/bursar_login');
-    }
-
-    public function bursarLogin(): string
-    {
-        $this->validateCsrf();
-        $email    = trim((string) $this->input('email'));
-        $password = (string) $this->input('password');
-
-        if ($lock = $this->checkThrottle('bursar')) {
-            return $this->view('auth/bursar_login', ['error' => $lock, 'old' => compact('email')]);
-        }
-        if ($email === '' || $password === '') {
-            return $this->view('auth/bursar_login', ['error' => 'Email and password are required.', 'old' => compact('email')]);
-        }
-
-        if (!Auth::attempt($email, $password)) {
-            $this->recordFailure('bursar');
-            return $this->view('auth/bursar_login', ['error' => 'Invalid credentials.', 'old' => compact('email')]);
-        }
-        $this->clearFailures('bursar');
-
-        // Only bursars may use this portal. Anyone else is dropped from the
-        // session and shown a friendly hint pointing to the right portal.
-        if (Auth::role() !== 'bursar') {
-            $wrongRole = (string) Auth::role();
-            Auth::softLogout();
-            return $this->view('auth/bursar_login', [
-                'error' => 'This portal is for Bursars only. Please use the correct sign-in for your account.',
-                'old'   => compact('email'),
-                'mainHint' => $wrongRole !== 'hod',
-                'hodHint'  => $wrongRole === 'hod',
-            ]);
-        }
-
-        Flash::set('success', 'Welcome to the Fees Management portal.');
-        $this->redirect('/bursar');
-        return '';
-    }
-
-    /* -- HOD portal ------------------------------------------------------- */
-
-    public function showHodLogin(): string
-    {
-        if (Auth::check()) {
-            $this->redirect(Auth::isCurrentHod() ? '/hod' : '/dashboard');
-        }
-        return $this->view('auth/hod_login');
-    }
-
-    public function hodLogin(): string
-    {
-        $this->validateCsrf();
-        $email    = trim((string) $this->input('email'));
-        $password = (string) $this->input('password');
-
-        if ($lock = $this->checkThrottle('hod')) {
-            return $this->view('auth/hod_login', ['error' => $lock, 'old' => compact('email')]);
-        }
-
-        if ($email === '' || $password === '') {
-            return $this->view('auth/hod_login', ['error' => 'Email and password are required.', 'old' => compact('email')]);
-        }
-
-        if (!Auth::attempt($email, $password)) {
-            $this->recordFailure('hod');
-            return $this->view('auth/hod_login', ['error' => 'Invalid credentials.', 'old' => compact('email')]);
-        }
-        $this->clearFailures('hod');
-
-        // Only HODs may use this portal. Anyone else is dropped from the
-        // session and shown a friendly hint. Use softLogout so the new CSRF
-        // token for the re-rendered form lives in a real session (otherwise
-        // the user's next submit would fail with "Invalid CSRF token.").
-        if (!Auth::isCurrentHod()) {
-            Auth::softLogout();
-            return $this->view('auth/hod_login', [
-                'error' => 'This portal is for Heads of Department only. Use the main school sign-in instead.',
-                'old'   => compact('email'),
-                'mainHint' => true,
-            ]);
-        }
-
-        Flash::set('success', 'Welcome to your department portal.');
-        $this->redirect('/hod');
-        return '';
-    }
-
-    /* -- shared logout: portal-aware redirect ---------------------------- */
 
     public function logout(): string
     {
-        $portal = Auth::portal();
-        $wasHod = Auth::isCurrentHod();
         Auth::logout();
-        $target = match (true) {
-            $portal === 'bursar' => '/bursar/login',
-            $wasHod              => '/hod/login',
-            default              => '/login',
-        };
-        $this->redirect($target);
+        $this->redirect('/login');
+
         return '';
     }
 }

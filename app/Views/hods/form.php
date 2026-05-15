@@ -93,7 +93,7 @@ $currentDept    = trim((string) ($hod['department'] ?? ''));
             </div>
             <div class="entity-form__panel small mb-2">
               <p class="mb-2"><strong class="text-body">Sign-in URL</strong><br>
-                <code class="small"><?= $base ?>/hod/login</code>
+                <code class="small"><?= $base ?>/login</code>
               </p>
               <p class="mb-0 text-muted">
                 Heads of department enter marks for all subjects across Forms&nbsp;1–4 and print department reports.
