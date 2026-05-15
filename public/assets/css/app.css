@@ -3187,6 +3187,35 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .kpi-card__delta--down { color: var(--danger); }
 .kpi-card__delta--flat { color: var(--text-muted); }
 
+/* Dashboard KPI strip: room for labels and wrapping deltas */
+.kpi-card--dash {
+  align-items: flex-start;
+  padding: .75rem .85rem;
+  min-height: 5.75rem;
+}
+.kpi-card--dash .kpi-card__icon {
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  margin-top: .05rem;
+}
+.kpi-card--dash .kpi-card__label {
+  font-size: .65rem;
+  line-height: 1.25;
+}
+.kpi-card--dash .kpi-card__value {
+  font-size: 1.35rem;
+}
+.kpi-card--dash .kpi-card__delta {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.35;
+}
+
 /* ---------- Chart card ---------- */
 .chart-card .card-body {
   padding: 1rem 1.1rem 1.1rem;
@@ -3672,26 +3701,19 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   border: 1px solid rgba(var(--accent-rgb), .22);
   border-radius: 999px;
 }
-/* KPI strip: 4 cards (staff) or 8 cards (admin) on one row when wide enough */
+/* KPI strip: 2 cols mobile, 4 cols tablet+ (admin uses two rows of four) */
 .dash-kpi-grid {
   display: grid;
   gap: .75rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.dash-kpi-grid--4 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-@media (min-width: 768px) {
-  .dash-kpi-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
+.dash-kpi-grid--4,
 .dash-kpi-grid--8 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 @media (min-width: 768px) {
+  .dash-kpi-grid--4,
   .dash-kpi-grid--8 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-@media (min-width: 1400px) {
-  .dash-kpi-grid--8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 }
 .dash-kpi-grid__item {
   min-width: 0;

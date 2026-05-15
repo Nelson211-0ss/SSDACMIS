@@ -20,18 +20,6 @@ $attLate             = (int) ($attToday['late'] ?? 0);
 $attTotal            = (int) ($attToday['total'] ?? 0);
 $attRate             = $attTotal > 0 ? (int) round(($attPresent / $attTotal) * 100) : null;
 
-$feesSnap            = $adminOps['fees'] ?? null;
-$feesExpected        = (float) ($feesSnap['expected'] ?? 0);
-$feesCollected       = (float) ($feesSnap['collected'] ?? 0);
-$feesOutstanding     = (float) ($feesSnap['outstanding'] ?? 0);
-$feesPaidCount       = (int) ($feesSnap['paid_count'] ?? 0);
-$feesPartialCount    = (int) ($feesSnap['partial_count'] ?? 0);
-$feesUnpaidCount     = (int) ($feesSnap['unpaid_count'] ?? 0);
-$feesYear            = (string) ($feesSnap['year'] ?? '');
-$feesTerm            = (string) ($feesSnap['term'] ?? '');
-$feesCollectedPct    = $feesExpected > 0 ? min(100, round(($feesCollected / $feesExpected) * 100, 1)) : 0;
-$recentPaymentsAdmin = $adminOps['recent_payments'] ?? [];
-
 $studentsTotal   = (int) ($stats['students'] ?? 0);
 $staffTotal      = (int) ($stats['staff']    ?? 0);
 $classesTotal    = (int) ($stats['classes']  ?? 0);
@@ -166,7 +154,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   </div>
   <div class="dash-kpi-grid mb-4<?= $isAdmin ? ' dash-kpi-grid--8' : ' dash-kpi-grid--4' ?>">
     <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/students" class="kpi-card kpi-card--compact">
+      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
         <div class="kpi-card__icon kpi-card__icon--orange"><i class="bi bi-people-fill"></i></div>
         <div class="kpi-card__body">
           <div class="kpi-card__label">Students</div>
@@ -183,7 +171,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
 
     <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/staff" class="kpi-card kpi-card--compact">
+      <a href="<?= $base ?>/staff" class="kpi-card kpi-card--dash">
         <div class="kpi-card__icon kpi-card__icon--green"><i class="bi bi-person-workspace"></i></div>
         <div class="kpi-card__body">
           <div class="kpi-card__label">Staff</div>
@@ -201,7 +189,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
 
     <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/classes" class="kpi-card kpi-card--compact">
+      <a href="<?= $base ?>/classes" class="kpi-card kpi-card--dash">
         <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-building-fill"></i></div>
         <div class="kpi-card__body">
           <div class="kpi-card__label">Classes</div>
@@ -215,7 +203,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
 
     <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/subjects" class="kpi-card kpi-card--compact">
+      <a href="<?= $base ?>/subjects" class="kpi-card kpi-card--dash">
         <div class="kpi-card__icon kpi-card__icon--purple"><i class="bi bi-book-half"></i></div>
         <div class="kpi-card__body">
           <div class="kpi-card__label">Subjects</div>
@@ -229,8 +217,6 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
     <?php if ($isAdmin): include __DIR__ . '/_admin_kpi_ops.php'; endif; ?>
   </div>
-
-  <?php if ($isAdmin): include __DIR__ . '/_admin_ops.php'; endif; ?>
 
   <!-- ============================================================
        Charts row: Enrollment per class + Demographics
