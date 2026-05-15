@@ -869,10 +869,23 @@ body:has(.report-student-layout) {
   font-weight: 600;
 }
 .auth-page.auth-page--plain .auth-brand__t2-l1--smis {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08em;
   color: var(--ap-blue-deep);
   font-size: clamp(1.52rem, 3.15vw, 2.45rem);
-  line-height: 1.12;
+  line-height: 1.18;
   letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.auth-page.auth-page--plain .auth-brand__t2-l1--smis .auth-brand__t2-line {
+  display: block;
+  white-space: nowrap;
+}
+.auth-page.auth-page--plain .auth-brand__t2-line--acronym {
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .auth-page.auth-page--plain .auth-brand__t2 {
   text-shadow: none;
@@ -1088,6 +1101,14 @@ body.auth-page.auth-page--plain:has(.auth-page-frame--wave) .auth-credit__sep {
   .auth-page.auth-page--plain .auth-below {
     justify-content: center;
     text-align: center;
+  }
+  .auth-page.auth-page--plain .auth-brand__t2-l1--smis {
+    align-items: center;
+  }
+}
+@media (max-width: 480px) {
+  .auth-page.auth-page--plain .auth-brand__t2-l1--smis {
+    font-size: clamp(1rem, 4.5vw, 1.35rem);
   }
 }
 @media (prefers-reduced-motion: reduce) {
