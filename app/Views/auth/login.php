@@ -75,9 +75,12 @@ $schoolLogo  = Settings::logoUrl();
     <div class="auth-side auth-side--float">
       <div class="auth-side__inner">
         <div class="auth-wrap auth-wrap--wave">
-          <div class="auth-card auth-card--wave">
-            <h2 class="auth-card__wave-h2" id="login-title">Login</h2>
-            <p class="auth-card__wave-sub">Sign in to continue — you'll open the workspace that matches your role</p>
+          <div class="auth-card auth-card--wave auth-card--plain">
+            <div class="auth-card__plain-head">
+              <span class="auth-card__plain-badge" aria-hidden="true"><i class="bi bi-shield-lock-fill"></i></span>
+              <h2 class="auth-card__wave-h2" id="login-title">Sign in</h2>
+              <p class="auth-card__wave-sub">Continue to the workspace that matches your role.</p>
+            </div>
 
             <?php if (!empty($error)): ?>
               <div class="auth-alert auth-alert--danger" role="alert">
@@ -89,30 +92,30 @@ $schoolLogo  = Settings::logoUrl();
             <form class="auth-form auth-form--wave" method="post" action="<?= $base ?>/login" novalidate>
               <input type="hidden" name="_csrf" value="<?= $csrf ?>">
 
-              <div class="auth-field">
-                <label class="visually-hidden" for="email">Email</label>
+              <div class="auth-field auth-field--labeled">
+                <label class="auth-label-plain" for="email">Email</label>
                 <div class="auth-input-wave">
-                  <span class="auth-input-wave__ic" aria-hidden="true"><i class="bi bi-person"></i></span>
+                  <span class="auth-input-wave__ic" aria-hidden="true"><i class="bi bi-envelope"></i></span>
                   <input id="email"
                          type="email"
                          name="email"
                          class="form-control auth-input-wave__in"
-                         placeholder="Email or username"
+                         placeholder="you@school.edu"
                          required autofocus
                          autocomplete="email"
                          value="<?= View::e($old['email'] ?? '') ?>">
                 </div>
               </div>
 
-              <div class="auth-field">
-                <label class="visually-hidden" for="password">Password</label>
+              <div class="auth-field auth-field--labeled">
+                <label class="auth-label-plain" for="password">Password</label>
                 <div class="auth-input-wave">
-                  <span class="auth-input-wave__ic" aria-hidden="true"><i class="bi bi-lock"></i></span>
+                  <span class="auth-input-wave__ic" aria-hidden="true"><i class="bi bi-key"></i></span>
                   <input id="password"
                          type="password"
                          name="password"
                          class="form-control auth-input-wave__in"
-                         placeholder="Password"
+                         placeholder="Enter your password"
                          required
                          autocomplete="current-password">
                 </div>
@@ -121,7 +124,7 @@ $schoolLogo  = Settings::logoUrl();
               <div class="auth-form__row d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0">
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" name="remember" value="1" id="auth-remember" <?= !empty($old['remember'] ?? null) ? 'checked' : '' ?>>
-                  <label class="form-check-label text-secondary small" for="auth-remember">Remember me</label>
+                  <label class="form-check-label auth-check-label-plain small" for="auth-remember">Remember me</label>
                 </div>
                 <a class="auth-forgot" href="#" onclick="return false;" title="Contact your school administrator to reset your password.">Forgot your password?</a>
               </div>
