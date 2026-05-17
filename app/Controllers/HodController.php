@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\MarkEntryClassBuckets;
 
 /**
  * Head-of-Department dashboard.
@@ -144,6 +145,7 @@ class HodController extends Controller
                 $classesByForm[$lv][] = $c;
             }
         }
+        $classesByForm = MarkEntryClassBuckets::dropRedundantShellClasses($classesByForm);
 
         // Recent grades posted by this user (helpful "you last saved..." nudge).
         $recent = $user ? Database::query(

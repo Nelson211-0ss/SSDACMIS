@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\MarkEntryClassBuckets;
 use App\Core\Flash;
 use App\Services\AcademicMarking;
 use App\Services\TermResultsService;
@@ -325,11 +326,13 @@ class MarksController extends Controller
                 continue;
             }
             $classesByForm[$lv][] = [
-                'id'            => $cid,
-                'name'          => $d['class_name'],
-                'student_count' => (int) $d['student_count'],
+                'id'              => $cid,
+                'name'            => $d['class_name'],
+                'level'           => $lv,
+                'student_count'   => (int) $d['student_count'],
             ];
         }
+        $classesByForm = MarkEntryClassBuckets::dropRedundantShellClasses($classesByForm);
         $hodMarkSubjects = $this->hodMarkEntrySubjects($hodMarkCategories);
 
         return $this->view('marks/index', [
