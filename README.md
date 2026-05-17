@@ -45,7 +45,12 @@ SSDACMIS/
 ├── config/
 │   └── config.php          App + DB config (reads .env if present)
 ├── database/
-│   └── schema.sql          MySQL schema + seed data
+│   ├── schema.sql          Full schema + basic seed data (school, classes, subjects)
+│   ├── migrate.php         Idempotent migrator — seeds admin, HOD & bursar accounts;
+│   │                       also handles incremental column upgrades for existing installs
+│   └── migrations/
+│       └── add_multitenancy.sql  Upgrade-only: adds school_id to pre-multitenancy installs
+│                                 (schema.sql already includes this for fresh installs)
 ├── public/                 ← Web root
 │   ├── index.php           Front controller
 │   ├── install.php         One-shot installer (delete after use)
@@ -67,13 +72,14 @@ SSDACMIS/
    ```bash
    cp .env.example .env
    ```
-5. Open the installer in your browser:
+5. Import the schema and seed all default accounts with two commands:
+   ```bash
+   mysql -u root ssdacmis < database/schema.sql
+   php database/migrate.php
    ```
-   http://localhost/SSDACMIS/public/install.php
-   ```
-   This will create the database, import the schema, and create the default admin user.
-6. **Delete `public/install.php`** once you see the success page.
-7. Log in:
+   `schema.sql` creates all tables and seeds the school, classes, and subjects.
+   `migrate.php` seeds the admin, HOD, and bursar accounts (idempotent — safe to re-run).
+6. Log in:
    ```
    http://localhost/SSDACMIS/public/login
    Email:    admin@school.local
@@ -81,7 +87,16 @@ SSDACMIS/
    ```
    Change this password immediately from the **Staff** page.
 
-> If you prefer doing it manually, open phpMyAdmin and import `database/schema.sql`, then run the installer once just to create the admin.
+Default accounts created by `migrate.php`:
+
+| Role   | Email               | Password  |
+|--------|---------------------|-----------|
+| Admin  | admin@school.local  | admin123  |
+| HOD    | hod@school.local    | hod123    |
+| Bursar | bursar@school.local | bursar123 |
+
+> **phpMyAdmin alternative:** import `database/schema.sql` via the Import tab, then run `php database/migrate.php` from the terminal.
+> `public/install.php` also works for the initial schema import if you prefer a browser UI — delete it after use.
 
 ---
 
@@ -104,9 +119,13 @@ SSDACMIS/
    DB_USER=yourcpaneluser_dbuser
    DB_PASS=strong-password
    ```
-5. Visit `https://yourdomain.com/install.php` once to import the schema and create the admin.
-6. **DELETE `public/install.php`** from the server immediately after.
-7. Make sure the `storage/` directory is writable by the web user (usually 755 is fine; 775 if needed).
+5. Import the schema and seed all accounts via SSH:
+   ```bash
+   mysql -u yourdbuser -p yourdbname < database/schema.sql
+   php database/migrate.php
+   ```
+   Or use phpMyAdmin to import `schema.sql`, then run `migrate.php` via SSH.
+6. Make sure the `storage/` directory is writable by the web user (usually 755 is fine; 775 if needed).
 
 ### Deploy on a VPS / cloud (Ubuntu + Apache)
 
@@ -114,10 +133,17 @@ SSDACMIS/
 sudo apt install apache2 php php-mysql mariadb-server
 sudo a2enmod rewrite
 # Set DocumentRoot to /var/www/SSDACMIS/public and AllowOverride All
-mysql -u root -p < database/schema.sql
-# Create .env, then:
-php -S 0.0.0.0:8000 -t public   # quick test
+
+# 1. Create the database, then import schema + seed all accounts
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS ssdacmis"
+mysql -u root ssdacmis < database/schema.sql
+php database/migrate.php
+
+# 2. Create .env, then quick-test:
+php -S 0.0.0.0:8000 -t public
 ```
+
+> **Upgrading an existing install** (pre-multitenancy)? Run `php database/migrate.php`, then import `database/migrations/add_multitenancy.sql`. Do **not** re-import `schema.sql` on an existing database.
 
 ---
 

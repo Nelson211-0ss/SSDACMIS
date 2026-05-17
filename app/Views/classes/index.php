@@ -1,8 +1,10 @@
-<?php use App\Core\View; $layout = 'app'; $title = 'Classes'; ?>
+<?php use App\Core\View; $layout = 'app'; $title = 'Classes';
+$canManage = in_array($auth['role'], ['admin', 'school_admin'], true);
+?>
 <h4 class="mb-3"><i class="bi bi-building"></i> Classes</h4>
 
 <div class="row g-3">
-  <?php if ($auth['role'] === 'admin'): ?>
+  <?php if ($canManage): ?>
   <div class="col-lg-4">
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-white d-flex align-items-center">
@@ -18,7 +20,12 @@
           </div>
           <div class="mb-2">
             <label class="form-label">Level</label>
-            <input name="level" class="form-control" placeholder="e.g. Form 1">
+            <select name="level" class="form-select">
+              <option value="">— Select —</option>
+              <?php foreach (['Form 1','Form 2','Form 3','Form 4'] as $lvl): ?>
+                <option value="<?= $lvl ?>"><?= $lvl ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Admission Prefix <span class="text-muted small">(optional)</span></label>
@@ -32,14 +39,14 @@
   </div>
   <?php endif; ?>
 
-  <div class="col-lg-<?= $auth['role'] === 'admin' ? 8 : 12 ?>">
+  <div class="col-lg-<?= $canManage ? 8 : 12 ?>">
     <div class="card border-0 shadow-sm">
       <div class="table-responsive">
         <table class="table mb-0 align-middle">
           <thead class="table-light">
             <tr>
               <th>Name</th><th>Level</th><th>Adm. Prefix</th><th>Students</th><th>Class Teacher</th>
-              <?= $auth['role'] === 'admin' ? '<th></th>' : '' ?>
+              <?= $canManage ? '<th></th>' : '' ?>
             </tr>
           </thead>
           <tbody>
@@ -50,7 +57,7 @@
               <td><?= View::e($c['name']) ?></td>
               <td><?= View::e($c['level'] ?: '—') ?></td>
               <td>
-                <?php if ($auth['role'] === 'admin'): ?>
+                <?php if ($canManage): ?>
                   <form method="post"
                         action="<?= $base ?>/classes/<?= (int) $c['id'] ?>/prefix"
                         class="d-flex gap-1">
@@ -67,7 +74,7 @@
               </td>
               <td><span class="badge bg-secondary"><?= (int)$c['student_count'] ?></span></td>
               <td>
-                <?php if ($auth['role'] === 'admin'): ?>
+                <?php if ($canManage): ?>
                   <form method="post"
                         action="<?= $base ?>/classes/<?= (int) $c['id'] ?>/teacher"
                         class="d-flex gap-1">
@@ -87,7 +94,7 @@
                   <?= View::e(trim(($c['teacher_first'] ?? '').' '.($c['teacher_last'] ?? ''))) ?: '—' ?>
                 <?php endif; ?>
               </td>
-              <?php if ($auth['role'] === 'admin'): ?>
+              <?php if ($canManage): ?>
                 <td class="text-end">
                   <form method="post" action="<?= $base ?>/classes/<?= (int)$c['id'] ?>/delete" data-confirm="Delete this class?">
                     <input type="hidden" name="_csrf" value="<?= $csrf ?>">

@@ -27,9 +27,13 @@ $router->get('/bursar/logout', 'AuthController@logout');
 // Authenticated area
 $auth = fn() => Auth::require();
 $adminOnly = fn() => Auth::require(['admin']);
-$staffOrAdmin = fn() => Auth::require(['admin', 'staff']);
+/** Super admin only (global operations like school management). */
+$superAdminOnly = fn() => Auth::require(['admin']);
+/** School-level admin operations (admin or school_admin). */
+$schoolAdminOrAdmin = fn() => Auth::require(['admin', 'school_admin']);
+$staffOrAdmin = fn() => Auth::require(['admin', 'school_admin', 'staff']);
 /** HOD shared account + staff HODs + admin — for /hod, /marks, class reports. */
-$staffAdminOrHod = fn() => Auth::require(['admin', 'staff', 'hod']);
+$staffAdminOrHod = fn() => Auth::require(['admin', 'school_admin', 'staff', 'hod']);
 /** Bursar Fees Management portal — only role=bursar allowed. */
 $bursarOnly = fn() => Auth::require(['bursar']);
 
@@ -57,33 +61,33 @@ $router->post('/students/{id}/delete', 'StudentController@destroy',[$adminOnly])
 $router->post('/students/{id}/photo/delete', 'StudentController@deletePhoto', [$staffOrAdmin]);
 
 // Staff
-$router->get('/staff',              'StaffController@index',  [$adminOnly]);
-$router->get('/staff/create',       'StaffController@create', [$adminOnly]);
-$router->post('/staff',             'StaffController@store',  [$adminOnly]);
-$router->get('/staff/{id}/edit',    'StaffController@edit',   [$adminOnly]);
-$router->post('/staff/{id}',        'StaffController@update', [$adminOnly]);
-$router->post('/staff/{id}/delete', 'StaffController@destroy',[$adminOnly]);
+$router->get('/staff',              'StaffController@index',  [$schoolAdminOrAdmin]);
+$router->get('/staff/create',       'StaffController@create', [$schoolAdminOrAdmin]);
+$router->post('/staff',             'StaffController@store',  [$schoolAdminOrAdmin]);
+$router->get('/staff/{id}/edit',    'StaffController@edit',   [$schoolAdminOrAdmin]);
+$router->post('/staff/{id}',        'StaffController@update', [$schoolAdminOrAdmin]);
+$router->post('/staff/{id}/delete', 'StaffController@destroy',[$schoolAdminOrAdmin]);
 
 // HOD accounts (admin creates Heads of Department who sign in at /login)
-$router->get('/hods',              'HodAccountController@index',   [$adminOnly]);
-$router->get('/hods/create',       'HodAccountController@create',  [$adminOnly]);
-$router->post('/hods',             'HodAccountController@store',   [$adminOnly]);
-$router->get('/hods/{id}/edit',    'HodAccountController@edit',    [$adminOnly]);
-$router->post('/hods/{id}',        'HodAccountController@update',  [$adminOnly]);
-$router->post('/hods/{id}/delete', 'HodAccountController@destroy', [$adminOnly]);
+$router->get('/hods',              'HodAccountController@index',   [$schoolAdminOrAdmin]);
+$router->get('/hods/create',       'HodAccountController@create',  [$schoolAdminOrAdmin]);
+$router->post('/hods',             'HodAccountController@store',   [$schoolAdminOrAdmin]);
+$router->get('/hods/{id}/edit',    'HodAccountController@edit',    [$schoolAdminOrAdmin]);
+$router->post('/hods/{id}',        'HodAccountController@update',  [$schoolAdminOrAdmin]);
+$router->post('/hods/{id}/delete', 'HodAccountController@destroy', [$schoolAdminOrAdmin]);
 
 // Classes
 $router->get('/classes',                'ClassController@index',     [$staffOrAdmin]);
-$router->post('/classes',               'ClassController@store',     [$adminOnly]);
-$router->post('/classes/{id}/teacher',  'ClassController@setTeacher',[$adminOnly]);
-$router->post('/classes/{id}/prefix',   'ClassController@setPrefix', [$adminOnly]);
-$router->post('/classes/{id}/delete',   'ClassController@destroy',   [$adminOnly]);
+$router->post('/classes',               'ClassController@store',     [$schoolAdminOrAdmin]);
+$router->post('/classes/{id}/teacher',  'ClassController@setTeacher',[$schoolAdminOrAdmin]);
+$router->post('/classes/{id}/prefix',   'ClassController@setPrefix', [$schoolAdminOrAdmin]);
+$router->post('/classes/{id}/delete',   'ClassController@destroy',   [$schoolAdminOrAdmin]);
 
 // Subjects
 $router->get('/subjects',              'SubjectController@index',         [$staffOrAdmin]);
-$router->post('/subjects',             'SubjectController@store',         [$adminOnly]);
-$router->post('/subjects/offered',     'SubjectController@updateOffered', [$adminOnly]);
-$router->post('/subjects/{id}/delete', 'SubjectController@destroy',       [$adminOnly]);
+$router->post('/subjects',             'SubjectController@store',         [$schoolAdminOrAdmin]);
+$router->post('/subjects/offered',     'SubjectController@updateOffered', [$schoolAdminOrAdmin]);
+$router->post('/subjects/{id}/delete', 'SubjectController@destroy',       [$schoolAdminOrAdmin]);
 
 // Attendance
 $router->get('/attendance',  'AttendanceController@index', [$staffOrAdmin]);
@@ -96,11 +100,11 @@ $router->get('/grades',  'GradeController@index', [$staffAdminOrHod]);
 $router->post('/grades', 'GradeController@store', [$staffOrAdmin]);
 
 // Teaching assignments (admin: who teaches what; who heads which department)
-$router->get('/teaching',                'TeachingController@index',       [$adminOnly]);
-$router->post('/teaching',               'TeachingController@store',       [$adminOnly]);
-$router->post('/teaching/{id}/delete',   'TeachingController@destroy',     [$adminOnly]);
-$router->post('/teaching/heads',         'TeachingController@storeHead',   [$adminOnly]);
-$router->post('/teaching/heads/delete',  'TeachingController@destroyHead', [$adminOnly]);
+$router->get('/teaching',                'TeachingController@index',       [$schoolAdminOrAdmin]);
+$router->post('/teaching',               'TeachingController@store',       [$schoolAdminOrAdmin]);
+$router->post('/teaching/{id}/delete',   'TeachingController@destroy',     [$schoolAdminOrAdmin]);
+$router->post('/teaching/heads',         'TeachingController@storeHead',   [$schoolAdminOrAdmin]);
+$router->post('/teaching/heads/delete',  'TeachingController@destroyHead', [$schoolAdminOrAdmin]);
 
 // Marks
 //   Per-subject (teacher with a teaching_assignments row):
@@ -140,12 +144,12 @@ $router->get('/hod/reports/class/{id}',         'ReportController@classReport', 
 $router->get('/fees',  'FeeController@index', [$auth]);
 
 // Bursar accounts (admin creates Bursars who sign in at /login).
-$router->get('/bursars',              'BursarAccountController@index',   [$adminOnly]);
-$router->get('/bursars/create',       'BursarAccountController@create',  [$adminOnly]);
-$router->post('/bursars',             'BursarAccountController@store',   [$adminOnly]);
-$router->get('/bursars/{id}/edit',    'BursarAccountController@edit',    [$adminOnly]);
-$router->post('/bursars/{id}',        'BursarAccountController@update',  [$adminOnly]);
-$router->post('/bursars/{id}/delete', 'BursarAccountController@destroy', [$adminOnly]);
+$router->get('/bursars',              'BursarAccountController@index',   [$schoolAdminOrAdmin]);
+$router->get('/bursars/create',       'BursarAccountController@create',  [$schoolAdminOrAdmin]);
+$router->post('/bursars',             'BursarAccountController@store',   [$schoolAdminOrAdmin]);
+$router->get('/bursars/{id}/edit',    'BursarAccountController@edit',    [$schoolAdminOrAdmin]);
+$router->post('/bursars/{id}',        'BursarAccountController@update',  [$schoolAdminOrAdmin]);
+$router->post('/bursars/{id}/delete', 'BursarAccountController@destroy', [$schoolAdminOrAdmin]);
 
 // ============================================================
 // Bursar / Fees Management portal — every route is bursar-only.
@@ -181,5 +185,24 @@ $router->post('/hod/announcements', 'AnnouncementController@store', [$staffAdmin
 // Settings (school identity + theme customization)
 $router->get('/settings',  'SettingsController@index',  [$adminOnly]);
 $router->post('/settings', 'SettingsController@update', [$adminOnly]);
+
+// Schools (super-admin: multi-tenant school management)
+$router->get('/schools',                     'SchoolController@index',         [$adminOnly]);
+$router->get('/schools/create',              'SchoolController@create',        [$adminOnly]);
+$router->post('/schools',                    'SchoolController@store',         [$adminOnly]);
+$router->get('/schools/{id}',                'SchoolController@show',          [$adminOnly]);
+$router->get('/schools/{id}/edit',           'SchoolController@edit',          [$adminOnly]);
+$router->post('/schools/{id}',               'SchoolController@update',        [$adminOnly]);
+$router->post('/schools/{id}/admins',        'SchoolAdminController@store',    [$adminOnly]);
+$router->post('/school-admins/{id}/resend',  'SchoolAdminController@resend',   [$adminOnly]);
+$router->post('/school-admins/{id}/delete',  'SchoolAdminController@destroy',  [$adminOnly]);
+
+// Password management
+$router->get('/forgot-password',   'PasswordController@forgotForm',    []);
+$router->post('/forgot-password',  'PasswordController@forgotSubmit',  []);
+$router->get('/reset-password',    'PasswordController@resetForm',     []);
+$router->post('/reset-password',   'PasswordController@resetSubmit',   []);
+$router->get('/account/password',  'PasswordController@changeForm',    [$auth]);
+$router->post('/account/password', 'PasswordController@changeSubmit',  [$auth]);
 
 return $router;

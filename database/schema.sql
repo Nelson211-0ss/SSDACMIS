@@ -14,13 +14,42 @@ CREATE DATABASE IF NOT EXISTS ssdacmis
 
 USE ssdacmis;
 
+-- ---------- Schools (multi-tenant registry) ----------
+CREATE TABLE IF NOT EXISTS schools (
+    id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name       VARCHAR(150) NOT NULL,
+    code       VARCHAR(20)  NOT NULL,
+    email      VARCHAR(190) NULL,
+    phone      VARCHAR(30)  NULL,
+    address    TEXT         NULL,
+    status     ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uniq_school_code (code)
+) ENGINE=InnoDB;
+
+-- ---------- Password resets (forgot-password flow) ----------
+CREATE TABLE IF NOT EXISTS password_resets (
+    id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    email      VARCHAR(190) NOT NULL,
+    token      VARCHAR(64)  NOT NULL,
+    expires_at DATETIME     NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uniq_token (token),
+    KEY idx_pr_email (email)
+) ENGINE=InnoDB;
+
 -- ---------- Users (login accounts: admin / staff / student) ----------
+-- school_id is NULL for the global super admin (role='admin'). Every other
+-- role belongs to a specific school.
 CREATE TABLE IF NOT EXISTS users (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id   INT UNSIGNED NULL,
     name        VARCHAR(150) NOT NULL,
     email       VARCHAR(190) NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
-    role        ENUM('admin','staff','student','hod','bursar') NOT NULL DEFAULT 'staff',
+    role        ENUM('admin','staff','student','hod','bursar','school_admin') NOT NULL DEFAULT 'staff',
     -- Free-text department label shown next to HOD accounts (e.g. "Sciences",
     -- "Humanities"). Informational only — for ROLE='hod' users this is the
     -- "wing" the HOD heads, but does NOT restrict mark-entry access (any HOD
@@ -29,7 +58,9 @@ CREATE TABLE IF NOT EXISTS users (
     status      ENUM('active','disabled') NOT NULL DEFAULT 'active',
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    KEY idx_users_school (school_id),
+    CONSTRAINT fk_users_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ---------- Classes ----------
@@ -38,20 +69,24 @@ CREATE TABLE IF NOT EXISTS users (
 -- create; admin can override.
 CREATE TABLE IF NOT EXISTS classes (
     id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id        INT UNSIGNED NOT NULL DEFAULT 1,
     name             VARCHAR(100) NOT NULL,
     level            VARCHAR(50)  NULL,
     admission_prefix VARCHAR(10)  NOT NULL DEFAULT '',
     class_teacher_id INT UNSIGNED NULL,
     created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uniq_class_name (name),
-    KEY idx_class_teacher (class_teacher_id)
+    UNIQUE KEY uniq_class_school_name (school_id, name),
+    KEY idx_class_teacher (class_teacher_id),
+    KEY idx_classes_school (school_id),
+    CONSTRAINT fk_classes_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Subjects ----------
 -- category: core | science | arts | optional (used for grouped report sections)
 CREATE TABLE IF NOT EXISTS subjects (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id   INT UNSIGNED NOT NULL DEFAULT 1,
     name        VARCHAR(100) NOT NULL,
     code        VARCHAR(30)  NULL,
     category    VARCHAR(20)  NOT NULL DEFAULT 'optional',
@@ -61,7 +96,9 @@ CREATE TABLE IF NOT EXISTS subjects (
     is_offered  TINYINT(1)   NOT NULL DEFAULT 1,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uniq_subject_name (name)
+    UNIQUE KEY uniq_subject_school_name (school_id, name),
+    KEY idx_subjects_school (school_id),
+    CONSTRAINT fk_subjects_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Students ----------
@@ -69,6 +106,7 @@ CREATE TABLE IF NOT EXISTS subjects (
 -- enrolling class's admission_prefix unless the admin supplies one.
 CREATE TABLE IF NOT EXISTS students (
     id              INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id       INT UNSIGNED NOT NULL DEFAULT 1,
     user_id         INT UNSIGNED NULL,
     admission_no    VARCHAR(50)  NOT NULL,
     first_name      VARCHAR(100) NOT NULL,
@@ -88,15 +126,18 @@ CREATE TABLE IF NOT EXISTS students (
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uniq_admission_no (admission_no),
+    UNIQUE KEY uniq_admission_school (school_id, admission_no),
     KEY idx_class (class_id),
-    CONSTRAINT fk_student_user  FOREIGN KEY (user_id)  REFERENCES users(id)   ON DELETE SET NULL,
-    CONSTRAINT fk_student_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
+    KEY idx_students_school (school_id),
+    CONSTRAINT fk_student_user   FOREIGN KEY (user_id)   REFERENCES users(id)    ON DELETE SET NULL,
+    CONSTRAINT fk_student_class  FOREIGN KEY (class_id)  REFERENCES classes(id)  ON DELETE SET NULL,
+    CONSTRAINT fk_student_school FOREIGN KEY (school_id) REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Staff ----------
 CREATE TABLE IF NOT EXISTS staff (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id   INT UNSIGNED NOT NULL DEFAULT 1,
     user_id     INT UNSIGNED NULL,
     first_name  VARCHAR(100) NOT NULL,
     last_name   VARCHAR(100) NULL,
@@ -106,12 +147,15 @@ CREATE TABLE IF NOT EXISTS staff (
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_staff_user (user_id),
-    CONSTRAINT fk_staff_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    KEY idx_staff_school (school_id),
+    CONSTRAINT fk_staff_user   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE SET NULL,
+    CONSTRAINT fk_staff_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Attendance ----------
 CREATE TABLE IF NOT EXISTS attendance (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id   INT UNSIGNED NOT NULL DEFAULT 1,
     class_id    INT UNSIGNED NOT NULL,
     student_id  INT UNSIGNED NOT NULL,
     date        DATE NOT NULL,
@@ -119,8 +163,10 @@ CREATE TABLE IF NOT EXISTS attendance (
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uniq_class_student_date (class_id, student_id, date),
-    CONSTRAINT fk_att_class   FOREIGN KEY (class_id)   REFERENCES classes(id)  ON DELETE CASCADE,
-    CONSTRAINT fk_att_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    KEY idx_attendance_school (school_id),
+    CONSTRAINT fk_att_class    FOREIGN KEY (class_id)   REFERENCES classes(id)  ON DELETE CASCADE,
+    CONSTRAINT fk_att_student  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_att_school   FOREIGN KEY (school_id)  REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Grades ----------
@@ -128,6 +174,7 @@ CREATE TABLE IF NOT EXISTS attendance (
 -- a term ('Term 1' / 'Term 2' / 'Term 3') and an exam_type ('midterm' / 'endterm').
 CREATE TABLE IF NOT EXISTS grades (
     id             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id      INT UNSIGNED NOT NULL DEFAULT 1,
     student_id     INT UNSIGNED NOT NULL,
     subject_id     INT UNSIGNED NOT NULL,
     academic_year  VARCHAR(9)   NOT NULL,
@@ -140,9 +187,11 @@ CREATE TABLE IF NOT EXISTS grades (
     PRIMARY KEY (id),
     UNIQUE KEY uniq_student_subject_period (student_id, subject_id, academic_year, term, exam_type),
     KEY idx_grade_lookup (subject_id, academic_year, term, exam_type),
-    CONSTRAINT fk_grade_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-    CONSTRAINT fk_grade_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-    CONSTRAINT fk_grade_recorder FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL
+    KEY idx_grades_school (school_id),
+    CONSTRAINT fk_grade_student  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_grade_subject  FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    CONSTRAINT fk_grade_recorder FOREIGN KEY (recorded_by) REFERENCES users(id)   ON DELETE SET NULL,
+    CONSTRAINT fk_grade_school   FOREIGN KEY (school_id)  REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Teaching assignments ----------
@@ -150,6 +199,7 @@ CREATE TABLE IF NOT EXISTS grades (
 -- they are explicitly assigned. Admin manages this table from /teaching.
 CREATE TABLE IF NOT EXISTS teaching_assignments (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id   INT UNSIGNED NOT NULL DEFAULT 1,
     staff_id    INT UNSIGNED NOT NULL,
     class_id    INT UNSIGNED NOT NULL,
     subject_id  INT UNSIGNED NOT NULL,
@@ -158,9 +208,11 @@ CREATE TABLE IF NOT EXISTS teaching_assignments (
     UNIQUE KEY uniq_assignment (staff_id, class_id, subject_id),
     KEY idx_assign_staff (staff_id),
     KEY idx_assign_class (class_id),
+    KEY idx_ta_school (school_id),
     CONSTRAINT fk_assign_staff   FOREIGN KEY (staff_id)   REFERENCES staff(id)    ON DELETE CASCADE,
     CONSTRAINT fk_assign_class   FOREIGN KEY (class_id)   REFERENCES classes(id)  ON DELETE CASCADE,
-    CONSTRAINT fk_assign_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+    CONSTRAINT fk_assign_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ta_school      FOREIGN KEY (school_id)  REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Staff Subjects ----------
@@ -182,12 +234,15 @@ CREATE TABLE IF NOT EXISTS staff_subjects (
 -- HODs may grade ANY subject in their category for ANY class without an
 -- explicit teaching_assignments row.
 CREATE TABLE IF NOT EXISTS department_heads (
+    school_id   INT UNSIGNED NOT NULL DEFAULT 1,
     staff_id    INT UNSIGNED NOT NULL,
     category    VARCHAR(20)  NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (staff_id, category),
     KEY idx_dh_category (category),
-    CONSTRAINT fk_dh_staff FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE
+    KEY idx_dh_school (school_id),
+    CONSTRAINT fk_dh_staff  FOREIGN KEY (staff_id)  REFERENCES staff(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_dh_school FOREIGN KEY (school_id) REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Fees ----------
@@ -209,6 +264,7 @@ CREATE TABLE IF NOT EXISTS fees (
 -- auto-assigned the matching amount via student_fees.
 CREATE TABLE IF NOT EXISTS fees_structure (
     id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id     INT UNSIGNED NOT NULL DEFAULT 1,
     level         VARCHAR(20)  NOT NULL,
     section       ENUM('day','boarding') NOT NULL,
     academic_year VARCHAR(9)   NOT NULL,
@@ -216,13 +272,16 @@ CREATE TABLE IF NOT EXISTS fees_structure (
     created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uniq_struct (level, section, academic_year)
+    UNIQUE KEY uniq_fees_struct (school_id, level, section, academic_year),
+    KEY idx_fees_struct_school (school_id),
+    CONSTRAINT fk_fees_struct_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Per-student bill (cached total/paid/status). Created on first sync from
 -- fees_structure when the student appears in /bursar/students.
 CREATE TABLE IF NOT EXISTS student_fees (
     id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id     INT UNSIGNED NOT NULL DEFAULT 1,
     student_id    INT UNSIGNED NOT NULL,
     academic_year VARCHAR(9)   NOT NULL,
     term          ENUM('Term 1','Term 2','Term 3') NOT NULL DEFAULT 'Term 1',
@@ -235,12 +294,15 @@ CREATE TABLE IF NOT EXISTS student_fees (
     UNIQUE KEY uniq_student_year_term (student_id, academic_year, term),
     KEY idx_status (status),
     KEY idx_period (academic_year, term),
-    CONSTRAINT fk_sf_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    KEY idx_student_fees_school (school_id),
+    CONSTRAINT fk_sf_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sf_school  FOREIGN KEY (school_id)  REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Transaction history. recorded_by is the bursar who took the payment.
 CREATE TABLE IF NOT EXISTS payments (
     id              INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id       INT UNSIGNED NOT NULL DEFAULT 1,
     student_fee_id  INT UNSIGNED NOT NULL,
     student_id      INT UNSIGNED NOT NULL,
     amount          DECIMAL(12,2) NOT NULL,
@@ -253,21 +315,26 @@ CREATE TABLE IF NOT EXISTS payments (
     UNIQUE KEY uniq_receipt (receipt_no),
     KEY idx_pay_student (student_id),
     KEY idx_pay_date (payment_date),
+    KEY idx_payments_school (school_id),
     CONSTRAINT fk_pay_sf      FOREIGN KEY (student_fee_id) REFERENCES student_fees(id) ON DELETE CASCADE,
     CONSTRAINT fk_pay_student FOREIGN KEY (student_id)     REFERENCES students(id)     ON DELETE CASCADE,
-    CONSTRAINT fk_pay_user    FOREIGN KEY (recorded_by)    REFERENCES users(id)        ON DELETE SET NULL
+    CONSTRAINT fk_pay_user    FOREIGN KEY (recorded_by)    REFERENCES users(id)        ON DELETE SET NULL,
+    CONSTRAINT fk_pay_school  FOREIGN KEY (school_id)      REFERENCES schools(id)      ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Announcements ----------
 CREATE TABLE IF NOT EXISTS announcements (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id   INT UNSIGNED NOT NULL DEFAULT 1,
     user_id     INT UNSIGNED NULL,
     title       VARCHAR(200) NOT NULL,
     body        TEXT NOT NULL,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_ann_user (user_id),
-    CONSTRAINT fk_ann_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    KEY idx_ann_school (school_id),
+    CONSTRAINT fk_ann_user   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE SET NULL,
+    CONSTRAINT fk_ann_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Settings (key/value, used by admin customization page) ----------
@@ -324,32 +391,34 @@ CREATE TABLE IF NOT EXISTS term_student_results (
 -- That script hashes the password correctly using PHP's password_hash().
 -- ============================================================
 
-INSERT IGNORE INTO classes (id, name, level) VALUES
-(1, 'Form 1A', 'Form 1'),
-(2, 'Form 2A', 'Form 2'),
-(3, 'Form 3A', 'Form 3'),
-(4, 'Form 4A', 'Form 4');
+INSERT IGNORE INTO schools (id, name, code) VALUES (1, 'Default School', 'DEFAULT');
+
+INSERT IGNORE INTO classes (id, school_id, name, level) VALUES
+(1, 1, 'Form 1A', 'Form 1'),
+(2, 1, 'Form 2A', 'Form 2'),
+(3, 1, 'Form 3A', 'Form 3'),
+(4, 1, 'Form 4A', 'Form 4');
 
 -- Full curriculum (compulsory + optional). category drives report grouping.
-INSERT IGNORE INTO subjects (name, code, category) VALUES
-  ('English Language',          'ENG',   'core'),
-  ('Mathematics',                'MATH',  'core'),
-  ('Citizenship',                'CITZ',  'core'),
-  ('Religious Education',        'RE',    'core'),
-  ('Biology',                    'BIO',   'science'),
-  ('Chemistry',                  'CHEM',  'science'),
-  ('Physics',                    'PHY',   'science'),
-  ('Geography',                  'GEO',   'arts'),
-  ('History',                    'HIST',  'arts'),
-  ('Commerce',                   'COM',   'arts'),
-  ('Arabic',                     'ARAB',  'optional'),
-  ('French',                     'FREN',  'optional'),
-  ('Agriculture',                'AGRI',  'optional'),
-  ('ICT',                        'ICT',   'optional'),
-  ('Accounting',                 'ACC',   'optional'),
-  ('Additional Mathematics',     'AMATH', 'optional'),
-  ('Literature in English',      'LIT',   'optional'),
-  ('Fine Art',                   'ART',   'optional');
+INSERT IGNORE INTO subjects (school_id, name, code, category) VALUES
+  (1, 'English Language',          'ENG',   'core'),
+  (1, 'Mathematics',                'MATH',  'core'),
+  (1, 'Citizenship',                'CITZ',  'core'),
+  (1, 'Religious Education',        'RE',    'core'),
+  (1, 'Biology',                    'BIO',   'science'),
+  (1, 'Chemistry',                  'CHEM',  'science'),
+  (1, 'Physics',                    'PHY',   'science'),
+  (1, 'Geography',                  'GEO',   'arts'),
+  (1, 'History',                    'HIST',  'arts'),
+  (1, 'Commerce',                   'COM',   'arts'),
+  (1, 'Arabic',                     'ARAB',  'optional'),
+  (1, 'French',                     'FREN',  'optional'),
+  (1, 'Agriculture',                'AGRI',  'optional'),
+  (1, 'ICT',                        'ICT',   'optional'),
+  (1, 'Accounting',                 'ACC',   'optional'),
+  (1, 'Additional Mathematics',     'AMATH', 'optional'),
+  (1, 'Literature in English',      'LIT',   'optional'),
+  (1, 'Fine Art',                   'ART',   'optional');
 
 INSERT IGNORE INTO announcements (id, user_id, title, body) VALUES
 (1, 1, 'Welcome to the new term!', 'Classes resume on Monday. Please check the notice board for the updated timetable.');

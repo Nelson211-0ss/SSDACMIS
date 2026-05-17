@@ -78,12 +78,18 @@ foreach (($subjects ?? []) as $sub) { $grouped[$sub['category']][] = $sub; }
               </div>
             </div>
 
+            <?php if ($editing): ?>
             <div class="entity-form__panel mb-0">
               <label class="form-label small fw-semibold mb-1">
-                Password <?= $editing ? '<span class="text-muted fw-normal">(leave blank to keep)</span>' : '<span class="text-danger">*</span>' ?>
+                Password <span class="text-muted fw-normal">(leave blank to keep current)</span>
               </label>
-              <input type="password" name="password" class="form-control form-control-sm shadow-sm" <?= $editing ? '' : 'required' ?> autocomplete="new-password">
+              <input type="password" name="password" class="form-control form-control-sm shadow-sm" autocomplete="new-password">
             </div>
+            <?php else: ?>
+            <div class="entity-form__panel mb-0">
+              <p class="small text-muted mb-0"><i class="bi bi-shield-lock me-1"></i>A secure password will be auto-generated and emailed to the staff member.</p>
+            </div>
+            <?php endif; ?>
           </div>
 
           <div class="col-xl-6">

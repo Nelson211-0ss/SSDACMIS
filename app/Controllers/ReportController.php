@@ -30,7 +30,7 @@ class ReportController extends Controller
             : (date('Y') - 1) . '/' . date('Y');
     }
 
-    private function isAdmin(): bool   { return Auth::role() === 'admin'; }
+    private function isAdmin(): bool   { return in_array(Auth::role(), ['admin', 'school_admin'], true); }
     private function isStudent(): bool { return Auth::role() === 'student'; }
     private function isStaff(): bool   { return Auth::role() === 'staff'; }
 
@@ -59,8 +59,10 @@ class ReportController extends Controller
     private function visibleClassIds(): array
     {
         if ($this->isAdmin() || $this->isHod()) {
-            // HODs grade across the whole school; let them view every class.
-            $rows = Database::query("SELECT id FROM classes ORDER BY name")->fetchAll();
+            $schoolId = Auth::schoolId();
+            $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+            $ssp = $schoolId !== null ? [$schoolId] : [];
+            $rows = Database::query("SELECT id FROM classes{$ssf} ORDER BY name", $ssp)->fetchAll();
             return array_map(fn ($r) => (int) $r['id'], $rows);
         }
         if ($this->isStaff()) {

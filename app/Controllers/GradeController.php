@@ -13,8 +13,11 @@ class GradeController extends Controller
         $isStudent = Auth::role() === 'student';
         $studentId = (int) ($this->input('student_id') ?: 0);
 
-        $students = Database::query("SELECT id, admission_no, first_name, last_name FROM students ORDER BY first_name")->fetchAll();
-        $subjects = Database::query("SELECT id, name FROM subjects ORDER BY name")->fetchAll();
+        $schoolId = Auth::schoolId();
+        $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+        $ssp = $schoolId !== null ? [$schoolId] : [];
+        $students = Database::query("SELECT id, admission_no, first_name, last_name FROM students{$ssf} ORDER BY first_name", $ssp)->fetchAll();
+        $subjects = Database::query("SELECT id, name FROM subjects{$ssf} ORDER BY name", $ssp)->fetchAll();
         $terms    = ['Term 1', 'Term 2', 'Term 3'];
 
         if ($isStudent) {

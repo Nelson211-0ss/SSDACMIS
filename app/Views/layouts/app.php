@@ -46,23 +46,24 @@ $bursarNav = [
 ];
 
 $mainNav = [
-    ['Dashboard',     'bi-speedometer2',    '/dashboard',     ['admin','staff','student'], '/dashboard'],
-    ['Students',      'bi-people',          '/students',      ['admin','staff'],           '/students'],
-    ['Staff',         'bi-person-badge',    '/staff',         ['admin'],                   '/staff'],
-    ['HODs',          'bi-mortarboard-fill','/hods',          ['admin'],                   '/hods'],
-    ['Bursars',       'bi-cash-coin',       '/bursars',       ['admin'],                   '/bursars'],
-    ['Classes',       'bi-building',        '/classes',       ['admin','staff'],           '/classes'],
-    ['Subjects',      'bi-book',            '/subjects',      ['admin','staff'],           '/subjects'],
-    ['Teaching',      'bi-diagram-3',       '/teaching',      ['admin'],                   '/teaching'],
-    ['Marks',         'bi-pencil-square',   '/marks',         ['admin','staff'],           '/marks'],
-    ['Results',       'bi-graph-up-arrow',  '/results',       ['admin','staff'],           '/results'],
-    ['Reports',       'bi-file-earmark-text','/reports',      ['admin','staff','student'], '/reports'],
-    ['Attendance',    'bi-calendar-check',  '/attendance',    ['admin','staff'],           '/attendance'],
+    ['Dashboard',     'bi-speedometer2',      '/dashboard',     ['admin','school_admin','staff','student'], '/dashboard'],
+    ['Schools',       'bi-building-gear',     '/schools',       ['admin'],                                  '/schools'],
+    ['Students',      'bi-people',            '/students',      ['admin','school_admin','staff'],           '/students'],
+    ['Staff',         'bi-person-badge',      '/staff',         ['admin','school_admin'],                   '/staff'],
+    ['HODs',          'bi-mortarboard-fill',  '/hods',          ['admin','school_admin'],                   '/hods'],
+    ['Bursars',       'bi-cash-coin',         '/bursars',       ['admin','school_admin'],                   '/bursars'],
+    ['Classes',       'bi-grid',              '/classes',       ['admin','school_admin','staff'],           '/classes'],
+    ['Subjects',      'bi-book',              '/subjects',      ['admin','school_admin','staff'],           '/subjects'],
+    ['Teaching',      'bi-diagram-3',         '/teaching',      ['admin','school_admin'],                   '/teaching'],
+    ['Marks',         'bi-pencil-square',     '/marks',         ['admin','school_admin','staff'],           '/marks'],
+    ['Results',       'bi-graph-up-arrow',    '/results',       ['admin','school_admin','staff'],           '/results'],
+    ['Reports',       'bi-file-earmark-text', '/reports',       ['admin','school_admin','staff','student'], '/reports'],
+    ['Attendance',    'bi-calendar-check',    '/attendance',    ['admin','school_admin','staff'],           '/attendance'],
     // Fees Management Module is bursar-only and lives under /bursar/*.
     // Students still see /fees as a read-only "My fees" page.
-    ['My Fees',       'bi-cash-coin',       '/fees',          ['student'],                 '/fees'],
-    ['Announcements', 'bi-megaphone',       '/announcements', ['admin','staff','student'], '/announcements'],
-    ['Settings',      'bi-gear',            '/settings',      ['admin'],                   '/settings'],
+    ['My Fees',       'bi-cash-coin',         '/fees',          ['student'],                                '/fees'],
+    ['Announcements', 'bi-megaphone',         '/announcements', ['admin','school_admin','staff','student'], '/announcements'],
+    ['Settings',      'bi-gear',              '/settings',      ['admin'],                                  '/settings'],
 ];
 
 $initial = strtoupper(mb_substr($auth['name'] ?? '?', 0, 1));
@@ -291,6 +292,11 @@ $homeHref = $useBursarNav
                 </a>
               </li>
             <?php endif; ?>
+            <li>
+              <a class="dropdown-item" href="<?= $base ?>/account/password">
+                <i class="bi bi-key me-2"></i>Change Password
+              </a>
+            </li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <?php

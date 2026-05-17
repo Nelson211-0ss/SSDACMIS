@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -9,13 +10,24 @@ class AttendanceController extends Controller
 {
     public function index(): string
     {
-        $classes  = Database::query("SELECT id, name FROM classes ORDER BY name")->fetchAll();
+        $schoolId = Auth::schoolId();
+        $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+        $ssp = $schoolId !== null ? [$schoolId] : [];
+        $classes  = Database::query("SELECT id, name FROM classes{$ssf} ORDER BY name", $ssp)->fetchAll();
         $classId  = (int) ($this->input('class_id') ?: ($classes[0]['id'] ?? 0));
         $date     = $this->input('date') ?: date('Y-m-d');
 
-        $students = $classId
-            ? Database::query("SELECT id, admission_no, first_name, last_name FROM students WHERE class_id = ? ORDER BY first_name", [$classId])->fetchAll()
-            : [];
+        if ($classId) {
+            $stuParams = [$classId];
+            $stuFilter = '';
+            if ($schoolId !== null) { $stuFilter = ' AND school_id = ?'; $stuParams[] = $schoolId; }
+            $students = Database::query(
+                "SELECT id, admission_no, first_name, last_name FROM students WHERE class_id = ?{$stuFilter} ORDER BY first_name",
+                $stuParams
+            )->fetchAll();
+        } else {
+            $students = [];
+        }
 
         $existing = [];
         if ($classId) {

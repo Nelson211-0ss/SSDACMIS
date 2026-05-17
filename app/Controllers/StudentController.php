@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Core\App;
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -23,8 +24,9 @@ class StudentController extends Controller
     public function index(): string
     {
         $search   = trim((string) $this->input('q', ''));
-        $students = Student::all($search);
-        $totalMatching = Student::countAll($search);
+        $schoolId = Auth::schoolId();
+        $students = Student::all($search, Student::LIST_LIMIT, $schoolId);
+        $totalMatching = Student::countAll($search, $schoolId);
         $listLimit     = Student::LIST_LIMIT;
         $truncated     = $totalMatching > count($students);
         return $this->view('students/index', compact(
@@ -39,8 +41,9 @@ class StudentController extends Controller
     public function tableRows(): string
     {
         $search = trim((string) $this->input('q', ''));
-        $students = Student::all($search);
-        $totalMatching = Student::countAll($search);
+        $schoolId = Auth::schoolId();
+        $students = Student::all($search, Student::LIST_LIMIT, $schoolId);
+        $totalMatching = Student::countAll($search, $schoolId);
         $listLimit     = Student::LIST_LIMIT;
         $truncated     = $totalMatching > count($students);
         $studentsEmptyMessage = empty($students)
@@ -59,10 +62,14 @@ class StudentController extends Controller
      */
     public function printRoster(): string
     {
-        $classId = (int) $this->input('class_id', 0);
+        $classId  = (int) $this->input('class_id', 0);
+        $schoolId = Auth::schoolId();
+        $ssf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $ssp = $schoolId !== null ? [$schoolId] : [];
 
         $classes = Database::query(
-            'SELECT id, name, level FROM classes ORDER BY level, name'
+            "SELECT id, name, level FROM classes WHERE 1=1{$ssf} ORDER BY level, name",
+            $ssp
         )->fetchAll();
 
         $filterClass = null;
@@ -79,10 +86,15 @@ class StudentController extends Controller
                        s.guardian_name, s.guardian_phone, s.created_at,
                        c.name AS class_name, c.level AS class_level
                 FROM students s
-                LEFT JOIN classes c ON c.id = s.class_id';
+                LEFT JOIN classes c ON c.id = s.class_id
+                WHERE 1=1';
         $params = [];
+        if ($schoolId !== null) {
+            $sql .= ' AND s.school_id = ?';
+            $params[] = $schoolId;
+        }
         if ($classId > 0) {
-            $sql .= ' WHERE s.class_id = ?';
+            $sql .= ' AND s.class_id = ?';
             $params[] = $classId;
         }
         $sql .= ' ORDER BY c.level, c.name, s.first_name, s.last_name';
@@ -101,8 +113,12 @@ class StudentController extends Controller
 
     public function create(): string
     {
+        $schoolId = Auth::schoolId();
+        $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+        $ssp = $schoolId !== null ? [$schoolId] : [];
         $classes = Database::query(
-            "SELECT id, name, level, admission_prefix FROM classes ORDER BY name"
+            "SELECT id, name, level, admission_prefix FROM classes{$ssf} ORDER BY name",
+            $ssp
         )->fetchAll();
         return $this->view('students/form', ['student' => null, 'classes' => $classes]);
     }
@@ -142,13 +158,19 @@ class StudentController extends Controller
      */
     public function admissionLetters(): string
     {
-        $classId = (int) $this->input('class_id', 0);
+        $classId  = (int) $this->input('class_id', 0);
+        $schoolId = Auth::schoolId();
         $sql = "SELECT s.*, c.name AS class_name, c.level
                 FROM students s
-                LEFT JOIN classes c ON c.id = s.class_id";
+                LEFT JOIN classes c ON c.id = s.class_id
+                WHERE 1=1";
         $params = [];
+        if ($schoolId !== null) {
+            $sql .= ' AND s.school_id = ?';
+            $params[] = $schoolId;
+        }
         if ($classId > 0) {
-            $sql .= ' WHERE s.class_id = ?';
+            $sql .= ' AND s.class_id = ?';
             $params[] = $classId;
         }
         $sql .= ' ORDER BY c.level, c.name, s.last_name, s.first_name';
@@ -180,6 +202,7 @@ class StudentController extends Controller
             return '';
         }
         $data['admission_no'] = $generated;
+        $data['school_id']    = Auth::schoolId() ?? 1;
 
         $studentId = Student::create($data);
 
@@ -206,8 +229,12 @@ class StudentController extends Controller
     {
         $student = Student::find((int) $id);
         if (!$student) { http_response_code(404); return $this->view('errors/404'); }
+        $schoolId = Auth::schoolId();
+        $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+        $ssp = $schoolId !== null ? [$schoolId] : [];
         $classes = Database::query(
-            "SELECT id, name, level, admission_prefix FROM classes ORDER BY name"
+            "SELECT id, name, level, admission_prefix FROM classes{$ssf} ORDER BY name",
+            $ssp
         )->fetchAll();
         return $this->view('students/form', compact('student', 'classes'));
     }
@@ -357,7 +384,7 @@ class StudentController extends Controller
     /** GET /students/clear-all — confirmation page (admin only). */
     public function clearAllForm(): string
     {
-        $studentCount = Student::countAll('');
+        $studentCount = Student::countAll('', Auth::schoolId());
         return $this->view('students/clear_all', ['studentCount' => $studentCount]);
     }
 

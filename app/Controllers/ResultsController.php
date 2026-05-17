@@ -48,7 +48,7 @@ class ResultsController extends Controller
 
     private function isAdmin(): bool
     {
-        return Auth::role() === 'admin';
+        return in_array(Auth::role(), ['admin', 'school_admin'], true);
     }
 
     private function staffId(): ?int
@@ -83,7 +83,10 @@ class ResultsController extends Controller
     private function visibleClassIds(): array
     {
         if ($this->isAdmin() || $this->isHod()) {
-            $rows = Database::query('SELECT id FROM classes ORDER BY name')->fetchAll();
+            $schoolId = Auth::schoolId();
+            $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+            $ssp = $schoolId !== null ? [$schoolId] : [];
+            $rows = Database::query("SELECT id FROM classes{$ssf} ORDER BY name", $ssp)->fetchAll();
 
             return array_map(static fn ($r) => (int) $r['id'], $rows);
         }

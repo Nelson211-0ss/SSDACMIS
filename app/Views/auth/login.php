@@ -132,7 +132,7 @@ $schoolLogo  = Settings::logoUrl();
                   <input class="form-check-input" type="checkbox" name="remember" value="1" id="auth-remember" <?= !empty($old['remember'] ?? null) ? 'checked' : '' ?>>
                   <label class="form-check-label auth-check-label-plain small" for="auth-remember">Remember me</label>
                 </div>
-                <a class="auth-forgot" href="#" onclick="return false;" title="Contact your school administrator to reset your password.">Forgot your password?</a>
+                <a class="auth-forgot" href="<?= $base ?>/forgot-password">Forgot your password?</a>
               </div>
 
               <button type="submit" class="auth-btn auth-btn--wave" aria-describedby="login-title">

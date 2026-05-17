@@ -58,4 +58,13 @@ return [
         'name'     => env('SESSION_NAME', 'ssdacmis_sid'),
         'lifetime' => (int) env('SESSION_LIFETIME', 7200),
     ],
+    'mail' => [
+        'host'       => env('MAIL_HOST', ''),
+        'port'       => (int) env('MAIL_PORT', 587),
+        'username'   => env('MAIL_USERNAME', ''),
+        'password'   => env('MAIL_PASSWORD', ''),
+        'from'       => env('MAIL_FROM', ''),
+        'from_name'  => env('MAIL_FROM_NAME', 'SSD-ACMIS'),
+        'encryption' => env('MAIL_ENCRYPTION', 'tls'),
+    ],
 ];

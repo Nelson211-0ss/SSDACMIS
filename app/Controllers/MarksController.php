@@ -60,7 +60,7 @@ class MarksController extends Controller
 
     private function isAdmin(): bool
     {
-        return Auth::role() === 'admin';
+        return in_array(Auth::role(), ['admin', 'school_admin'], true);
     }
 
     /**
@@ -88,6 +88,9 @@ class MarksController extends Controller
     private function visibleAssignments(): array
     {
         if ($this->isAdmin()) {
+            $schoolId = Auth::schoolId();
+            $sf = $schoolId !== null ? ' AND ta.school_id = ?' : '';
+            $sp = $schoolId !== null ? [$schoolId] : [];
             return Database::query(
                 "SELECT ta.id, ta.class_id, ta.subject_id, ta.staff_id,
                         c.name AS class_name,
@@ -98,8 +101,9 @@ class MarksController extends Controller
                  JOIN classes  c   ON c.id   = ta.class_id
                  JOIN subjects sub ON sub.id = ta.subject_id
                  JOIN staff    s   ON s.id   = ta.staff_id
-                 WHERE sub.is_offered = 1
-                 ORDER BY c.name, sub.name"
+                 WHERE sub.is_offered = 1{$sf}
+                 ORDER BY c.name, sub.name",
+                $sp
             )->fetchAll();
         }
         $staff = $this->currentStaff();
@@ -170,6 +174,9 @@ class MarksController extends Controller
     private function visibleDepartments(): array
     {
         if ($this->isAdmin() || $this->isSharedHodAccount()) {
+            $schoolId = Auth::schoolId();
+            $sf = $schoolId !== null ? ' AND c.school_id = ?' : '';
+            $sp = $schoolId !== null ? [$schoolId] : [];
             return Database::query(
                 "SELECT c.id AS class_id, c.name AS class_name, c.level AS class_level,
                         sub.category,
@@ -177,10 +184,11 @@ class MarksController extends Controller
                         (SELECT COUNT(*) FROM students st WHERE st.class_id = c.id) AS student_count
                  FROM classes c
                  CROSS JOIN subjects sub
-                 WHERE sub.is_offered = 1
+                 WHERE sub.is_offered = 1{$sf}
                  GROUP BY c.id, c.name, c.level, sub.category
                  HAVING subject_count > 0
-                 ORDER BY c.level, c.name, sub.category"
+                 ORDER BY c.level, c.name, sub.category",
+                $sp
             )->fetchAll();
         }
         $cats = $this->headOfCategories();

@@ -217,7 +217,7 @@ class FeesService
         $structure = self::structureMap($year);
 
         $students = Database::query(
-            "SELECT s.id, s.section, c.level
+            "SELECT s.id, s.school_id, s.section, c.level
              FROM students s
              LEFT JOIN classes c ON c.id = s.class_id
              WHERE c.level IN ('Form 1','Form 2','Form 3','Form 4')"
@@ -249,8 +249,8 @@ class FeesService
         $touched = 0;
         try {
             $insert = $pdo->prepare(
-                "INSERT INTO student_fees (student_id, academic_year, term, total_amount, paid_amount, status)
-                 VALUES (?, ?, ?, ?, 0, ?)"
+                "INSERT INTO student_fees (school_id, student_id, academic_year, term, total_amount, paid_amount, status)
+                 VALUES (?, ?, ?, ?, ?, 0, ?)"
             );
             $update = $pdo->prepare(
                 "UPDATE student_fees SET total_amount = ?, status = ? WHERE id = ?"
@@ -268,7 +268,7 @@ class FeesService
                     $row = $existing[$key] ?? null;
 
                     if (!$row) {
-                        $insert->execute([$sid, $year, $term, $perTerm, self::statusFor($perTerm, 0.0)]);
+                        $insert->execute([(int) $s['school_id'], $sid, $year, $term, $perTerm, self::statusFor($perTerm, 0.0)]);
                         $touched++;
                         continue;
                     }
@@ -316,7 +316,7 @@ class FeesService
         // Look up the student's class level + section so we know which
         // structure cell applies.
         $stu = Database::query(
-            "SELECT s.section, c.level
+            "SELECT s.school_id, s.section, c.level
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
              WHERE s.id = ? LIMIT 1",
             [$studentId]
@@ -330,9 +330,9 @@ class FeesService
         $perTerm   = self::termAmount($yearly);
 
         Database::query(
-            "INSERT INTO student_fees (student_id, academic_year, term, total_amount, paid_amount, status)
-             VALUES (?, ?, ?, ?, 0, ?)",
-            [$studentId, $year, $term, $perTerm, self::statusFor($perTerm, 0.0)]
+            "INSERT INTO student_fees (school_id, student_id, academic_year, term, total_amount, paid_amount, status)
+             VALUES (?, ?, ?, ?, ?, 0, ?)",
+            [(int) $stu['school_id'], $studentId, $year, $term, $perTerm, self::statusFor($perTerm, 0.0)]
         );
         return (int) Database::connection()->lastInsertId();
     }
@@ -410,11 +410,16 @@ class FeesService
                 throw new \DomainException('That receipt number is already in use. Use a unique value.');
             }
 
+            $stuRow = $pdo->prepare("SELECT school_id FROM students WHERE id = ? LIMIT 1");
+            $stuRow->execute([$studentId]);
+            $stuSchoolId = (int) ($stuRow->fetchColumn() ?: 1);
+
             $ins = $pdo->prepare(
-                "INSERT INTO payments (student_fee_id, student_id, amount, payment_date, receipt_no, recorded_by, notes)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO payments (school_id, student_fee_id, student_id, amount, payment_date, receipt_no, recorded_by, notes)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             );
             $ins->execute([
+                $stuSchoolId,
                 $sfId,
                 $studentId,
                 $amount,

@@ -18,14 +18,19 @@ class DashboardController extends Controller
 
         $role       = Auth::role() ?? 'guest';
         $isAdmin    = $role === 'admin';
-        $isAdminish = in_array($role, ['admin', 'staff'], true);
+        $isAdminish = in_array($role, ['admin', 'school_admin', 'staff'], true);
+
+        // Scoping: school_admin and all non-admin roles see only their school.
+        $schoolId = Auth::schoolId();
+        $sf  = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp  = $schoolId !== null ? [$schoolId] : [];
 
         // ---------- Top-line counts ----------
-        $studentsTotal = (int) (Database::query("SELECT COUNT(*) c FROM students")->fetch()['c'] ?? 0);
-        $staffTotal    = (int) (Database::query("SELECT COUNT(*) c FROM staff")->fetch()['c'] ?? 0);
-        $classesTotal  = (int) (Database::query("SELECT COUNT(*) c FROM classes")->fetch()['c'] ?? 0);
-        $subjectsTotal = (int) (Database::query("SELECT COUNT(*) c FROM subjects")->fetch()['c'] ?? 0);
-        $subjectsOffered = (int) (Database::query("SELECT COUNT(*) c FROM subjects WHERE is_offered=1")->fetch()['c'] ?? 0);
+        $studentsTotal   = (int) (Database::query("SELECT COUNT(*) c FROM students  WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
+        $staffTotal      = (int) (Database::query("SELECT COUNT(*) c FROM staff     WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
+        $classesTotal    = (int) (Database::query("SELECT COUNT(*) c FROM classes   WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
+        $subjectsTotal   = (int) (Database::query("SELECT COUNT(*) c FROM subjects  WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
+        $subjectsOffered = (int) (Database::query("SELECT COUNT(*) c FROM subjects  WHERE is_offered=1{$sf}", $sp)->fetch()['c'] ?? 0);
 
         $stats = [
             'students' => $studentsTotal,
@@ -35,8 +40,6 @@ class DashboardController extends Controller
         ];
 
         // ---------- Month-over-month deltas (admin/staff only) ----------
-        // "How many students were added this month vs last month?" — simple,
-        // robust signal for the KPI card sparkline indicators.
         $deltas = [
             'students_this_month' => 0,
             'students_last_month' => 0,
@@ -47,28 +50,32 @@ class DashboardController extends Controller
         if ($isAdminish) {
             $deltas['students_this_month'] = (int) (Database::query(
                 "SELECT COUNT(*) c FROM students
-                 WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+                 WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01'){$sf}",
+                $sp
             )->fetch()['c'] ?? 0);
             $deltas['students_last_month'] = (int) (Database::query(
                 "SELECT COUNT(*) c FROM students
                  WHERE created_at >= DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01')
-                   AND created_at <  DATE_FORMAT(NOW(), '%Y-%m-01')"
+                   AND created_at <  DATE_FORMAT(NOW(), '%Y-%m-01'){$sf}",
+                $sp
             )->fetch()['c'] ?? 0);
             $deltas['staff_this_month'] = (int) (Database::query(
                 "SELECT COUNT(*) c FROM staff
-                 WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+                 WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01'){$sf}",
+                $sp
             )->fetch()['c'] ?? 0);
         }
 
-        // ---------- Class distribution (drives the enrollment chart) ----------
+        // ---------- Class distribution ----------
         $classDistribution = [];
         if ($isAdminish) {
             $classDistribution = Database::query(
                 "SELECT c.id, c.name, COALESCE(c.level, '') AS level, COUNT(s.id) AS total
                  FROM classes c
-                 LEFT JOIN students s ON s.class_id = c.id
-                 GROUP BY c.id, c.name, c.level
-                 ORDER BY c.name ASC"
+                 LEFT JOIN students s ON s.class_id = c.id" .
+                ($schoolId !== null ? " WHERE c.school_id = ?" : "") .
+                " GROUP BY c.id, c.name, c.level ORDER BY c.name ASC",
+                $sp
             )->fetchAll();
         }
 
@@ -78,13 +85,13 @@ class DashboardController extends Controller
         $streamBreakdown  = ['none' => 0, 'science' => 0, 'arts' => 0];
 
         if ($isAdminish) {
-            foreach (Database::query("SELECT gender, COUNT(*) c FROM students GROUP BY gender")->fetchAll() as $r) {
+            foreach (Database::query("SELECT gender,  COUNT(*) c FROM students WHERE 1=1{$sf} GROUP BY gender",  $sp)->fetchAll() as $r) {
                 $genderBreakdown[$r['gender']] = (int) $r['c'];
             }
-            foreach (Database::query("SELECT section, COUNT(*) c FROM students GROUP BY section")->fetchAll() as $r) {
+            foreach (Database::query("SELECT section, COUNT(*) c FROM students WHERE 1=1{$sf} GROUP BY section", $sp)->fetchAll() as $r) {
                 $sectionBreakdown[$r['section']] = (int) $r['c'];
             }
-            foreach (Database::query("SELECT stream, COUNT(*) c FROM students GROUP BY stream")->fetchAll() as $r) {
+            foreach (Database::query("SELECT stream,  COUNT(*) c FROM students WHERE 1=1{$sf} GROUP BY stream",  $sp)->fetchAll() as $r) {
                 $streamBreakdown[$r['stream']] = (int) $r['c'];
             }
         }
@@ -97,18 +104,20 @@ class DashboardController extends Controller
                         s.section, s.created_at, c.name AS class_name
                  FROM students s
                  LEFT JOIN classes c ON c.id = s.class_id
-                 ORDER BY s.id DESC
-                 LIMIT 6"
+                 WHERE 1=1" . ($schoolId !== null ? " AND s.school_id = ?" : "") . "
+                 ORDER BY s.id DESC LIMIT 6",
+                $sp
             )->fetchAll();
         }
 
-        // ---------- Latest announcements (with author) ----------
+        // ---------- Latest announcements ----------
         $announcements = Database::query(
             "SELECT a.title, a.body, a.created_at, COALESCE(u.name, 'System') AS author
              FROM announcements a
              LEFT JOIN users u ON u.id = a.user_id
-             ORDER BY a.created_at DESC
-             LIMIT 5"
+             WHERE 1=1" . ($schoolId !== null ? " AND a.school_id = ?" : "") . "
+             ORDER BY a.created_at DESC LIMIT 5",
+            $sp
         )->fetchAll();
 
         // ---------- Admin-only operational snapshot ----------
@@ -120,31 +129,40 @@ class DashboardController extends Controller
             'attendance_today'       => ['present' => 0, 'absent' => 0, 'late' => 0, 'total' => 0],
         ];
 
-        if ($isAdmin) {
+        if ($isAdmin || $role === 'school_admin') {
             $adminOps['hod_count'] = (int) (Database::query(
-                "SELECT COUNT(DISTINCT staff_id) c FROM department_heads"
+                "SELECT COUNT(DISTINCT dh.staff_id) c FROM department_heads dh
+                 JOIN staff s ON s.id = dh.staff_id WHERE 1=1" .
+                ($schoolId !== null ? " AND s.school_id = ?" : ""),
+                $sp
             )->fetch()['c'] ?? 0);
             $adminOps['bursar_count'] = (int) (Database::query(
-                "SELECT COUNT(*) c FROM users WHERE role = 'bursar' AND status = 'active'"
+                "SELECT COUNT(*) c FROM users WHERE role = 'bursar' AND status = 'active'{$sf}",
+                $sp
             )->fetch()['c'] ?? 0);
             $adminOps['teaching_assignments'] = (int) (Database::query(
-                "SELECT COUNT(*) c FROM teaching_assignments"
+                "SELECT COUNT(*) c FROM teaching_assignments ta
+                 JOIN staff s ON s.id = ta.staff_id WHERE 1=1" .
+                ($schoolId !== null ? " AND s.school_id = ?" : ""),
+                $sp
             )->fetch()['c'] ?? 0);
             $adminOps['unassigned_students'] = (int) (Database::query(
-                "SELECT COUNT(*) c FROM students WHERE class_id IS NULL"
+                "SELECT COUNT(*) c FROM students WHERE class_id IS NULL{$sf}",
+                $sp
             )->fetch()['c'] ?? 0);
 
             foreach (Database::query(
-                "SELECT status, COUNT(*) c FROM attendance WHERE date = CURDATE() GROUP BY status"
+                "SELECT status, COUNT(*) c FROM attendance
+                 WHERE date = CURDATE(){$sf} GROUP BY status",
+                $sp
             )->fetchAll() as $row) {
-                $st = (string) ($row['status'] ?? '');
+                $st  = (string) ($row['status'] ?? '');
                 $cnt = (int) ($row['c'] ?? 0);
                 if (isset($adminOps['attendance_today'][$st])) {
                     $adminOps['attendance_today'][$st] = $cnt;
                 }
                 $adminOps['attendance_today']['total'] += $cnt;
             }
-
         }
 
         return $this->view('dashboard/index', compact(

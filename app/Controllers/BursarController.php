@@ -60,6 +60,10 @@ class BursarController extends Controller
         ['year' => $year, 'term' => $term] = FeesService::activePeriod();
         FeesService::syncAllStudents($year);
 
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
+
         $totals = Database::query(
             "SELECT
                 COUNT(*)                          AS students,
@@ -69,8 +73,8 @@ class BursarController extends Controller
                 SUM(status = 'paid')              AS paid_count,
                 SUM(status = 'partial')           AS partial_count,
                 SUM(status = 'not_paid')          AS unpaid_count
-             FROM student_fees WHERE academic_year = ? AND term = ?",
-            [$year, $term]
+             FROM student_fees WHERE academic_year = ? AND term = ?{$sf}",
+            array_merge([$year, $term], $sp)
         )->fetch() ?: [];
 
         $byLevel = Database::query(
@@ -82,14 +86,13 @@ class BursarController extends Controller
              FROM student_fees sf
              JOIN students s ON s.id = sf.student_id
              LEFT JOIN classes c ON c.id = s.class_id
-             WHERE sf.academic_year = ? AND sf.term = ?
+             WHERE sf.academic_year = ? AND sf.term = ?" . ($schoolId !== null ? ' AND sf.school_id = ?' : '') . "
                AND c.level IN ('Form 1','Form 2','Form 3','Form 4')
              GROUP BY c.level
              ORDER BY c.level",
-            [$year, $term]
+            array_merge([$year, $term], $sp)
         )->fetchAll();
 
-        // Per-term spread for the active year — handy at-a-glance card.
         $byTerm = Database::query(
             "SELECT term,
                     COUNT(*) AS students,
@@ -97,10 +100,10 @@ class BursarController extends Controller
                     COALESCE(SUM(paid_amount), 0)  AS collected,
                     COALESCE(SUM(GREATEST(total_amount - paid_amount, 0)), 0) AS outstanding
              FROM student_fees
-             WHERE academic_year = ?
+             WHERE academic_year = ?{$sf}
              GROUP BY term
              ORDER BY term",
-            [$year]
+            array_merge([$year], $sp)
         )->fetchAll();
 
         $recentPayments = Database::query(
@@ -112,7 +115,9 @@ class BursarController extends Controller
              JOIN students s ON s.id = p.student_id
              LEFT JOIN student_fees sf ON sf.id = p.student_fee_id
              LEFT JOIN users u ON u.id = p.recorded_by
-             ORDER BY p.id DESC LIMIT 8"
+             WHERE 1=1" . ($schoolId !== null ? ' AND p.school_id = ?' : '') . "
+             ORDER BY p.id DESC LIMIT 8",
+            $sp
         )->fetchAll();
 
         return $this->view('bursar/dashboard', [
@@ -216,8 +221,10 @@ class BursarController extends Controller
         $level    = (string) $this->input('level', '');
         $status   = (string) $this->input('status', '');
 
+        $schoolId = Auth::schoolId();
         $where = ['sf.academic_year = ?', 'sf.term = ?'];
         $args  = [$year, $term];
+        if ($schoolId !== null) { $where[] = 'sf.school_id = ?'; $args[] = $schoolId; }
 
         if ($q !== '') {
             $where[] = "(s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ? OR CONCAT(s.first_name,' ',s.last_name) LIKE ?)";
@@ -444,12 +451,15 @@ class BursarController extends Controller
         // Default scope: just the active period. The "All periods" toggle
         // (?scope=all) lets the bursar audit every payment ever made.
         $scope = (string) $this->input('scope', 'period');
-        $where = '';
-        $args  = [];
+        $schoolId = Auth::schoolId();
+        $conditions = [];
+        $args = [];
         if ($scope !== 'all') {
-            $where = "WHERE sf.academic_year = ? AND sf.term = ?";
-            $args  = [$year, $term];
+            $conditions[] = 'sf.academic_year = ?'; $args[] = $year;
+            $conditions[] = 'sf.term = ?';           $args[] = $term;
         }
+        if ($schoolId !== null) { $conditions[] = 'p.school_id = ?'; $args[] = $schoolId; }
+        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
         $rows = Database::query(
             "SELECT p.id, p.amount, p.payment_date, p.receipt_no, p.notes, p.created_at,

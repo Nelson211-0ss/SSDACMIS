@@ -12,26 +12,33 @@ class Student
      */
     public const LIST_LIMIT = 500;
 
-    public static function all(string $search = '', int $limit = self::LIST_LIMIT): array
+    public static function all(string $search = '', int $limit = self::LIST_LIMIT, ?int $schoolId = null): array
     {
         $limit = max(1, min(2000, $limit));
+        $sf = $schoolId !== null ? ' AND s.school_id = ?' : '';
         if ($search !== '') {
             $like = '%' . $search . '%';
+            $params = [$like, $like, $like, $like];
+            if ($schoolId !== null) $params[] = $schoolId;
             return Database::query(
                 "SELECT s.*, c.name AS class_name
                  FROM students s LEFT JOIN classes c ON c.id = s.class_id
-                 WHERE s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ?
-                    OR CONCAT(s.first_name, ' ', s.last_name) LIKE ?
+                 WHERE (s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ?
+                    OR CONCAT(s.first_name, ' ', s.last_name) LIKE ?){$sf}
                  ORDER BY s.created_at DESC
                  LIMIT $limit",
-                [$like, $like, $like, $like]
+                $params
             )->fetchAll();
         }
+        $where = $schoolId !== null ? ' WHERE s.school_id = ?' : '';
+        $params = $schoolId !== null ? [$schoolId] : [];
         return Database::query(
             "SELECT s.*, c.name AS class_name
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
+             {$where}
              ORDER BY s.created_at DESC
-             LIMIT $limit"
+             LIMIT $limit",
+            $params
         )->fetchAll();
     }
 
@@ -39,18 +46,23 @@ class Student
      * Total row count matching the search — used by the list view to decide
      * whether the cap was hit and a "narrow your search" banner is needed.
      */
-    public static function countAll(string $search = ''): int
+    public static function countAll(string $search = '', ?int $schoolId = null): int
     {
+        $sf = $schoolId !== null ? ' AND s.school_id = ?' : '';
         if ($search !== '') {
             $like = '%' . $search . '%';
+            $params = [$like, $like, $like, $like];
+            if ($schoolId !== null) $params[] = $schoolId;
             $row = Database::query(
                 "SELECT COUNT(*) AS n FROM students s
-                 WHERE s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ?
-                    OR CONCAT(s.first_name, ' ', s.last_name) LIKE ?",
-                [$like, $like, $like, $like]
+                 WHERE (s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_no LIKE ?
+                    OR CONCAT(s.first_name, ' ', s.last_name) LIKE ?){$sf}",
+                $params
             )->fetch();
         } else {
-            $row = Database::query("SELECT COUNT(*) AS n FROM students")->fetch();
+            $where = $schoolId !== null ? ' WHERE school_id = ?' : '';
+            $params = $schoolId !== null ? [$schoolId] : [];
+            $row = Database::query("SELECT COUNT(*) AS n FROM students{$where}", $params)->fetch();
         }
         return (int) ($row['n'] ?? 0);
     }
@@ -64,10 +76,11 @@ class Student
     public static function create(array $d): int
     {
         Database::query(
-            "INSERT INTO students (admission_no, first_name, last_name, gender, dob, class_id, section, stream,
+            "INSERT INTO students (school_id, admission_no, first_name, last_name, gender, dob, class_id, section, stream,
                                    guardian_name, guardian_phone, address, photo_path)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
+                $d['school_id'] ?? 1,
                 $d['admission_no'], $d['first_name'], $d['last_name'], $d['gender'], $d['dob'] ?: null,
                 $d['class_id'] ?: null, $d['section'], $d['stream'] ?? 'none',
                 $d['guardian_name'], $d['guardian_phone'], $d['address'],

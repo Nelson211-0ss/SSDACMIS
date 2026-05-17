@@ -75,15 +75,19 @@ $currentDept    = trim((string) ($hod['department'] ?? ''));
               </div>
             </div>
 
+            <?php if ($editing): ?>
             <div class="entity-form__panel mb-0">
               <label class="form-label small fw-semibold mb-1">
-                Password <?= $editing ? '<span class="text-muted fw-normal">(leave blank to keep)</span>' : '<span class="text-danger">*</span>' ?>
+                Password <span class="text-muted fw-normal">(leave blank to keep current)</span>
               </label>
               <input type="password" name="password" class="form-control form-control-sm shadow-sm"
-                     minlength="6" autocomplete="new-password"
-                     <?= $editing ? '' : 'required' ?>
-                     placeholder="<?= $editing ? 'Unchanged' : 'Min. 6 characters' ?>">
+                     minlength="6" autocomplete="new-password" placeholder="Unchanged">
             </div>
+            <?php else: ?>
+            <div class="entity-form__panel mb-0">
+              <p class="small text-muted mb-0"><i class="bi bi-shield-lock me-1"></i>A secure password will be auto-generated and emailed to the HOD.</p>
+            </div>
+            <?php endif; ?>
           </div>
 
           <div class="col-xl-5">
@@ -106,7 +110,7 @@ $currentDept    = trim((string) ($hod['department'] ?? ''));
       </div>
 
       <div class="card-footer py-2 px-3 bg-body-secondary bg-opacity-25 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <span class="small text-muted mb-0"><span class="text-danger">*</span> Required · min. 6 characters for new passwords</span>
+        <span class="small text-muted mb-0"><span class="text-danger">*</span> Required<?= $editing ? ' · leave password blank to keep current' : '' ?></span>
         <div class="d-flex flex-wrap gap-2 ms-auto">
           <a href="<?= $base ?>/hods" class="btn btn-outline-secondary btn-sm px-3">Cancel</a>
           <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save changes' : 'Create HOD' ?></button>

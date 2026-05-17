@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -22,11 +23,57 @@ class SubjectController extends Controller
 {
     private const CATEGORIES = ['core', 'science', 'arts', 'optional'];
 
+    private const DEFAULTS = [
+        ['English Language',      'ENG',   'core'],
+        ['Mathematics',           'MATH',  'core'],
+        ['Citizenship',           'CITZ',  'core'],
+        ['Religious Education',   'RE',    'core'],
+        ['Biology',               'BIO',   'science'],
+        ['Chemistry',             'CHEM',  'science'],
+        ['Physics',               'PHY',   'science'],
+        ['Geography',             'GEO',   'arts'],
+        ['History',               'HIST',  'arts'],
+        ['Commerce',              'COM',   'arts'],
+        ['Arabic',                'ARAB',  'optional'],
+        ['French',                'FREN',  'optional'],
+        ['Agriculture',           'AGRI',  'optional'],
+        ['ICT',                   'ICT',   'optional'],
+        ['Accounting',            'ACC',   'optional'],
+        ['Additional Mathematics','AMATH', 'optional'],
+        ['Literature in English', 'LIT',   'optional'],
+        ['Fine Art',              'ART',   'optional'],
+    ];
+
     public function index(): string
     {
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
+
+        // Auto-seed default curriculum for new schools so school admins
+        // see the full subject list on first visit instead of a blank page.
+        if ($schoolId !== null) {
+            $count = (int) Database::query(
+                "SELECT COUNT(*) FROM subjects WHERE school_id = ?",
+                [$schoolId]
+            )->fetchColumn();
+
+            if ($count === 0) {
+                foreach (self::DEFAULTS as [$name, $code, $cat]) {
+                    Database::query(
+                        "INSERT IGNORE INTO subjects (school_id, name, code, category, is_offered)
+                         VALUES (?, ?, ?, ?, 0)",
+                        [$schoolId, $name, $code, $cat]
+                    );
+                }
+            }
+        }
+
         $subjects = Database::query(
             "SELECT id, name, code, category, is_offered FROM subjects
-             ORDER BY FIELD(category, 'core','science','arts','optional'), name"
+             WHERE 1=1{$sf}
+             ORDER BY FIELD(category, 'core','science','arts','optional'), name",
+            $sp
         )->fetchAll();
         return $this->view('subjects/index', compact('subjects'));
     }
@@ -34,9 +81,9 @@ class SubjectController extends Controller
     public function store(): string
     {
         $this->validateCsrf();
-        $name = trim((string) $this->input('name'));
-        $code = trim((string) $this->input('code'));
-        $cat  = (string) $this->input('category', 'optional');
+        $name    = trim((string) $this->input('name'));
+        $code    = trim((string) $this->input('code'));
+        $cat     = (string) $this->input('category', 'optional');
         $offered = (string) $this->input('is_offered', '1') === '1' ? 1 : 0;
 
         if (!in_array($cat, self::CATEGORIES, true)) {
@@ -47,9 +94,10 @@ class SubjectController extends Controller
             $this->redirect('/subjects');
             return '';
         }
+        $schoolId = Auth::schoolId() ?? 1;
         Database::query(
-            "INSERT INTO subjects (name, code, category, is_offered) VALUES (?, ?, ?, ?)",
-            [$name, $code, $cat, $offered]
+            "INSERT INTO subjects (school_id, name, code, category, is_offered) VALUES (?, ?, ?, ?, ?)",
+            [$schoolId, $name, $code, $cat, $offered]
         );
         Flash::set('success', 'Subject added.');
         $this->redirect('/subjects');
@@ -57,8 +105,7 @@ class SubjectController extends Controller
     }
 
     /**
-     * Bulk update of `is_offered`. The form posts an `offered[]` array of
-     * subject ids that should be ON; everything else is set to OFF.
+     * Bulk update of `is_offered`. Scoped to the current user's school.
      */
     public function updateOffered(): string
     {
@@ -66,15 +113,18 @@ class SubjectController extends Controller
         $on = array_map('intval', (array) ($_POST['offered'] ?? []));
         $on = array_values(array_unique(array_filter($on, static fn ($v) => $v > 0)));
 
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
-            // First flip everything OFF, then turn the selected ones back ON.
-            $pdo->exec("UPDATE subjects SET is_offered = 0");
+            $pdo->prepare("UPDATE subjects SET is_offered = 0 WHERE 1=1{$sf}")->execute($sp);
             if ($on) {
                 $place = implode(',', array_fill(0, count($on), '?'));
-                $stmt  = $pdo->prepare("UPDATE subjects SET is_offered = 1 WHERE id IN ($place)");
-                $stmt->execute($on);
+                $pdo->prepare("UPDATE subjects SET is_offered = 1 WHERE id IN ($place){$sf}")
+                    ->execute(array_merge($on, $sp));
             }
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -92,7 +142,12 @@ class SubjectController extends Controller
     public function destroy(string $id): string
     {
         $this->validateCsrf();
-        Database::query("DELETE FROM subjects WHERE id = ?", [(int) $id]);
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) {
+            Database::query("DELETE FROM subjects WHERE id = ? AND school_id = ?", [(int) $id, $schoolId]);
+        } else {
+            Database::query("DELETE FROM subjects WHERE id = ?", [(int) $id]);
+        }
         Flash::set('success', 'Subject removed.');
         $this->redirect('/subjects');
         return '';

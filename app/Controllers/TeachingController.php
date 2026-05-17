@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -14,6 +15,12 @@ class TeachingController extends Controller
 {
     public function index(): string
     {
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND ta.school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
+        $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
+        $ssp = $schoolId !== null ? [$schoolId] : [];
+
         $assignments = Database::query(
             "SELECT ta.id,
                     ta.staff_id, ta.class_id, ta.subject_id,
@@ -24,7 +31,9 @@ class TeachingController extends Controller
              JOIN staff    s   ON s.id   = ta.staff_id
              JOIN classes  c   ON c.id   = ta.class_id
              JOIN subjects sub ON sub.id = ta.subject_id
-             ORDER BY c.name, sub.name, s.first_name"
+             WHERE 1=1{$sf}
+             ORDER BY c.name, sub.name, s.first_name",
+            $sp
         )->fetchAll();
 
         $heads = Database::query(
@@ -32,15 +41,19 @@ class TeachingController extends Controller
                     s.first_name, s.last_name
              FROM department_heads dh
              JOIN staff s ON s.id = dh.staff_id
-             ORDER BY dh.category, s.first_name"
+             WHERE 1=1" . ($schoolId !== null ? ' AND dh.school_id = ?' : '') . "
+             ORDER BY dh.category, s.first_name",
+            $ssp
         )->fetchAll();
 
         $staff    = Database::query(
-            "SELECT id, first_name, last_name FROM staff ORDER BY first_name, last_name"
+            "SELECT id, first_name, last_name FROM staff{$ssf} ORDER BY first_name, last_name",
+            $ssp
         )->fetchAll();
-        $classes  = Database::query("SELECT id, name FROM classes ORDER BY name")->fetchAll();
+        $classes  = Database::query("SELECT id, name FROM classes{$ssf} ORDER BY name", $ssp)->fetchAll();
         $subjects = Database::query(
-            "SELECT id, name, category FROM subjects ORDER BY category, name"
+            "SELECT id, name, category FROM subjects{$ssf} ORDER BY category, name",
+            $ssp
         )->fetchAll();
 
         return $this->view('teaching/index', compact(
@@ -60,9 +73,10 @@ class TeachingController extends Controller
             Flash::set('danger', 'Please choose a teacher and a valid department.');
             $this->redirect('/teaching'); return '';
         }
+        $schoolId = Auth::schoolId() ?? 1;
         Database::query(
-            "INSERT IGNORE INTO department_heads (staff_id, category) VALUES (?, ?)",
-            [$staffId, $category]
+            "INSERT IGNORE INTO department_heads (school_id, staff_id, category) VALUES (?, ?, ?)",
+            [$schoolId, $staffId, $category]
         );
         Flash::set('success', 'Department head appointed.');
         $this->redirect('/teaching'); return '';
@@ -93,11 +107,12 @@ class TeachingController extends Controller
             $this->redirect('/teaching'); return '';
         }
 
+        $schoolId = Auth::schoolId() ?? 1;
         try {
             Database::query(
-                "INSERT IGNORE INTO teaching_assignments (staff_id, class_id, subject_id)
-                 VALUES (?, ?, ?)",
-                [$staffId, $classId, $subjectId]
+                "INSERT IGNORE INTO teaching_assignments (school_id, staff_id, class_id, subject_id)
+                 VALUES (?, ?, ?, ?)",
+                [$schoolId, $staffId, $classId, $subjectId]
             );
             Flash::set('success', 'Teaching assignment saved.');
         } catch (\Throwable $e) {

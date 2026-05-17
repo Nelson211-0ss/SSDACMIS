@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -9,16 +10,25 @@ class ClassController extends Controller
 {
     public function index(): string
     {
+        $schoolId = Auth::schoolId();
+        $sf  = $schoolId !== null ? ' AND c.school_id = ?' : '';
+        $sp  = $schoolId !== null ? [$schoolId] : [];
+
         $classes = Database::query(
             "SELECT c.*,
                     t.first_name AS teacher_first, t.last_name AS teacher_last,
                     (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) AS student_count
              FROM classes c
              LEFT JOIN staff t ON t.id = c.class_teacher_id
-             ORDER BY c.name"
+             WHERE 1=1{$sf}
+             ORDER BY c.name",
+            $sp
         )->fetchAll();
         $staff = Database::query(
-            "SELECT id, first_name, last_name FROM staff ORDER BY first_name, last_name"
+            "SELECT id, first_name, last_name FROM staff" .
+            ($schoolId !== null ? " WHERE school_id = ?" : "") .
+            " ORDER BY first_name, last_name",
+            $sp
         )->fetchAll();
         return $this->view('classes/index', compact('classes', 'staff'));
     }
@@ -27,7 +37,9 @@ class ClassController extends Controller
     {
         $this->validateCsrf();
         $name   = trim((string) $this->input('name'));
+        $allowed = ['Form 1', 'Form 2', 'Form 3', 'Form 4'];
         $level  = trim((string) $this->input('level'));
+        if (!in_array($level, $allowed, true)) $level = '';
         $prefix = strtoupper(trim((string) $this->input('admission_prefix')));
         if ($name === '') { Flash::set('danger', 'Class name is required.'); $this->redirect('/classes'); return ''; }
         if ($prefix === '') $prefix = $this->derivePrefix($name);
@@ -35,9 +47,10 @@ class ClassController extends Controller
             Flash::set('danger', 'Admission prefix must be 1–10 letters/digits (uppercase).');
             $this->redirect('/classes'); return '';
         }
+        $schoolId = Auth::schoolId() ?? 1;
         Database::query(
-            "INSERT INTO classes (name, level, admission_prefix) VALUES (?, ?, ?)",
-            [$name, $level, $prefix]
+            "INSERT INTO classes (school_id, name, level, admission_prefix) VALUES (?, ?, ?, ?)",
+            [$schoolId, $name, $level, $prefix]
         );
         Flash::set('success', "Class added (admission prefix: {$prefix}).");
         $this->redirect('/classes'); return '';

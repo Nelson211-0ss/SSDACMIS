@@ -1,9 +1,11 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Services\MailService;
 
 /**
  * Admin-only management of Head-of-Department login accounts.
@@ -27,15 +29,18 @@ class HodAccountController extends Controller
 {
     public function index(): string
     {
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
+
         $hods = Database::query(
             "SELECT id, name, email, department, status, created_at
-             FROM users WHERE role = 'hod'
-             ORDER BY status DESC, name"
+             FROM users WHERE role = 'hod'{$sf}
+             ORDER BY status DESC, name",
+            $sp
         )->fetchAll();
 
-        return $this->view('hods/index', [
-            'hods' => $hods,
-        ]);
+        return $this->view('hods/index', ['hods' => $hods]);
     }
 
     public function create(): string
@@ -50,18 +55,13 @@ class HodAccountController extends Controller
         $this->validateCsrf();
         $d = $this->payload();
 
-        if ($d['name'] === '' || $d['email'] === '' || $d['password'] === '') {
-            Flash::set('danger', 'Name, email and password are required.');
+        if ($d['name'] === '' || $d['email'] === '') {
+            Flash::set('danger', 'Name and email are required.');
             $this->redirect('/hods/create');
             return '';
         }
         if (!filter_var($d['email'], FILTER_VALIDATE_EMAIL)) {
             Flash::set('danger', 'That email address looks invalid.');
-            $this->redirect('/hods/create');
-            return '';
-        }
-        if (strlen($d['password']) < 6) {
-            Flash::set('danger', 'Password must be at least 6 characters.');
             $this->redirect('/hods/create');
             return '';
         }
@@ -73,19 +73,30 @@ class HodAccountController extends Controller
             return '';
         }
 
+        $plain    = bin2hex(random_bytes(8));
+        $schoolId = Auth::schoolId() ?? 1;
+
         Database::query(
-            "INSERT INTO users (name, email, password, role, department, status)
-             VALUES (?, ?, ?, 'hod', ?, ?)",
+            "INSERT INTO users (school_id, name, email, password, role, department, status)
+             VALUES (?, ?, ?, ?, 'hod', ?, ?)",
             [
+                $schoolId,
                 $d['name'],
                 $d['email'],
-                password_hash($d['password'], PASSWORD_DEFAULT),
+                password_hash($plain, PASSWORD_DEFAULT),
                 $d['department'] ?: null,
                 $d['status'],
             ]
         );
 
-        Flash::set('success', 'HOD account created. They can sign in at /login.');
+        $appUrl  = rtrim($_ENV['APP_URL'] ?? '', '/');
+        $appName = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
+        $html    = self::welcomeEmail($d['name'], $appName, $d['email'], $plain, $appUrl, 'Head of Department');
+        $sent    = MailService::send($d['email'], $d['name'], "Your HOD Account — {$appName}", $html);
+
+        $msg = 'HOD account created.';
+        if (!$sent) $msg .= " (Email failed — temporary password: {$plain})";
+        Flash::set($sent ? 'success' : 'warning', $msg);
         $this->redirect('/hods');
         return '';
     }
@@ -208,5 +219,32 @@ class HodAccountController extends Controller
                                 ? (string) $this->input('status')
                                 : 'active',
         ];
+    }
+
+    private static function welcomeEmail(
+        string $name, string $appName, string $email,
+        string $password, string $appUrl, string $roleLabel
+    ): string {
+        return <<<HTML
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="font-family:Inter,Arial,sans-serif;color:#212529;max-width:600px;margin:auto;padding:32px 24px;">
+  <h2 style="margin-bottom:4px;">{$appName}</h2>
+  <p style="color:#6c757d;margin-top:0;">School Management System</p>
+  <hr style="border:none;border-top:1px solid #dee2e6;margin:20px 0;">
+  <p>Hello <strong>{$name}</strong>,</p>
+  <p>A <strong>{$roleLabel}</strong> account has been created for you.</p>
+  <table style="background:#f8f9fa;border-radius:8px;padding:20px 24px;width:100%;margin:20px 0;border-collapse:collapse;">
+    <tr><td style="padding:6px 0;color:#6c757d;font-size:14px;">Login URL</td>
+        <td style="padding:6px 0;"><a href="{$appUrl}/login">{$appUrl}/login</a></td></tr>
+    <tr><td style="padding:6px 0;color:#6c757d;font-size:14px;">Email</td>
+        <td style="padding:6px 0;font-family:monospace;">{$email}</td></tr>
+    <tr><td style="padding:6px 0;color:#6c757d;font-size:14px;">Temporary Password</td>
+        <td style="padding:6px 0;font-family:monospace;font-size:18px;letter-spacing:2px;color:#dc3545;"><strong>{$password}</strong></td></tr>
+  </table>
+  <p style="color:#dc3545;font-size:14px;">⚠ Change your password after first login via <em>Account → Change Password</em>.</p>
+  <hr style="border:none;border-top:1px solid #dee2e6;margin:20px 0;">
+  <p style="font-size:12px;color:#adb5bd;">Sent by {$appName}.</p>
+</body></html>
+HTML;
     }
 }

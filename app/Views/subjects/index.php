@@ -50,7 +50,7 @@ $totalAll = count($subjects);
   </span>
 </div>
 
-<?php if ($auth['role'] === 'admin'): ?>
+<?php if (in_array($auth['role'], ['admin', 'school_admin'], true)): ?>
   <div class="row g-3">
 
     <!-- Curation panel -->

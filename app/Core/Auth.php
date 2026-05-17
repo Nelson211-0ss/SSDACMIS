@@ -68,7 +68,7 @@ class Auth
     public static function attempt(string $email, string $password): bool
     {
         $stmt = Database::query(
-            'SELECT id, name, email, password, role, status FROM users WHERE email = ? LIMIT 1',
+            'SELECT id, school_id, name, email, password, role, status FROM users WHERE email = ? LIMIT 1',
             [$email]
         );
         $user = $stmt->fetch();
@@ -105,7 +105,7 @@ class Auth
     public static function attemptUnified(string $email, string $password): ?string
     {
         $stmt = Database::query(
-            'SELECT id, name, email, password, role, status FROM users WHERE email = ? LIMIT 1',
+            'SELECT id, school_id, name, email, password, role, status FROM users WHERE email = ? LIMIT 1',
             [$email]
         );
         $user = $stmt->fetch();
@@ -142,6 +142,10 @@ class Auth
         }
         if ($role === 'bursar') {
             return 'bursar';
+        }
+        // admin, school_admin, student all go to 'main'
+        if (in_array($role, ['admin', 'school_admin', 'student'], true)) {
+            return 'main';
         }
         if ($role === 'staff') {
             $row = Database::query(
@@ -186,6 +190,21 @@ class Auth
     {
         $u = self::user();
         return $u['role'] ?? null;
+    }
+
+    /**
+     * Returns the school_id for the currently signed-in user.
+     * Returns null for the global super admin (role='admin') — no school filter.
+     * Returns the integer school_id for all other roles.
+     */
+    public static function schoolId(): ?int
+    {
+        $u = self::user();
+        if (!$u) return null;
+        if ($u['role'] === 'admin') return null;
+        return isset($u['school_id']) && $u['school_id'] !== null
+            ? (int) $u['school_id']
+            : null;
     }
 
     public static function logout(): void

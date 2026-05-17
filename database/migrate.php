@@ -577,6 +577,19 @@ if ($tableExists('student_fees')) {
     }
 }
 
+/* -- Default admin account (change password in production!) ----------- */
+$adminEmail = 'admin@school.local';
+$chkAdmin = $pdo->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+$chkAdmin->execute([$adminEmail]);
+if (!$chkAdmin->fetch()) {
+    $hash = password_hash('admin123', PASSWORD_DEFAULT);
+    $ins = $pdo->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'admin', 'active')");
+    $ins->execute(['System Admin', $adminEmail, $hash]);
+    $out[] = "  ok  created default admin: $adminEmail / admin123 (change password in production)";
+} else {
+    $out[] = "  --  admin user $adminEmail already exists";
+}
+
 /* -- Default bursar account (change password in production!) ---------- */
 $bursarEmail = 'bursar@school.local';
 $chkBur = $pdo->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
