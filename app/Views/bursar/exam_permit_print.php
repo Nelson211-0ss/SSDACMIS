@@ -1,7 +1,6 @@
 <?php
 use App\Core\View;
-use App\Core\App;
-use App\Core\Settings;
+use App\Core\SchoolIdentity;
 
 /**
  * Examination permit — modern, restrained design. One permit per A4 page.
@@ -20,17 +19,16 @@ use App\Core\Settings;
  */
 $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
 
-$schoolName    = Settings::get('school_name')  ?: (string) App::config('app.name');
-$schoolMotto   = (string) (Settings::get('school_motto')   ?? '');
-$schoolPhone   = (string) (Settings::get('school_phone')   ?? '');
-$schoolEmail   = (string) (Settings::get('school_email')   ?? '');
-$schoolAddress = (string) (Settings::get('school_address') ?? '');
-$schoolLogo    = Settings::logoUrl();
+$schoolName    = SchoolIdentity::name();
+$schoolMotto   = SchoolIdentity::motto();
+$schoolPhone   = SchoolIdentity::phone();
+$schoolEmail   = SchoolIdentity::email();
+$schoolAddress = SchoolIdentity::address();
+$schoolLogo    = SchoolIdentity::logoUrl();
 
-$htName     = trim((string) (Settings::get('school_headteacher_name')  ?? ''));
-$htTitle    = trim((string) (Settings::get('school_headteacher_title') ?? 'Head Teacher'));
-if ($htTitle === '') $htTitle = 'Head Teacher';
-$htSignature = Settings::headteacherSignatureUrl();
+$htName      = SchoolIdentity::headteacherName();
+$htTitle     = SchoolIdentity::headteacherTitle();
+$htSignature = SchoolIdentity::headteacherSignatureUrl();
 
 $today    = date('F j, Y');
 $validFor = trim($term . ' · ' . $year);

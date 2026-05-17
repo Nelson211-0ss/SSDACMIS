@@ -1,12 +1,11 @@
 <?php
 use App\Core\View;
-use App\Core\Settings;
-use App\Core\App;
+use App\Core\SchoolIdentity;
 $layout = 'app';
 $title  = (string) ($class['name'] ?? 'Report Cards');
-$schoolName  = Settings::get('school_name') ?: App::config('app.name');
-$schoolMotto = Settings::get('school_motto') ?? '';
-$schoolLogo  = Settings::logoUrl();
+$schoolName  = SchoolIdentity::name();
+$schoolMotto = SchoolIdentity::motto();
+$schoolLogo  = SchoolIdentity::logoUrl();
 $n = count($booklet);
 $qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term);
 

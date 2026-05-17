@@ -101,9 +101,11 @@ class DashboardController extends Controller
         if ($isAdminish) {
             $recentStudents = Database::query(
                 "SELECT s.id, s.first_name, s.last_name, s.admission_no, s.gender,
-                        s.section, s.created_at, c.name AS class_name
+                        s.section, s.created_at, c.name AS class_name,
+                        sc.name AS school_name
                  FROM students s
-                 LEFT JOIN classes c ON c.id = s.class_id
+                 LEFT JOIN classes c  ON c.id  = s.class_id
+                 LEFT JOIN schools sc ON sc.id = s.school_id
                  WHERE 1=1" . ($schoolId !== null ? " AND s.school_id = ?" : "") . "
                  ORDER BY s.id DESC LIMIT 6",
                 $sp
@@ -168,10 +170,66 @@ class DashboardController extends Controller
         $schoolProfile = null;
         if ($schoolId !== null) {
             $schoolProfile = Database::query(
-                'SELECT id, name, code, email, phone, address, status
+                'SELECT id, name, code, email, phone, address, status,
+                        motto, logo, headteacher_name, headteacher_title
                  FROM schools WHERE id = ? LIMIT 1',
                 [$schoolId]
             )->fetch();
+        }
+
+        // ---- Super-admin platform overview (per-school breakdown) ----
+        $schoolsOverview   = [];
+        $platformTotals    = [];
+        if ($isAdmin) {
+            $schoolsOverview = Database::query(
+                "SELECT
+                    s.id, s.name, s.code, s.status, s.logo,
+                    COUNT(DISTINCT st.id)  AS student_count,
+                    COUNT(DISTINCT sf.id)  AS staff_count,
+                    COUNT(DISTINCT dh.staff_id) AS hod_count,
+                    COUNT(DISTINCT u_b.id) AS bursar_count,
+                    COUNT(DISTINCT cl.id)  AS class_count,
+                    SUM(CASE WHEN st.gender = 'male'   THEN 1 ELSE 0 END) AS male_count,
+                    SUM(CASE WHEN st.gender = 'female' THEN 1 ELSE 0 END) AS female_count
+                 FROM schools s
+                 LEFT JOIN students           st  ON st.school_id  = s.id
+                 LEFT JOIN staff              sf  ON sf.school_id  = s.id
+                 LEFT JOIN classes            cl  ON cl.school_id  = s.id
+                 LEFT JOIN staff              sf2 ON sf2.school_id = s.id
+                 LEFT JOIN department_heads   dh  ON dh.staff_id   = sf2.id
+                 LEFT JOIN users              u_b ON u_b.school_id = s.id
+                                                 AND u_b.role = 'bursar'
+                                                 AND u_b.status = 'active'
+                 GROUP BY s.id
+                 ORDER BY s.name ASC"
+            )->fetchAll();
+
+            // Build clean per-school aggregate (fix duplicate-join inflation).
+            // The query above joins staff twice (sf + sf2) so school-count is doubled
+            // for HODs. Re-fetch HODs separately to be safe.
+            $hodBySchool = [];
+            foreach (Database::query(
+                "SELECT s.school_id, COUNT(DISTINCT dh.staff_id) c
+                 FROM department_heads dh
+                 JOIN staff s ON s.id = dh.staff_id
+                 GROUP BY s.school_id"
+            )->fetchAll() as $r) {
+                $hodBySchool[(int) $r['school_id']] = (int) $r['c'];
+            }
+
+            foreach ($schoolsOverview as &$row) {
+                $row['hod_count'] = $hodBySchool[(int) $row['id']] ?? 0;
+            }
+            unset($row);
+
+            $platformTotals = [
+                'schools'  => count($schoolsOverview),
+                'active'   => count(array_filter($schoolsOverview, fn($r) => $r['status'] === 'active')),
+                'students' => array_sum(array_column($schoolsOverview, 'student_count')),
+                'staff'    => array_sum(array_column($schoolsOverview, 'staff_count')),
+                'bursars'  => array_sum(array_column($schoolsOverview, 'bursar_count')),
+                'hods'     => array_sum(array_column($schoolsOverview, 'hod_count')),
+            ];
         }
 
         return $this->view('dashboard/index', compact(
@@ -185,7 +243,9 @@ class DashboardController extends Controller
             'recentStudents',
             'announcements',
             'adminOps',
-            'schoolProfile'
+            'schoolProfile',
+            'schoolsOverview',
+            'platformTotals'
         ));
     }
 }

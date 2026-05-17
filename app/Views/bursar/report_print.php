@@ -1,12 +1,11 @@
 <?php
 use App\Core\View;
-use App\Core\App;
-use App\Core\Settings;
+use App\Core\SchoolIdentity;
 use App\Services\FeesService;
 
 // Standalone printable view — no admin sidebar/topbar.
-$schoolName = Settings::get('school_name') ?: App::config('app.name');
-$schoolLogo = Settings::logoUrl();
+$schoolName = SchoolIdentity::name();
+$schoolLogo = SchoolIdentity::logoUrl();
 $base       = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
 
 $isPaid = $type === 'paid';

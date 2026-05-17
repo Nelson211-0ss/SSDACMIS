@@ -113,14 +113,33 @@ class StudentController extends Controller
 
     public function create(): string
     {
+        $isAdmin  = Auth::role() === 'admin';
         $schoolId = Auth::schoolId();
-        $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
-        $ssp = $schoolId !== null ? [$schoolId] : [];
-        $classes = Database::query(
-            "SELECT id, name, level, admission_prefix FROM classes{$ssf} ORDER BY name",
-            $ssp
-        )->fetchAll();
-        return $this->view('students/form', ['student' => null, 'classes' => $classes]);
+
+        if ($isAdmin) {
+            // Super admin: load every class across all schools for JS filtering.
+            $classes = Database::query(
+                "SELECT id, name, level, admission_prefix, school_id FROM classes ORDER BY name"
+            )->fetchAll();
+            $schools = Database::query(
+                "SELECT id, name FROM schools WHERE status='active' ORDER BY name"
+            )->fetchAll();
+        } else {
+            $ssf     = $schoolId !== null ? ' WHERE school_id = ?' : '';
+            $ssp     = $schoolId !== null ? [$schoolId] : [];
+            $classes = Database::query(
+                "SELECT id, name, level, admission_prefix, school_id FROM classes{$ssf} ORDER BY name",
+                $ssp
+            )->fetchAll();
+            $schools = [];
+        }
+
+        return $this->view('students/form', [
+            'student'  => null,
+            'classes'  => $classes,
+            'schools'  => $schools,
+            'isAdmin'  => $isAdmin,
+        ]);
     }
 
     /**
@@ -202,7 +221,12 @@ class StudentController extends Controller
             return '';
         }
         $data['admission_no'] = $generated;
-        $data['school_id']    = Auth::schoolId() ?? 1;
+        // Super admin picks the school via the form; all others are scoped to their own school.
+        if (Auth::role() === 'admin') {
+            $data['school_id'] = (int) $this->input('school_id', 1) ?: 1;
+        } else {
+            $data['school_id'] = Auth::schoolId() ?? 1;
+        }
 
         $studentId = Student::create($data);
 
@@ -229,14 +253,31 @@ class StudentController extends Controller
     {
         $student = Student::find((int) $id);
         if (!$student) { http_response_code(404); return $this->view('errors/404'); }
-        $schoolId = Auth::schoolId();
+
+        $isAdmin  = Auth::role() === 'admin';
+        $schoolId = Auth::schoolId() ?? ($isAdmin ? (int)($student['school_id'] ?? 0) ?: null : null);
         $ssf = $schoolId !== null ? ' WHERE school_id = ?' : '';
         $ssp = $schoolId !== null ? [$schoolId] : [];
-        $classes = Database::query(
-            "SELECT id, name, level, admission_prefix FROM classes{$ssf} ORDER BY name",
-            $ssp
-        )->fetchAll();
-        return $this->view('students/form', compact('student', 'classes'));
+
+        // Super admin edits: load classes for the student's school.
+        if ($isAdmin) {
+            $sStudentSchool = (int)($student['school_id'] ?? 0);
+            $classes = Database::query(
+                "SELECT id, name, level, admission_prefix, school_id FROM classes WHERE school_id = ? ORDER BY name",
+                [$sStudentSchool ?: 0]
+            )->fetchAll();
+        } else {
+            $classes = Database::query(
+                "SELECT id, name, level, admission_prefix, school_id FROM classes{$ssf} ORDER BY name",
+                $ssp
+            )->fetchAll();
+        }
+
+        $schools = $isAdmin
+            ? Database::query("SELECT id, name FROM schools WHERE status='active' ORDER BY name")->fetchAll()
+            : [];
+
+        return $this->view('students/form', compact('student', 'classes', 'schools', 'isAdmin'));
     }
 
     public function update(string $id): string

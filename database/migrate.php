@@ -603,6 +603,22 @@ if (!$chkBur->fetch()) {
     $out[] = "  --  bursar user $bursarEmail already exists";
 }
 
+/* -- Per-school branding columns (logo, motto, headteacher) ----------- */
+$schoolBrandingCols = [
+    'motto'                 => "ALTER TABLE schools ADD COLUMN motto VARCHAR(200) NULL AFTER address",
+    'logo'                  => "ALTER TABLE schools ADD COLUMN logo VARCHAR(255) NULL AFTER motto",
+    'headteacher_name'      => "ALTER TABLE schools ADD COLUMN headteacher_name VARCHAR(150) NULL AFTER logo",
+    'headteacher_title'     => "ALTER TABLE schools ADD COLUMN headteacher_title VARCHAR(80) NULL DEFAULT 'Head Teacher' AFTER headteacher_name",
+    'headteacher_signature' => "ALTER TABLE schools ADD COLUMN headteacher_signature VARCHAR(255) NULL AFTER headteacher_title",
+];
+foreach ($schoolBrandingCols as $col => $sql) {
+    if (!$columnExists('schools', $col)) {
+        $run($sql, "schools.$col column added");
+    } else {
+        $out[] = "  --  schools.$col already present";
+    }
+}
+
 $out[] = "Done.";
 
 /* Output -------------------------------------------------------------- */

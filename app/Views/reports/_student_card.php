@@ -7,13 +7,11 @@
  *          $schoolName, $schoolMotto, $schoolLogo
  */
 use App\Core\View;
-use App\Core\Settings;
+use App\Core\SchoolIdentity;
 
-// Optional scanned head-teacher signature — printed on the "Head teacher"
-// signature slot when uploaded in admin Settings. Falls back to a blank
-// line when none on file.
-$htSignature = Settings::headteacherSignatureUrl();
-$htName      = trim((string) (Settings::get('school_headteacher_name') ?? ''));
+// Head-teacher details for the signature slot on each report card.
+$htSignature = SchoolIdentity::headteacherSignatureUrl();
+$htName      = SchoolIdentity::headteacherName();
 
 $rows = [];
 foreach (($sheet['groups'] ?? []) as $grp) {

@@ -18,15 +18,14 @@
  * standalone CSS.
  */
 use App\Core\View;
-use App\Core\App;
-use App\Core\Settings;
+use App\Core\SchoolIdentity;
 
-$lh_school   = Settings::get('school_name')  ?: (string) App::config('app.name');
-$lh_motto    = (string) (Settings::get('school_motto') ?? '');
-$lh_logo     = Settings::logoUrl();
-$lh_phone    = (string) (Settings::get('school_phone')   ?? '');
-$lh_email    = (string) (Settings::get('school_email')   ?? '');
-$lh_address  = (string) (Settings::get('school_address') ?? '');
+$lh_school   = SchoolIdentity::name();
+$lh_motto    = SchoolIdentity::motto();
+$lh_logo     = SchoolIdentity::logoUrl();
+$lh_phone    = SchoolIdentity::phone();
+$lh_email    = SchoolIdentity::email();
+$lh_address  = SchoolIdentity::address();
 $lh_subtitle = isset($lh_subtitle) ? (string) $lh_subtitle : '';
 
 // Compose a single-line meta strip with whichever contact pieces were

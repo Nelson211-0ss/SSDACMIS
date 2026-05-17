@@ -2,6 +2,21 @@
 use App\Core\View;
 $layout = 'app';
 $title  = $school['name'];
+
+// Resolve logo / signature paths for display.
+$base64   = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
+$logoUrl  = '';
+$sigUrl   = '';
+$logoRel  = trim((string) ($school['logo'] ?? ''));
+if ($logoRel !== '' && str_starts_with(ltrim($logoRel,'/'), 'uploads/')) {
+    $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
+    if (is_file($abs)) $logoUrl = $base64 . '/' . ltrim($logoRel, '/');
+}
+$sigRel = trim((string) ($school['headteacher_signature'] ?? ''));
+if ($sigRel !== '' && str_starts_with(ltrim($sigRel,'/'), 'uploads/')) {
+    $abs = dirname(__DIR__, 3) . '/public/' . ltrim($sigRel, '/');
+    if (is_file($abs)) $sigUrl = $base64 . '/' . ltrim($sigRel, '/');
+}
 ?>
 <div class="mb-3 d-flex align-items-center gap-2">
   <a href="<?= $base ?>/schools" class="btn btn-sm btn-outline-secondary">
@@ -16,9 +31,17 @@ $title  = $school['name'];
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body px-4 py-3">
     <div class="d-flex align-items-start gap-3 flex-wrap">
-      <div class="fs-1 text-primary"><i class="bi bi-building"></i></div>
+      <?php if ($logoUrl !== ''): ?>
+        <img src="<?= View::e($logoUrl) ?>" alt="School logo"
+             style="width:72px;height:72px;object-fit:contain;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;flex-shrink:0;">
+      <?php else: ?>
+        <div class="fs-1 text-primary"><i class="bi bi-building"></i></div>
+      <?php endif; ?>
       <div class="flex-grow-1">
-        <h4 class="mb-1"><?= View::e($school['name']) ?></h4>
+        <h4 class="mb-0"><?= View::e($school['name']) ?></h4>
+        <?php $motto = trim((string)($school['motto'] ?? '')); if ($motto !== ''): ?>
+          <p class="text-muted fst-italic small mb-1"><?= View::e($motto) ?></p>
+        <?php endif; ?>
         <div class="d-flex flex-wrap gap-3 text-muted small mt-1">
           <span><i class="bi bi-code-square me-1"></i><?= View::e($school['code']) ?></span>
           <?php if ($school['email']): ?>
@@ -40,6 +63,26 @@ $title  = $school['name'];
         </div>
       </div>
     </div>
+
+    <?php $htName = trim((string)($school['headteacher_name'] ?? '')); if ($htName !== '' || $sigUrl !== ''): ?>
+      <hr class="my-3">
+      <div class="d-flex align-items-center gap-4 flex-wrap">
+        <div>
+          <div class="small text-muted text-uppercase fw-semibold mb-1" style="letter-spacing:.05em;">Head Teacher</div>
+          <?php if ($htName !== ''): ?>
+            <div class="fw-semibold"><?= View::e($htName) ?></div>
+            <div class="small text-muted"><?= View::e(trim((string)($school['headteacher_title'] ?? 'Head Teacher'))) ?></div>
+          <?php endif; ?>
+        </div>
+        <?php if ($sigUrl !== ''): ?>
+          <div>
+            <div class="small text-muted text-uppercase fw-semibold mb-1" style="letter-spacing:.05em;">Signature</div>
+            <img src="<?= View::e($sigUrl) ?>" alt="Headteacher signature"
+                 style="height:48px;max-width:180px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;">
+          </div>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
   </div>
 </div>
 

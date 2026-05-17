@@ -11,7 +11,9 @@ $isSchoolAdmin = ($role === 'school_admin');
 $isAdminish  = in_array($role, ['admin', 'school_admin', 'staff'], true);
 $showOpsKpis = ($isAdmin || $isSchoolAdmin);
 $adminOps    = $adminOps ?? [];
-$schoolProfile = $schoolProfile ?? null;
+$schoolProfile   = $schoolProfile   ?? null;
+$schoolsOverview = $schoolsOverview ?? [];
+$platformTotals  = $platformTotals  ?? [];
 
 $hodCount            = (int) ($adminOps['hod_count'] ?? 0);
 $bursarCount         = (int) ($adminOps['bursar_count'] ?? 0);
@@ -90,7 +92,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         <?php if ($isAdmin): ?>
           <span class="dash-hero__inline">
             <i class="bi bi-shield-check"></i>
-            School-wide control centre
+            <?= !empty($platformTotals) ? number_format((int)$platformTotals['schools']) . ' school' . ((int)$platformTotals['schools'] !== 1 ? 's' : '') . ' · ' . number_format((int)$platformTotals['students']) . ' students' : 'Platform overview' ?>
           </span>
         <?php elseif ($isSchoolAdmin): ?>
           <span class="dash-hero__inline">
@@ -159,26 +161,200 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
 </section>
 
 
-<?php if ($isAdminish): ?>
-  <!-- ============================================================
-       KPI cards (compact)
-       ============================================================ -->
-  <div class="section-block mb-2">
-    <div class="section-block__head">
-      <div>
-        <h3 class="section-block__title"><i class="bi bi-bar-chart-line"></i> At a glance</h3>
-        <p class="section-block__sub">
-          <?php if ($isAdmin): ?>
-            Key counts and operations across the school today.
-          <?php elseif ($isSchoolAdmin): ?>
-            Key counts and daily operations for your school.
-          <?php else: ?>
-            Key counts across the school today.
-          <?php endif; ?>
-        </p>
+<?php if ($isAdmin && !empty($schoolsOverview)): ?>
+<!-- ============================================================
+     Super-Admin Platform Overview
+     ============================================================ -->
+<style>
+  /* Platform KPI pills */
+  .platform-kpi-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:1.25rem; }
+  .platform-kpi {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 18px; border-radius:999px; font-size:.85rem; font-weight:600;
+    background:var(--surface,#fff); border:1.5px solid transparent;
+    box-shadow:0 1px 4px rgba(0,0,0,.07); text-decoration:none; color:inherit;
+    transition:box-shadow .15s, transform .1s;
+  }
+  .platform-kpi:hover { box-shadow:0 3px 10px rgba(0,0,0,.12); transform:translateY(-1px); }
+  .platform-kpi > i { font-size:1rem; opacity:.85; }
+  .platform-kpi__val { font-size:1.05rem; font-weight:700; }
+  .platform-kpi__lbl { color:var(--text-muted,#6b7280); font-weight:400; font-size:.8rem; }
+  .platform-kpi--blue   { border-color:#bfdbfe; } .platform-kpi--blue   > i { color:#2563eb; }
+  .platform-kpi--green  { border-color:#bbf7d0; } .platform-kpi--green  > i { color:#16a34a; }
+  .platform-kpi--orange { border-color:#fed7aa; } .platform-kpi--orange > i { color:#ea580c; }
+  .platform-kpi--teal   { border-color:#99f6e4; } .platform-kpi--teal   > i { color:#0d9488; }
+  .platform-kpi--purple { border-color:#e9d5ff; } .platform-kpi--purple > i { color:#7c3aed; }
+  .platform-kpi--indigo { border-color:#c7d2fe; } .platform-kpi--indigo > i { color:#4f46e5; }
+
+  /* Per-school cards grid */
+  .schools-grid {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap:16px;
+    margin-bottom:2rem;
+  }
+  .school-card {
+    background:var(--surface,#fff);
+    border:1px solid var(--border,#e7e9ee);
+    border-radius:12px;
+    padding:16px;
+    display:flex; flex-direction:column; gap:10px;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);
+    transition:box-shadow .15s, transform .1s;
+    text-decoration:none; color:inherit;
+  }
+  .school-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.1); transform:translateY(-2px); }
+  .school-card__top { display:flex; align-items:center; gap:12px; }
+  .school-card__logo {
+    width:48px; height:48px; border-radius:8px; object-fit:contain;
+    border:1px solid var(--border,#e7e9ee); background:#f9fafb; flex-shrink:0;
+  }
+  .school-card__logo-icon {
+    width:48px; height:48px; border-radius:8px; background:#eff6ff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; color:#3b82f6; flex-shrink:0;
+  }
+  .school-card__name { font-weight:700; font-size:.95rem; line-height:1.3; }
+  .school-card__code { font-size:.78rem; color:var(--text-muted,#6b7280); font-family:monospace; }
+  .school-card__stats { display:flex; flex-wrap:wrap; gap:8px; }
+  .school-card__stat {
+    display:flex; align-items:center; gap:5px;
+    font-size:.78rem; font-weight:600;
+    background:var(--surface-2,#f8f9fa); border-radius:6px;
+    padding:3px 9px; color:var(--text,#374151);
+  }
+  .school-card__stat > i { font-size:.8rem; opacity:.7; }
+  .school-card__footer { display:flex; align-items:center; justify-content:space-between; }
+  .school-card--inactive { opacity:.7; }
+
+</style>
+
+<!-- Platform KPI pills -->
+<div class="platform-kpi-row">
+  <a href="<?= $base ?>/schools" class="platform-kpi platform-kpi--blue">
+    <i class="bi bi-building-fill"></i>
+    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['schools'] ?? 0)) ?></span>
+    <span class="platform-kpi__lbl">School<?= ((int)($platformTotals['schools'] ?? 0)) !== 1 ? 's' : '' ?></span>
+    <?php if ((int)($platformTotals['active'] ?? 0) < (int)($platformTotals['schools'] ?? 0)): ?>
+      <span class="platform-kpi__lbl">(<?= (int)$platformTotals['active'] ?> active)</span>
+    <?php endif; ?>
+  </a>
+  <a href="<?= $base ?>/students" class="platform-kpi platform-kpi--orange">
+    <i class="bi bi-people-fill"></i>
+    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['students'] ?? 0)) ?></span>
+    <span class="platform-kpi__lbl">Total students</span>
+  </a>
+  <a href="<?= $base ?>/staff" class="platform-kpi platform-kpi--green">
+    <i class="bi bi-person-workspace"></i>
+    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['staff'] ?? 0)) ?></span>
+    <span class="platform-kpi__lbl">Total staff</span>
+  </a>
+  <span class="platform-kpi platform-kpi--indigo">
+    <i class="bi bi-mortarboard-fill"></i>
+    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['hods'] ?? 0)) ?></span>
+    <span class="platform-kpi__lbl">HODs</span>
+  </span>
+  <span class="platform-kpi platform-kpi--teal">
+    <i class="bi bi-cash-coin"></i>
+    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['bursars'] ?? 0)) ?></span>
+    <span class="platform-kpi__lbl">Bursars</span>
+  </span>
+</div>
+
+<!-- Per-school cards -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-1"></i> All Schools</h5>
+  <a href="<?= $base ?>/schools/create" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg"></i> Add school
+  </a>
+</div>
+<div class="schools-grid mb-4">
+  <?php foreach ($schoolsOverview as $sc):
+    $logoPath = '';
+    $logoRel  = trim((string)($sc['logo'] ?? ''));
+    if ($logoRel !== '' && str_starts_with(ltrim($logoRel,'/'), 'uploads/')) {
+      $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
+      if (is_file($abs)) {
+        $logoPath = rtrim($base, '/') . '/' . ltrim($logoRel, '/');
+      }
+    }
+    $students = (int)($sc['student_count'] ?? 0);
+    $staff    = (int)($sc['staff_count']   ?? 0);
+    $hods     = (int)($sc['hod_count']     ?? 0);
+    $bursars  = (int)($sc['bursar_count']  ?? 0);
+    $classes  = (int)($sc['class_count']   ?? 0);
+    $male     = (int)($sc['male_count']    ?? 0);
+    $female   = (int)($sc['female_count']  ?? 0);
+    $isActive = ($sc['status'] ?? '') === 'active';
+  ?>
+  <a href="<?= $base ?>/schools/<?= (int)$sc['id'] ?>"
+     class="school-card<?= !$isActive ? ' school-card--inactive' : '' ?>">
+    <div class="school-card__top">
+      <?php if ($logoPath !== ''): ?>
+        <img src="<?= View::e($logoPath) ?>" alt="" class="school-card__logo">
+      <?php else: ?>
+        <div class="school-card__logo-icon"><i class="bi bi-building"></i></div>
+      <?php endif; ?>
+      <div style="min-width:0;">
+        <div class="school-card__name"><?= View::e((string)$sc['name']) ?></div>
+        <div class="school-card__code"><?= View::e((string)$sc['code']) ?></div>
       </div>
     </div>
-  </div>
+
+    <div class="school-card__stats">
+      <span class="school-card__stat">
+        <i class="bi bi-people-fill" style="color:#ea580c;"></i>
+        <?= number_format($students) ?> student<?= $students !== 1 ? 's' : '' ?>
+      </span>
+      <span class="school-card__stat">
+        <i class="bi bi-person-workspace" style="color:#16a34a;"></i>
+        <?= number_format($staff) ?> staff
+      </span>
+      <span class="school-card__stat">
+        <i class="bi bi-building-fill" style="color:#2563eb;"></i>
+        <?= number_format($classes) ?> class<?= $classes !== 1 ? 'es' : '' ?>
+      </span>
+      <?php if ($hods > 0): ?>
+        <span class="school-card__stat">
+          <i class="bi bi-mortarboard-fill" style="color:#4f46e5;"></i>
+          <?= number_format($hods) ?> HOD<?= $hods !== 1 ? 's' : '' ?>
+        </span>
+      <?php endif; ?>
+      <?php if ($bursars > 0): ?>
+        <span class="school-card__stat">
+          <i class="bi bi-cash-coin" style="color:#0d9488;"></i>
+          <?= number_format($bursars) ?> bursar<?= $bursars !== 1 ? 's' : '' ?>
+        </span>
+      <?php endif; ?>
+      <?php if ($male + $female > 0): ?>
+        <span class="school-card__stat">
+          <i class="bi bi-gender-ambiguous" style="color:#7c3aed;"></i>
+          <?= number_format($male) ?>M / <?= number_format($female) ?>F
+        </span>
+      <?php endif; ?>
+    </div>
+
+    <div class="school-card__footer">
+      <span class="badge <?= $isActive ? 'bg-success-subtle text-success-emphasis' : 'bg-secondary-subtle text-secondary-emphasis' ?>">
+        <?= $isActive ? 'Active' : 'Inactive' ?>
+      </span>
+      <span class="small text-muted"><i class="bi bi-arrow-right"></i> View</span>
+    </div>
+  </a>
+  <?php endforeach; ?>
+</div>
+
+<!-- Separator before the school-level analytics section -->
+<div class="d-flex align-items-center gap-2 mb-3 mt-2">
+  <span class="fs-6 fw-semibold text-muted">
+    <i class="bi bi-activity me-1"></i>Platform-wide analytics (all schools combined)
+  </span>
+  <hr class="flex-grow-1 my-0">
+</div>
+
+<?php endif; /* end $isAdmin platform overview */ ?>
+
+<?php if ($isAdminish): ?>
 <?php if ($isSchoolAdmin && !empty($schoolProfile)): ?>
   <div class="card border-0 shadow-sm mb-4 school-dash-profile">
     <div class="card-body py-3">
@@ -221,207 +397,190 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
   </div>
 <?php endif; ?>
-  <div class="dash-kpi-grid mb-4<?= $showOpsKpis ? ' dash-kpi-grid--8' : ' dash-kpi-grid--4' ?>">
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--orange"><i class="bi bi-people-fill"></i></div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Students</div>
-          <div class="kpi-card__value"><?= number_format($studentsTotal) ?></div>
-          <div class="kpi-card__delta kpi-card__delta--<?= $studDeltaDir ?>">
-            <?php if ($studDeltaDir === 'up'): ?><i class="bi bi-arrow-up-right"></i>
-            <?php elseif ($studDeltaDir === 'down'): ?><i class="bi bi-arrow-down-right"></i>
-            <?php else: ?><i class="bi bi-dash"></i>
-            <?php endif; ?>
-            <?= number_format($studThisMonth) ?> this month
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/staff" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--green"><i class="bi bi-person-workspace"></i></div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Staff</div>
-          <div class="kpi-card__value"><?= number_format($staffTotal) ?></div>
-          <div class="kpi-card__delta kpi-card__delta--<?= $staffThisMonth > 0 ? 'up' : 'flat' ?>">
-            <?php if ($staffThisMonth > 0): ?>
-              <i class="bi bi-arrow-up-right"></i>
-              <?= number_format($staffThisMonth) ?> this month
-            <?php else: ?>
-              <i class="bi bi-dash"></i> No new this month
-            <?php endif; ?>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/classes" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-building-fill"></i></div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Classes</div>
-          <div class="kpi-card__value"><?= number_format($classesTotal) ?></div>
-          <?php $avg = $classesTotal > 0 ? (int) round($studentsTotal / $classesTotal) : 0; ?>
-          <div class="kpi-card__delta kpi-card__delta--flat">
-            <i class="bi bi-people"></i> ~<?= number_format($avg) ?> / class
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/subjects" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--purple"><i class="bi bi-book-half"></i></div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Subjects</div>
-          <div class="kpi-card__value"><?= number_format($subjectsTotal) ?></div>
-          <div class="kpi-card__delta kpi-card__delta--flat">
-            <i class="bi bi-check2-circle"></i>
-            <?= number_format($subjectsOffered) ?> offered
-          </div>
-        </div>
-      </a>
-    </div>
-    <?php if ($showOpsKpis): include __DIR__ . '/_admin_kpi_ops.php'; endif; ?>
-  </div>
 
   <!-- ============================================================
-       Charts row: Enrollment per class + Demographics
+       Stat pills + Charts (merged into one visual block)
        ============================================================ -->
-  <div class="section-block mb-2">
-    <div class="section-block__head">
-      <div>
-        <h3 class="section-block__title"><i class="bi bi-graph-up-arrow"></i> Insights</h3>
-        <p class="section-block__sub">Enrollment, demographics, and section distribution.</p>
-      </div>
-    </div>
+  <div class="dash-stat-row mb-3">
+    <a href="<?= $base ?>/students" class="dash-stat-pill dash-stat-pill--orange">
+      <i class="bi bi-people-fill"></i>
+      <span class="dash-stat-pill__value"><?= number_format($studentsTotal) ?></span>
+      <span class="dash-stat-pill__label">Students</span>
+      <?php if ($studThisMonth > 0): ?>
+        <span class="dash-stat-pill__delta"><i class="bi bi-arrow-up-right"></i><?= number_format($studThisMonth) ?> new</span>
+      <?php endif; ?>
+    </a>
+    <a href="<?= $base ?>/staff" class="dash-stat-pill dash-stat-pill--green">
+      <i class="bi bi-person-workspace"></i>
+      <span class="dash-stat-pill__value"><?= number_format($staffTotal) ?></span>
+      <span class="dash-stat-pill__label">Staff</span>
+    </a>
+    <a href="<?= $base ?>/classes" class="dash-stat-pill dash-stat-pill--blue">
+      <i class="bi bi-building-fill"></i>
+      <span class="dash-stat-pill__value"><?= number_format($classesTotal) ?></span>
+      <span class="dash-stat-pill__label">Classes</span>
+    </a>
+    <a href="<?= $base ?>/subjects" class="dash-stat-pill dash-stat-pill--purple">
+      <i class="bi bi-book-half"></i>
+      <span class="dash-stat-pill__value"><?= number_format($subjectsOffered) ?></span>
+      <span class="dash-stat-pill__label">Subjects offered</span>
+    </a>
+    <?php if ($showOpsKpis): ?>
+      <a href="<?= $base ?>/hods" class="dash-stat-pill dash-stat-pill--indigo">
+        <i class="bi bi-mortarboard-fill"></i>
+        <span class="dash-stat-pill__value"><?= number_format($hodCount) ?></span>
+        <span class="dash-stat-pill__label">HODs</span>
+      </a>
+      <a href="<?= $base ?>/bursars" class="dash-stat-pill dash-stat-pill--teal">
+        <i class="bi bi-cash-coin"></i>
+        <span class="dash-stat-pill__value"><?= number_format($bursarCount) ?></span>
+        <span class="dash-stat-pill__label">Bursars</span>
+      </a>
+      <?php if ($attTotal > 0): ?>
+        <a href="<?= $base ?>/attendance" class="dash-stat-pill dash-stat-pill--<?= $attRate >= 80 ? 'green' : ($attRate >= 60 ? 'orange' : 'red') ?>">
+          <i class="bi bi-calendar-check"></i>
+          <span class="dash-stat-pill__value"><?= $attRate ?>%</span>
+          <span class="dash-stat-pill__label">Attendance today</span>
+        </a>
+      <?php endif; ?>
+    <?php endif; ?>
   </div>
+  <style>
+    .dash-stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .dash-stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1.5px solid transparent;
+      background: var(--surface, #fff);
+      color: inherit;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      transition: box-shadow .15s, transform .1s;
+    }
+    .dash-stat-pill:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); transform: translateY(-1px); }
+    .dash-stat-pill > i { font-size: 1rem; opacity: .85; }
+    .dash-stat-pill__value { font-size: 1rem; font-weight: 700; }
+    .dash-stat-pill__label { color: var(--text-muted, #6b7280); font-weight: 400; font-size: 0.8rem; }
+    .dash-stat-pill__delta { font-size: 0.75rem; color: #16a34a; }
+    .dash-stat-pill--orange { border-color: #fed7aa; }
+    .dash-stat-pill--orange > i { color: #ea580c; }
+    .dash-stat-pill--green  { border-color: #bbf7d0; }
+    .dash-stat-pill--green  > i { color: #16a34a; }
+    .dash-stat-pill--blue   { border-color: #bfdbfe; }
+    .dash-stat-pill--blue   > i { color: #2563eb; }
+    .dash-stat-pill--purple { border-color: #e9d5ff; }
+    .dash-stat-pill--purple > i { color: #7c3aed; }
+    .dash-stat-pill--indigo { border-color: #c7d2fe; }
+    .dash-stat-pill--indigo > i { color: #4f46e5; }
+    .dash-stat-pill--teal   { border-color: #99f6e4; }
+    .dash-stat-pill--teal   > i { color: #0d9488; }
+    .dash-stat-pill--red    { border-color: #fecaca; }
+    .dash-stat-pill--red    > i { color: #dc2626; }
+  </style>
+
+  <!-- Charts -->
   <div class="row g-3 mb-4">
-    <div class="col-xl-6">
+    <!-- Enrollment: wider + taller -->
+    <div class="col-lg-7">
       <div class="card chart-card h-100">
         <div class="card-body">
           <div class="chart-card__head">
             <div>
-              <h3 class="chart-card__title">Enrollment overview</h3>
+              <h3 class="chart-card__title">Enrollment per class</h3>
               <p class="chart-card__sub">Students currently enrolled in each class</p>
             </div>
             <div class="chart-card__badge">
               <i class="bi bi-bar-chart-fill"></i>
-              <?= number_format($classTotal) ?> enrolled
+              <?= number_format($classTotal) ?> total
             </div>
           </div>
-          <div class="chart-wrap chart-wrap--md">
+          <div style="position:relative;min-height:260px;">
             <?php if (empty($classLabels) || $classTotal === 0): ?>
-              <div class="chart-empty">
+              <div class="chart-empty" style="height:260px;">
                 <div class="text-center">
                   <i class="bi bi-bar-chart d-block mb-2 fs-3 text-subtle"></i>
-                  <?= empty($classLabels)
-                    ? 'No classes set up yet.'
-                    : 'No students enrolled in any class yet.' ?>
+                  <?= empty($classLabels) ? 'No classes set up yet.' : 'No students enrolled yet.' ?>
                 </div>
               </div>
             <?php else: ?>
-              <canvas id="enrollmentChart" aria-label="Enrollment per class" role="img"></canvas>
+              <canvas id="enrollmentChart" style="width:100%;height:260px;" aria-label="Enrollment per class" role="img"></canvas>
             <?php endif; ?>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6 col-xl-3">
-      <div class="card chart-card h-100">
-        <div class="card-body">
-          <div class="chart-card__head">
+    <!-- Demographics + Section stacked on the right -->
+    <div class="col-lg-5 d-flex flex-column gap-3">
+
+      <div class="card chart-card flex-fill">
+        <div class="card-body pb-2">
+          <div class="chart-card__head mb-1">
             <div>
-              <h3 class="chart-card__title">Demographics</h3>
-              <p class="chart-card__sub">Gender split &middot; <?= number_format($gTotal) ?> total</p>
+              <h3 class="chart-card__title">Gender</h3>
+              <p class="chart-card__sub"><?= number_format($gTotal) ?> students</p>
             </div>
           </div>
-
-          <div class="chart-wrap chart-wrap--sm">
-            <?php if ($gTotal === 0): ?>
-              <div class="chart-empty">No student data yet.</div>
-            <?php else: ?>
-              <canvas id="genderChart" aria-label="Gender distribution" role="img"></canvas>
-            <?php endif; ?>
-          </div>
-
-          <ul class="donut-legend mt-2">
-            <li>
-              <span class="donut-legend__swatch" style="background:#3b82f6"></span>
-              <span class="donut-legend__label">Male</span>
-              <span class="donut-legend__value"><?= number_format($gMale) ?></span>
-            </li>
-            <li>
-              <span class="donut-legend__swatch" style="background:#ec4899"></span>
-              <span class="donut-legend__label">Female</span>
-              <span class="donut-legend__value"><?= number_format($gFemale) ?></span>
-            </li>
-            <?php if ($gOther > 0): ?>
-              <li>
-                <span class="donut-legend__swatch" style="background:#6b7280"></span>
-                <span class="donut-legend__label">Other</span>
-                <span class="donut-legend__value"><?= number_format($gOther) ?></span>
-              </li>
-            <?php endif; ?>
-          </ul>
-
-          <div class="mini-stats mt-2">
-            <div class="mini-stat">
-              <div class="mini-stat__label">Day</div>
-              <div class="mini-stat__value"><?= number_format($sectionDay) ?></div>
+          <div class="row g-0 align-items-center">
+            <div class="col-5" style="position:relative;height:140px;">
+              <?php if ($gTotal === 0): ?>
+                <div class="chart-empty" style="height:140px;">No data yet.</div>
+              <?php else: ?>
+                <canvas id="genderChart" style="width:100%;height:140px;" aria-label="Gender distribution" role="img"></canvas>
+              <?php endif; ?>
             </div>
-            <div class="mini-stat">
-              <div class="mini-stat__label">Boarding</div>
-              <div class="mini-stat__value"><?= number_format($sectionBoarding) ?></div>
-            </div>
-            <div class="mini-stat">
-              <div class="mini-stat__label">Science</div>
-              <div class="mini-stat__value"><?= number_format($streamScience) ?></div>
-            </div>
-            <div class="mini-stat">
-              <div class="mini-stat__label">Arts</div>
-              <div class="mini-stat__value"><?= number_format($streamArts) ?></div>
+            <div class="col-7 ps-3">
+              <ul class="donut-legend mb-2">
+                <li><span class="donut-legend__swatch" style="background:#3b82f6"></span><span class="donut-legend__label">Male</span><span class="donut-legend__value"><?= number_format($gMale) ?></span></li>
+                <li><span class="donut-legend__swatch" style="background:#ec4899"></span><span class="donut-legend__label">Female</span><span class="donut-legend__value"><?= number_format($gFemale) ?></span></li>
+                <?php if ($gOther > 0): ?>
+                  <li><span class="donut-legend__swatch" style="background:#6b7280"></span><span class="donut-legend__label">Other</span><span class="donut-legend__value"><?= number_format($gOther) ?></span></li>
+                <?php endif; ?>
+              </ul>
+              <div class="mini-stats">
+                <div class="mini-stat"><div class="mini-stat__label">Science</div><div class="mini-stat__value"><?= number_format($streamScience) ?></div></div>
+                <div class="mini-stat"><div class="mini-stat__label">Arts</div><div class="mini-stat__value"><?= number_format($streamArts) ?></div></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-6 col-xl-3">
-      <div class="card chart-card h-100">
-        <div class="card-body">
-          <div class="chart-card__head">
+      <div class="card chart-card flex-fill">
+        <div class="card-body pb-2">
+          <div class="chart-card__head mb-1">
             <div>
               <h3 class="chart-card__title">Section split</h3>
-              <p class="chart-card__sub">Day vs Boarding &middot; <?= number_format($sectionTotal) ?> total</p>
+              <p class="chart-card__sub">Day vs Boarding &middot; <?= number_format($sectionTotal) ?></p>
             </div>
           </div>
-
-          <div class="chart-wrap chart-wrap--sm">
-            <?php if ($sectionTotal === 0): ?>
-              <div class="chart-empty">No section data yet.</div>
-            <?php else: ?>
-              <canvas id="sectionChart" aria-label="Section distribution" role="img"></canvas>
-            <?php endif; ?>
+          <div class="row g-0 align-items-center">
+            <div class="col-5" style="position:relative;height:140px;">
+              <?php if ($sectionTotal === 0): ?>
+                <div class="chart-empty" style="height:140px;">No data yet.</div>
+              <?php else: ?>
+                <canvas id="sectionChart" style="width:100%;height:140px;" aria-label="Section distribution" role="img"></canvas>
+              <?php endif; ?>
+            </div>
+            <div class="col-7 ps-3">
+              <ul class="donut-legend">
+                <li><span class="donut-legend__swatch" style="background:#14b8a6"></span><span class="donut-legend__label">Day</span><span class="donut-legend__value"><?= number_format($sectionDay) ?></span></li>
+                <li><span class="donut-legend__swatch" style="background:#f59e0b"></span><span class="donut-legend__label">Boarding</span><span class="donut-legend__value"><?= number_format($sectionBoarding) ?></span></li>
+              </ul>
+            </div>
           </div>
-
-          <ul class="donut-legend mt-2">
-            <li>
-              <span class="donut-legend__swatch" style="background:#14b8a6"></span>
-              <span class="donut-legend__label">Day</span>
-              <span class="donut-legend__value"><?= number_format($sectionDay) ?></span>
-            </li>
-            <li>
-              <span class="donut-legend__swatch" style="background:#f59e0b"></span>
-              <span class="donut-legend__label">Boarding</span>
-              <span class="donut-legend__value"><?= number_format($sectionBoarding) ?></span>
-            </li>
-          </ul>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -484,6 +643,9 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
                       <?= View::e($s['class_name'] ?? 'Unassigned') ?>
                       &middot;
                       <?= View::studentEnumUpper('section', $s['section'] ?? 'day') ?>
+                      <?php $sName = trim((string)($s['school_name'] ?? '')); if ($isAdmin && $sName !== ''): ?>
+                        &middot; <span class="text-primary fw-semibold"><?= View::e($sName) ?></span>
+                      <?php endif; ?>
                     </span>
                   </div>
                 </div>

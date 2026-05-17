@@ -1,13 +1,12 @@
 <?php
 use App\Core\View;
-use App\Core\App;
-use App\Core\Settings;
+use App\Core\SchoolIdentity;
 use App\Services\FeesService;
 
 // Standalone printable receipt — no admin sidebar/topbar.
-$schoolName  = Settings::get('school_name')  ?: App::config('app.name');
-$schoolMotto = Settings::get('school_motto') ?? '';
-$schoolLogo  = Settings::logoUrl();
+$schoolName  = SchoolIdentity::name();
+$schoolMotto = SchoolIdentity::motto();
+$schoolLogo  = SchoolIdentity::logoUrl();
 $base        = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
 
 $balance = max(0.0, (float) ($p['total_amount'] ?? 0) - (float) ($p['paid_amount'] ?? 0));

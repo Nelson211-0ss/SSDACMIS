@@ -1,12 +1,18 @@
 <?php
 use App\Core\View;
 $layout = 'app';
-$editing = (bool) ($student ?? null);
-$title = $editing ? 'Edit Student' : 'New Student';
-$action = $editing ? ($base . '/students/' . (int) $student['id']) : ($base . '/students');
+$editing  = (bool) ($student ?? null);
+$isAdmin  = !empty($isAdmin);
+$schools  = $schools ?? [];
+$title    = $editing ? 'Edit Student' : 'New Student';
+$action   = $editing ? ($base . '/students/' . (int) $student['id']) : ($base . '/students');
 $currentClassId = (int) ($student['class_id'] ?? 0);
 $selectedSection = $student['section'] ?? 'day';
 $selectedStream  = $student['stream']  ?? 'none';
+
+// Super admin: remember which school was selected (for editing, default to student's school).
+$selectedSchoolId = $isAdmin ? (int) ($student['school_id'] ?? 0) : 0;
+
 $currentLevel = '';
 foreach ($classes as $c) {
     if ((int) $c['id'] === $currentClassId) { $currentLevel = trim((string) ($c['level'] ?? '')); break; }
@@ -42,14 +48,32 @@ $dobMaxAttr = date('Y-m-d');
               Enrollment
             </div>
 
+            <?php if ($isAdmin && !empty($schools)): ?>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold mb-1" for="schoolSelect">
+                School <span class="text-danger">*</span>
+              </label>
+              <select name="school_id" id="schoolSelect" class="form-select form-select-sm shadow-sm" required>
+                <option value="">— Choose school first —</option>
+                <?php foreach ($schools as $sch): ?>
+                  <option value="<?= (int)$sch['id'] ?>"
+                          <?= $selectedSchoolId === (int)$sch['id'] ? 'selected' : '' ?>>
+                    <?= View::e((string)$sch['name']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <?php endif; ?>
+
             <div class="mb-2">
               <label class="form-label small fw-semibold mb-1" for="classSelect">Class <span class="text-danger">*</span></label>
               <select name="class_id" id="classSelect" class="form-select form-select-sm shadow-sm" required>
-                <option value="">Choose…</option>
+                <option value=""><?= $isAdmin ? 'Select school first…' : 'Choose…' ?></option>
                 <?php foreach ($classes as $c): ?>
                   <option value="<?= (int)$c['id'] ?>"
                           data-prefix="<?= View::e($c['admission_prefix'] ?? '') ?>"
                           data-level="<?= View::e($c['level'] ?? '') ?>"
+                          data-school="<?= (int)($c['school_id'] ?? 0) ?>"
                           <?= $currentClassId === (int)$c['id'] ? 'selected' : '' ?>>
                     <?= View::e(mb_strtoupper((string) ($c['name'] ?? ''), 'UTF-8')) ?><?php if (!empty($c['admission_prefix'])): ?> · <?= View::e(mb_strtoupper((string) ($c['admission_prefix'] ?? ''), 'UTF-8')) ?><?php endif; ?>
                   </option>
@@ -312,12 +336,53 @@ $dobMaxAttr = date('Y-m-d');
 (function () {
   const form = document.getElementById('studentEnrollmentForm');
   const sel = document.getElementById('classSelect');
+  const schoolSel = document.getElementById('schoolSelect');
   const pv = document.getElementById('admissionPreview');
   const wrap = document.getElementById('streamWrap');
   const stream = document.getElementById('streamSelect');
   const modalEl = document.getElementById('studentFormErrorModal');
   const errList = document.getElementById('studentFormErrorList');
   const upperFields = document.querySelectorAll('.js-upper');
+
+  // Super-admin: filter class options by selected school.
+  function filterClassesBySchool() {
+    if (!schoolSel || !sel) return;
+    var chosen = schoolSel.value;
+    var prevVal = sel.value;
+    // Store all options on first run.
+    if (!sel._allOptions) {
+      sel._allOptions = Array.from(sel.options);
+    }
+    // Rebuild options list.
+    while (sel.options.length > 0) sel.remove(0);
+    sel._allOptions.forEach(function (opt) {
+      if (opt.value === '' || opt.dataset.school === chosen || chosen === '') {
+        sel.appendChild(opt.cloneNode(true));
+      }
+    });
+    // Restore previous selection if it's still available.
+    sel.value = prevVal;
+    if (!sel.value) {
+      sel.selectedIndex = 0;
+      if (sel.options.length > 0) sel.options[0].selected = true;
+    }
+    syncStream();
+    syncAdmissionPreview();
+  }
+
+  if (schoolSel) {
+    schoolSel.addEventListener('change', function () {
+      if (sel) sel.disabled = !schoolSel.value;
+      filterClassesBySchool();
+    });
+    // On load: if a school is already selected (edit mode), filter immediately.
+    if (schoolSel.value) {
+      filterClassesBySchool();
+    } else {
+      // No school chosen yet: disable class select until school is picked.
+      if (sel) sel.disabled = true;
+    }
+  }
 
   function upperElement(el) {
     if (!el) return;
@@ -366,6 +431,9 @@ $dobMaxAttr = date('Y-m-d');
 
   function validateStudentForm() {
     var errs = [];
+    if (schoolSel && (!schoolSel.value || schoolSel.value === '')) {
+      errs.push('Select a school first.');
+    }
     if (sel && (!sel.value || sel.value === '')) {
       errs.push('Select a class.');
     }
