@@ -165,6 +165,15 @@ class DashboardController extends Controller
             }
         }
 
+        $schoolProfile = null;
+        if ($schoolId !== null) {
+            $schoolProfile = Database::query(
+                'SELECT id, name, code, email, phone, address, status
+                 FROM schools WHERE id = ? LIMIT 1',
+                [$schoolId]
+            )->fetch();
+        }
+
         return $this->view('dashboard/index', compact(
             'isAdmin',
             'stats',
@@ -175,7 +184,8 @@ class DashboardController extends Controller
             'streamBreakdown',
             'recentStudents',
             'announcements',
-            'adminOps'
+            'adminOps',
+            'schoolProfile'
         ));
     }
 }

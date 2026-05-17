@@ -6,8 +6,12 @@ $title  = 'Dashboard';
 
 $role        = $auth['role'] ?? 'guest';
 $isAdmin     = !empty($isAdmin) || $role === 'admin';
-$isAdminish  = in_array($role, ['admin', 'staff'], true);
+$isSchoolAdmin = ($role === 'school_admin');
+// Must match DashboardController scope: admins, per-school admins, and staff see analytics.
+$isAdminish  = in_array($role, ['admin', 'school_admin', 'staff'], true);
+$showOpsKpis = ($isAdmin || $isSchoolAdmin);
 $adminOps    = $adminOps ?? [];
+$schoolProfile = $schoolProfile ?? null;
 
 $hodCount            = (int) ($adminOps['hod_count'] ?? 0);
 $bursarCount         = (int) ($adminOps['bursar_count'] ?? 0);
@@ -60,12 +64,12 @@ $greetIcon  = $h < 12 ? 'bi-sunrise'   : ($h < 17 ? 'bi-sun'         : 'bi-moon-
 $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
 ?>
 
-<div class="<?= $isAdmin ? 'admin-dash' : '' ?>">
+<div class="<?= ($isAdmin || $isSchoolAdmin) ? 'admin-dash' : '' ?>">
 
 <!-- ============================================================
      Hero / greeting (compact, with inline quick actions)
      ============================================================ -->
-<section class="dash-hero<?= $isAdmin ? ' dash-hero--admin' : '' ?>">
+<section class="dash-hero<?= ($isAdmin || $isSchoolAdmin) ? ' dash-hero--admin' : '' ?>">
   <div class="dash-hero__content d-flex align-items-center gap-3">
     <span class="icon-chip icon-chip--<?= $greetTone ?> d-none d-sm-inline-grid">
       <i class="bi <?= $greetIcon ?>"></i>
@@ -75,6 +79,8 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         <?= $greeting ?>, <?= View::e($auth['name']) ?>.
         <?php if ($isAdmin): ?>
           <span class="dash-hero__role">Administrator</span>
+        <?php elseif ($isSchoolAdmin): ?>
+          <span class="dash-hero__role">School admin</span>
         <?php endif; ?>
       </h2>
       <p class="dash-hero__sub">
@@ -85,6 +91,13 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           <span class="dash-hero__inline">
             <i class="bi bi-shield-check"></i>
             School-wide control centre
+          </span>
+        <?php elseif ($isSchoolAdmin): ?>
+          <span class="dash-hero__inline">
+            <i class="bi bi-building-check"></i>
+            <?= $schoolProfile
+              ? View::e((string) $schoolProfile['name'])
+              : 'Your school dashboard' ?>
           </span>
         <?php endif; ?>
         <?php if ($isAdminish): ?>
@@ -114,6 +127,18 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         </a>
         <a href="<?= $base ?>/settings" class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
           <i class="bi bi-gear"></i> Settings
+        </a>
+      <?php elseif ($isSchoolAdmin): ?>
+        <a href="<?= $base ?>/teaching" class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
+          <i class="bi bi-diagram-3"></i> Teaching
+        </a>
+        <a href="<?= $base ?>/attendance"
+           class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
+          <i class="bi bi-calendar-check"></i> Attendance
+        </a>
+        <a href="<?= $base ?>/marks"
+           class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
+          <i class="bi bi-pencil-square"></i> Marks
         </a>
       <?php else: ?>
         <a href="<?= $base ?>/attendance"
@@ -145,6 +170,8 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         <p class="section-block__sub">
           <?php if ($isAdmin): ?>
             Key counts and operations across the school today.
+          <?php elseif ($isSchoolAdmin): ?>
+            Key counts and daily operations for your school.
           <?php else: ?>
             Key counts across the school today.
           <?php endif; ?>
@@ -152,7 +179,49 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </div>
     </div>
   </div>
-  <div class="dash-kpi-grid mb-4<?= $isAdmin ? ' dash-kpi-grid--8' : ' dash-kpi-grid--4' ?>">
+<?php if ($isSchoolAdmin && !empty($schoolProfile)): ?>
+  <div class="card border-0 shadow-sm mb-4 school-dash-profile">
+    <div class="card-body py-3">
+      <div class="row g-3 align-items-start">
+        <div class="col-md-8">
+          <h3 class="h6 fw-semibold mb-2">
+            <i class="bi bi-building text-primary"></i>
+            <?= View::e((string) $schoolProfile['name']) ?>
+          </h3>
+          <div class="small text-muted d-flex flex-wrap gap-3">
+            <span><strong>Code:</strong> <?= View::e((string) ($schoolProfile['code'] ?? '—')) ?></span>
+            <span><strong>Status:</strong> <?= View::e(ucfirst((string) ($schoolProfile['status'] ?? '—'))) ?></span>
+          </div>
+          <?php
+            $addr = trim((string) ($schoolProfile['address'] ?? ''));
+            $em   = trim((string) ($schoolProfile['email'] ?? ''));
+            $ph   = trim((string) ($schoolProfile['phone'] ?? ''));
+          ?>
+          <?php if ($addr !== ''): ?>
+            <p class="small mb-1 mt-2 mb-0 text-body-secondary"><?= nl2br(View::e($addr)) ?></p>
+          <?php endif; ?>
+          <div class="small mt-2 d-flex flex-wrap gap-3">
+            <?php if ($em !== ''): ?>
+              <span><i class="bi bi-envelope me-1"></i><a href="mailto:<?= View::e($em) ?>"><?= View::e($em) ?></a></span>
+            <?php endif; ?>
+            <?php if ($ph !== ''): ?>
+              <span><i class="bi bi-telephone me-1"></i><?= View::e($ph) ?></span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <span class="badge rounded-pill <?= ($schoolProfile['status'] ?? '') === 'active' ? 'text-bg-success' : 'text-bg-secondary' ?> align-middle">
+            Your organisation
+          </span>
+          <p class="small text-muted mt-2 mb-0">
+            Contact your system administrator to update school branding and global settings.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+  <div class="dash-kpi-grid mb-4<?= $showOpsKpis ? ' dash-kpi-grid--8' : ' dash-kpi-grid--4' ?>">
     <div class="dash-kpi-grid__item">
       <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
         <div class="kpi-card__icon kpi-card__icon--orange"><i class="bi bi-people-fill"></i></div>
@@ -215,7 +284,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         </div>
       </a>
     </div>
-    <?php if ($isAdmin): include __DIR__ . '/_admin_kpi_ops.php'; endif; ?>
+    <?php if ($showOpsKpis): include __DIR__ . '/_admin_kpi_ops.php'; endif; ?>
   </div>
 
   <!-- ============================================================
