@@ -45,7 +45,10 @@ class SchoolController extends Controller
 
     public function create(): string
     {
-        return $this->view('schools/form', ['school' => null]);
+        $pdo = Database::connection();
+        $next = (int) $pdo->query("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schools'")->fetchColumn();
+        $suggestedCode = 'SCH' . str_pad($next ?: time(), 4, '0', STR_PAD_LEFT);
+        return $this->view('schools/form', ['school' => null, 'suggestedCode' => $suggestedCode]);
     }
 
     public function store(): string
@@ -53,29 +56,44 @@ class SchoolController extends Controller
         $this->validateCsrf();
         $d = $this->payload();
 
-        if ($d['name'] === '' || $d['code'] === '') {
-            Flash::set('danger', 'School name and code are required.');
-            $this->redirect('/schools/create');
-            return '';
-        }
+            if ($d['name'] === '') {
+                Flash::set('danger', 'School name is required.');
+                $this->redirect('/schools/create');
+                return '';
+            }
 
-        $clash = Database::query("SELECT 1 FROM schools WHERE code = ? LIMIT 1", [$d['code']])->fetch();
-        if ($clash) {
-            Flash::set('danger', 'A school with that code already exists.');
-            $this->redirect('/schools/create');
-            return '';
-        }
+            // Always generate the school's code server-side; do not trust user input.
+            $pdo = Database::connection();
+            $next = (int) $pdo->query("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schools'")->fetchColumn();
+            $code = 'SCH' . str_pad($next ?: time(), 4, '0', STR_PAD_LEFT);
+            $code = strtoupper($code);
 
-        Database::query(
-            "INSERT INTO schools (name, code, email, phone, address, motto,
-                                  headteacher_name, headteacher_title, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                $d['name'], strtoupper($d['code']), $d['email'], $d['phone'],
-                $d['address'], $d['motto'],
-                $d['headteacher_name'], $d['headteacher_title'], $d['status'],
-            ]
-        );
+            // If the code collides (rare), retry with a timestamp suffix once.
+            try {
+                Database::query(
+                    "INSERT INTO schools (name, code, email, phone, address, motto,
+                                          headteacher_name, headteacher_title, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        $d['name'], $code, $d['email'], $d['phone'],
+                        $d['address'], $d['motto'],
+                        $d['headteacher_name'], $d['headteacher_title'], $d['status'],
+                    ]
+                );
+            } catch (\Throwable $e) {
+                // Try a fallback code if unique constraint on code triggered.
+                $fallback = $code . '-' . substr((string) time(), -4);
+                Database::query(
+                    "INSERT INTO schools (name, code, email, phone, address, motto,
+                                          headteacher_name, headteacher_title, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        $d['name'], strtoupper($fallback), $d['email'], $d['phone'],
+                        $d['address'], $d['motto'],
+                        $d['headteacher_name'], $d['headteacher_title'], $d['status'],
+                    ]
+                );
+            }
 
         $newId = (int) Database::connection()->lastInsertId();
 
@@ -133,21 +151,14 @@ class SchoolController extends Controller
 
         $d = $this->payload();
 
-        if ($d['name'] === '' || $d['code'] === '') {
-            Flash::set('danger', 'School name and code are required.');
+        if ($d['name'] === '') {
+            Flash::set('danger', 'School name is required.');
             $this->redirect('/schools/' . (int) $id . '/edit');
             return '';
         }
-
-        $clash = Database::query(
-            "SELECT 1 FROM schools WHERE code = ? AND id <> ? LIMIT 1",
-            [strtoupper($d['code']), (int) $id]
-        )->fetch();
-        if ($clash) {
-            Flash::set('danger', 'Another school already uses that code.');
-            $this->redirect('/schools/' . (int) $id . '/edit');
-            return '';
-        }
+        // Do NOT allow editing the school's code via the admin edit form.
+        // Keep the existing code value from the DB to avoid accidental changes.
+        $d['code'] = (string) ($school['code'] ?? '');
 
         // Handle logo removal / upload.
         $logo = (string) ($school['logo'] ?? '');
@@ -184,12 +195,12 @@ class SchoolController extends Controller
 
         Database::query(
             "UPDATE schools
-             SET name=?, code=?, email=?, phone=?, address=?, motto=?,
+             SET name=?, email=?, phone=?, address=?, motto=?,
                  headteacher_name=?, headteacher_title=?,
                  logo=?, headteacher_signature=?, status=?
              WHERE id=?",
             [
-                $d['name'], strtoupper($d['code']), $d['email'], $d['phone'],
+                $d['name'], $d['email'], $d['phone'],
                 $d['address'], $d['motto'],
                 $d['headteacher_name'], $d['headteacher_title'],
                 $logo, $sig, $d['status'], (int) $id,

@@ -57,9 +57,13 @@ if ($isEdit) {
       <div class="row g-3 mb-3">
         <div class="col-md-4">
           <label class="form-label fw-semibold">School Code <span class="text-danger">*</span></label>
-          <input type="text" name="code" class="form-control text-uppercase"
-                 value="<?= View::e($school['code'] ?? '') ?>"
-                 placeholder="e.g. SCH001" required maxlength="20">
+          <?php if ($isEdit): ?>
+            <input type="text" name="code" class="form-control text-uppercase" value="<?= View::e($school['code'] ?? '') ?>" disabled maxlength="20">
+            <input type="hidden" name="code" value="<?= View::e($school['code'] ?? '') ?>">
+          <?php else: ?>
+            <input type="text" class="form-control text-uppercase" value="<?= View::e($suggestedCode ?? '') ?>" disabled maxlength="20">
+            <input type="hidden" name="code" value="<?= View::e($suggestedCode ?? '') ?>">
+          <?php endif; ?>
           <div class="form-text">Unique short code. Stored in UPPERCASE.</div>
         </div>
         <div class="col-md-8">

@@ -389,6 +389,16 @@ if (!$columnExists('subjects', 'is_offered')) {
     $out[] = "  --  subjects.is_offered already present";
 }
 
+/* -- unique constraint to prevent duplicate subjects per school ---------- */
+if (!$indexExists('subjects', 'uniq_school_subject')) {
+    $run(
+        "ALTER TABLE subjects ADD UNIQUE KEY uniq_school_subject (school_id, name, code)",
+        "subjects unique index on (school_id,name,code) added"
+    );
+} else {
+    $out[] = "  --  subjects unique index already present";
+}
+
 /* -- term_subject_results / term_student_results (South Sudan totals + ranking) */
 if (!$tableExists('term_subject_results')) {
     $run("

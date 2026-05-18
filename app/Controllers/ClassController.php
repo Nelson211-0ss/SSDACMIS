@@ -11,6 +11,12 @@ class ClassController extends Controller
     public function index(): string
     {
         $schoolId = Auth::schoolId();
+        $isAdmin = Auth::role() === 'admin';
+        $selectedSchool = null;
+        if ($isAdmin) {
+            $sel = (int) $this->input('school_id', 0) ?: null;
+            if ($sel !== null) { $schoolId = $sel; $selectedSchool = $sel; }
+        }
         $sf  = $schoolId !== null ? ' AND c.school_id = ?' : '';
         $sp  = $schoolId !== null ? [$schoolId] : [];
 
@@ -30,7 +36,8 @@ class ClassController extends Controller
             " ORDER BY first_name, last_name",
             $sp
         )->fetchAll();
-        return $this->view('classes/index', compact('classes', 'staff'));
+        $schools = $isAdmin ? Database::query("SELECT id, name FROM schools WHERE status='active' ORDER BY name")->fetchAll() : [];
+        return $this->view('classes/index', compact('classes', 'staff', 'schools', 'selectedSchool'));
     }
 
     public function store(): string
@@ -47,7 +54,7 @@ class ClassController extends Controller
             Flash::set('danger', 'Admission prefix must be 1–10 letters/digits (uppercase).');
             $this->redirect('/classes'); return '';
         }
-        $schoolId = Auth::schoolId() ?? 1;
+        $schoolId = Auth::schoolId() ?? (int) $this->input('school_id', 0) ?: 1;
         Database::query(
             "INSERT INTO classes (school_id, name, level, admission_prefix) VALUES (?, ?, ?, ?)",
             [$schoolId, $name, $level, $prefix]
@@ -65,10 +72,11 @@ class ClassController extends Controller
             Flash::set('danger', 'Admission prefix must be 1–10 letters/digits.');
             $this->redirect('/classes'); return '';
         }
-        Database::query(
-            "UPDATE classes SET admission_prefix = ? WHERE id = ?",
-            [$prefix, (int) $id]
-        );
+        $schoolId = Auth::schoolId();
+        $sql = "UPDATE classes SET admission_prefix = ? WHERE id = ?";
+        $params = [$prefix, (int) $id];
+        if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
+        Database::query($sql, $params);
         Flash::set('success', 'Admission prefix updated.');
         $this->redirect('/classes'); return '';
     }
@@ -89,10 +97,11 @@ class ClassController extends Controller
     {
         $this->validateCsrf();
         $teacherId = (int) $this->input('class_teacher_id');
-        Database::query(
-            "UPDATE classes SET class_teacher_id = ? WHERE id = ?",
-            [$teacherId ?: null, (int) $id]
-        );
+        $schoolId = Auth::schoolId();
+        $sql = "UPDATE classes SET class_teacher_id = ? WHERE id = ?";
+        $params = [$teacherId ?: null, (int) $id];
+        if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
+        Database::query($sql, $params);
         Flash::set('success', 'Class teacher updated.');
         $this->redirect('/classes'); return '';
     }
@@ -100,7 +109,11 @@ class ClassController extends Controller
     public function destroy(string $id): string
     {
         $this->validateCsrf();
-        Database::query("DELETE FROM classes WHERE id = ?", [(int)$id]);
+        $schoolId = Auth::schoolId();
+        $sql = "DELETE FROM classes WHERE id = ?";
+        $params = [(int)$id];
+        if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
+        Database::query($sql, $params);
         Flash::set('success', 'Class removed.');
         $this->redirect('/classes'); return '';
     }

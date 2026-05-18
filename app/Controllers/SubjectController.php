@@ -47,6 +47,12 @@ class SubjectController extends Controller
     public function index(): string
     {
         $schoolId = Auth::schoolId();
+        $isAdmin = Auth::role() === 'admin';
+        $selectedSchool = null;
+        if ($isAdmin) {
+            $sel = (int) $this->input('school_id', 0) ?: null;
+            if ($sel !== null) { $schoolId = $sel; $selectedSchool = $sel; }
+        }
         $sf = $schoolId !== null ? ' AND school_id = ?' : '';
         $sp = $schoolId !== null ? [$schoolId] : [];
 
@@ -75,7 +81,8 @@ class SubjectController extends Controller
              ORDER BY FIELD(category, 'core','science','arts','optional'), name",
             $sp
         )->fetchAll();
-        return $this->view('subjects/index', compact('subjects'));
+        $schools = $isAdmin ? Database::query("SELECT id, name FROM schools WHERE status='active' ORDER BY name")->fetchAll() : [];
+        return $this->view('subjects/index', compact('subjects', 'schools', 'selectedSchool'));
     }
 
     public function store(): string
@@ -94,7 +101,7 @@ class SubjectController extends Controller
             $this->redirect('/subjects');
             return '';
         }
-        $schoolId = Auth::schoolId() ?? 1;
+        $schoolId = Auth::schoolId() ?? (int) $this->input('school_id', 0) ?: 1;
         Database::query(
             "INSERT INTO subjects (school_id, name, code, category, is_offered) VALUES (?, ?, ?, ?, ?)",
             [$schoolId, $name, $code, $cat, $offered]

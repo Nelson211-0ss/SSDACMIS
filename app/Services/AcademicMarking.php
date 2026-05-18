@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\Auth;
 use App\Core\Settings;
 
 /**
@@ -139,15 +140,18 @@ final class AcademicMarking
     public static function offeredSubjectsForStudent(int $studentId): array
     {
         $student = Database::query(
-            'SELECT s.stream, c.level
+            'SELECT s.stream, c.level, s.school_id
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
              WHERE s.id = ?',
             [$studentId]
         )->fetch();
         $level  = trim((string) ($student['level'] ?? ''));
         $stream = (string) ($student['stream'] ?? 'none');
+        $schoolId = isset($student['school_id']) ? (int) $student['school_id'] : null;
 
         $sql = 'SELECT id, name, code, category FROM subjects WHERE is_offered = 1';
+        $params = [];
+        if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
         $isUpper = ($level === 'Form 3' || $level === 'Form 4');
         if ($isUpper) {
             if ($stream === 'science') {
@@ -160,7 +164,7 @@ final class AcademicMarking
         }
         $sql .= " ORDER BY FIELD(category, 'core','science','arts','optional'), name";
 
-        return Database::query($sql)->fetchAll();
+        return Database::query($sql, $params)->fetchAll();
     }
 
     /**
@@ -171,9 +175,13 @@ final class AcademicMarking
      */
     public static function offeredSubjectsForSchoolReport(): array
     {
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
         return Database::query(
-            "SELECT id, name, code, category FROM subjects WHERE is_offered = 1
-             ORDER BY FIELD(category, 'core','science','arts','optional'), name"
+            "SELECT id, name, code, category FROM subjects WHERE is_offered = 1{$sf}
+             ORDER BY FIELD(category, 'core','science','arts','optional'), name",
+            $sp
         )->fetchAll();
     }
 
