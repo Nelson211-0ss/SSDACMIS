@@ -61,7 +61,8 @@ class MarksController extends Controller
 
     private function isAdmin(): bool
     {
-        return in_array(Auth::role(), ['admin', 'school_admin'], true);
+        // Only school-scoped admins may enter and modify marks.
+        return Auth::role() === 'school_admin';
     }
 
     /**

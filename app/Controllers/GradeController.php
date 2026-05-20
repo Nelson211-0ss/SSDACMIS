@@ -10,6 +10,11 @@ class GradeController extends Controller
 {
     public function index(): string
     {
+        if (Auth::role() === 'admin') {
+            http_response_code(403);
+            return $this->view('errors/403');
+        }
+
         $isStudent = Auth::role() === 'student';
         $studentId = (int) ($this->input('student_id') ?: 0);
 
@@ -39,6 +44,11 @@ class GradeController extends Controller
 
     public function store(): string
     {
+        if (Auth::role() === 'admin') {
+            http_response_code(403);
+            return $this->view('errors/403');
+        }
+
         $this->validateCsrf();
         $studentId = (int) $this->input('student_id');
         $subjectId = (int) $this->input('subject_id');

@@ -30,21 +30,20 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
   </a>
 </div>
 
-<?php if ($streamScoped): ?>
-  <div class="alert alert-warning py-2 small d-flex align-items-center gap-2 mb-3">
-    <i class="bi bi-funnel-fill"></i>
+<?php
+  // Compact header info: stream note (if any) + current period/exam.
+  $streamNote = $streamScoped ? ('Showing only ' . View::e($subjectCat) . ' stream students.') : '';
+  $examLabelShort = $dual ? 'MT & EOT' : View::e($exams[$examType]);
+?>
+<div class="mb-3">
+  <div class="d-flex justify-content-between align-items-center small text-muted">
     <div>
-      Form 3 &amp; Form 4 stream subject: showing only <strong class="text-capitalize"><?= View::e($subjectCat) ?></strong> stream students.
-      <?= View::e($subjectCat === 'science' ? 'Arts students do not study this subject.' : 'Science students do not study this subject.') ?>
+      <?= $streamNote ? '<i class="bi bi-funnel-fill me-1"></i>' . $streamNote : '' ?>
     </div>
-  </div>
-<?php endif; ?>
-
-<div class="alert alert-info py-2 small d-flex align-items-center gap-2 mb-3">
-  <i class="bi bi-calendar2-check"></i>
-  <div class="flex-grow-1">
-    Recording marks for <strong><?= View::e($year) ?></strong> &middot; <strong><?= View::e($term) ?></strong>
-    <?php if (!$dual): ?>&middot; <strong><?= View::e($exams[$examType]) ?></strong><?php endif; ?>.
+    <div>
+      <i class="bi bi-calendar2-check me-1"></i>
+      <strong><?= View::e($year) ?></strong> · <?= View::e($term) ?> · <?= $examLabelShort ?>
+    </div>
   </div>
 </div>
 
@@ -148,10 +147,8 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
           </tbody>
         </table>
       </div>
-      <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="small text-muted">
-          Mid-term ≤ 30 · End-of-term ≤ 70 · Subject total = Mid + End (max 100). Leave blank to skip a cell.
-        </div>
+      <div class="card-footer bg-white d-flex justify-content-end gap-2">
+        <div class="small text-muted me-auto">MT ≤ 30 · EOT ≤ 70 · leave blank to skip</div>
         <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save marks</button>
       </div>
     </div>
@@ -209,11 +206,8 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
           </tbody>
         </table>
       </div>
-      <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="small text-muted">
-          <?= View::e($exams[$examType]) ?> marks:
-          <?= $examType === 'midterm' ? '0–30 only.' : '0–70 only.' ?> Subject letter grade applies to the combined total once both Mid and End are entered (dual sheet).
-        </div>
+      <div class="card-footer bg-white d-flex justify-content-end gap-2">
+        <div class="small text-muted me-auto"><?= View::e($exams[$examType]) ?> · leave blank to skip</div>
         <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save marks</button>
       </div>
     </div>
