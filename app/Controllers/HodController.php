@@ -92,6 +92,8 @@ class HodController extends Controller
 
         // Subjects in the user's departments, with the names of every staff
         // member who teaches that subject.
+        $schoolId = Auth::schoolId();
+        $sp = $schoolId !== null ? [$schoolId] : [];
         $subjects = Database::query(
             "SELECT sub.id, sub.name, sub.code, sub.category,
                     GROUP_CONCAT(DISTINCT CONCAT(st.first_name, ' ', st.last_name)
@@ -99,10 +101,10 @@ class HodController extends Controller
              FROM subjects sub
              LEFT JOIN staff_subjects ss ON ss.subject_id = sub.id
              LEFT JOIN staff st          ON st.id = ss.staff_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
+             WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
              GROUP BY sub.id
              ORDER BY sub.category, sub.name",
-            $categories
+            array_merge($categories, $sp)
         )->fetchAll();
 
         // Staff members who teach at least one subject in the departments,
@@ -114,10 +116,10 @@ class HodController extends Controller
              JOIN staff_subjects ss ON ss.staff_id = st.id
              JOIN subjects sub      ON sub.id = ss.subject_id
              LEFT JOIN users u      ON u.id = st.user_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
+             WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
              GROUP BY st.id
              ORDER BY st.first_name, st.last_name",
-            $categories
+            array_merge($categories, $sp)
         )->fetchAll();
 
         // Classes + student counts. Every class effectively studies every
@@ -128,8 +130,10 @@ class HodController extends Controller
                     (SELECT COUNT(*) FROM students st WHERE st.class_id = c.id) AS student_count,
                     CONCAT(t.first_name, ' ', t.last_name) AS class_teacher
              FROM classes c
-             LEFT JOIN staff t ON t.id = c.class_teacher_id
-             ORDER BY c.level, c.name"
+             LEFT JOIN staff t ON t.id = c.class_teacher_id"
+            . ($schoolId !== null ? ' WHERE c.school_id = ?' : '')
+            . " ORDER BY c.level, c.name",
+            $schoolId !== null ? [$schoolId] : []
         )->fetchAll();
 
         // Group DB classes into Form 1–4 (by `level`, e.g. "Form 1" … "Form 4")
@@ -156,10 +160,10 @@ class HodController extends Controller
              FROM grades g
              JOIN students s   ON s.id = g.student_id
              JOIN subjects sub ON sub.id = g.subject_id
-             WHERE g.recorded_by = ?
+             WHERE g.recorded_by = ?" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
              ORDER BY g.id DESC
              LIMIT 8",
-            [(int) $user['id']]
+            $schoolId !== null ? [(int) $user['id'], $schoolId] : [(int) $user['id']]
         )->fetchAll() : [];
 
         // Headline numbers.
@@ -248,7 +252,12 @@ class HodController extends Controller
         }
 
         $place = implode(',', array_fill(0, count($categories), '?'));
-        $bindPeriod = static fn (array $extra = []) => array_merge($categories, $extra);
+        $schoolId = Auth::schoolId();
+        $sp = $schoolId !== null ? [$schoolId] : [];
+        $bindPeriod = static fn (array $extra = []) use ($categories) { return array_merge($categories, $extra); };
+        $bindPeriodWithSchool = static fn (array $extra = []) use ($categories, $schoolId) {
+            return $schoolId !== null ? array_merge($categories, $extra, [$schoolId]) : array_merge($categories, $extra);
+        };
 
         // Default academic year / term (same rules as HOD dashboard).
         $defaultYear = (date('n') >= 9)
@@ -280,49 +289,49 @@ class HodController extends Controller
 
         $summaryParams = $bindPeriod([$year, $term]);
 
-        $summaryRow = Database::query(
-            "SELECT COUNT(*) AS grade_count,
-                    COUNT(DISTINCT g.student_id) AS students_count,
-                    AVG(g.score) AS avg_score
-             FROM grades g
-             JOIN subjects sub ON sub.id = g.subject_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
-               AND g.academic_year = ? AND g.term = ?",
-            $summaryParams
-        )->fetch();
+                $summaryRow = Database::query(
+                        "SELECT COUNT(*) AS grade_count,
+                                        COUNT(DISTINCT g.student_id) AS students_count,
+                                        AVG(g.score) AS avg_score
+                         FROM grades g
+                         JOIN subjects sub ON sub.id = g.subject_id
+                         WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
+                             AND g.academic_year = ? AND g.term = ?",
+                        $bindPeriodWithSchool([$year, $term])
+                )->fetch();
 
         $gradeCount   = (int) ($summaryRow['grade_count'] ?? 0);
         $studentsTouch = (int) ($summaryRow['students_count'] ?? 0);
         $avgOverall   = $summaryRow['avg_score'] !== null
             ? round((float) $summaryRow['avg_score'], 2) : null;
 
-        $subjectRows = Database::query(
-            "SELECT sub.name AS subject_name,
-                    AVG(g.score) AS avg_score,
-                    COUNT(*) AS n
-             FROM grades g
-             JOIN subjects sub ON sub.id = g.subject_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
-               AND g.academic_year = ? AND g.term = ?
-             GROUP BY sub.id, sub.name
-             ORDER BY sub.name",
-            $summaryParams
-        )->fetchAll();
+                $subjectRows = Database::query(
+                        "SELECT sub.name AS subject_name,
+                                        AVG(g.score) AS avg_score,
+                                        COUNT(*) AS n
+                         FROM grades g
+                         JOIN subjects sub ON sub.id = g.subject_id
+                         WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
+                             AND g.academic_year = ? AND g.term = ?
+                         GROUP BY sub.id, sub.name
+                         ORDER BY sub.name",
+                        $bindPeriodWithSchool([$year, $term])
+                )->fetchAll();
 
-        $classRows = Database::query(
-            "SELECT c.id, c.name AS class_name, c.level,
-                    AVG(g.score) AS avg_score,
-                    COUNT(*) AS n
-             FROM grades g
-             JOIN students s ON s.id = g.student_id
-             JOIN classes c ON c.id = s.class_id
-             JOIN subjects sub ON sub.id = g.subject_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
-               AND g.academic_year = ? AND g.term = ?
-             GROUP BY c.id, c.name, c.level
-             ORDER BY c.level, c.name",
-            $summaryParams
-        )->fetchAll();
+                $classRows = Database::query(
+                        "SELECT c.id, c.name AS class_name, c.level,
+                                        AVG(g.score) AS avg_score,
+                                        COUNT(*) AS n
+                         FROM grades g
+                         JOIN students s ON s.id = g.student_id
+                         JOIN classes c ON c.id = s.class_id
+                         JOIN subjects sub ON sub.id = g.subject_id
+                         WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
+                             AND g.academic_year = ? AND g.term = ?
+                         GROUP BY c.id, c.name, c.level
+                         ORDER BY c.level, c.name",
+                        $bindPeriodWithSchool([$year, $term])
+                )->fetchAll();
 
         $bandRow = Database::query(
             "SELECT
@@ -332,20 +341,20 @@ class HodController extends Controller
                 COALESCE(SUM(CASE WHEN g.score < 40 THEN 1 ELSE 0 END), 0) AS band_d
              FROM grades g
              JOIN subjects sub ON sub.id = g.subject_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
+             WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
                AND g.academic_year = ? AND g.term = ?",
-            $summaryParams
+            $bindPeriodWithSchool([$year, $term])
         )->fetch() ?: ['band_a' => 0, 'band_b' => 0, 'band_c' => 0, 'band_d' => 0];
 
-        $examRows = Database::query(
-            "SELECT g.exam_type, AVG(g.score) AS avg_score, COUNT(*) AS n
-             FROM grades g
-             JOIN subjects sub ON sub.id = g.subject_id
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
-               AND g.academic_year = ? AND g.term = ?
-             GROUP BY g.exam_type",
-            $summaryParams
-        )->fetchAll();
+                $examRows = Database::query(
+                        "SELECT g.exam_type, AVG(g.score) AS avg_score, COUNT(*) AS n
+                         FROM grades g
+                         JOIN subjects sub ON sub.id = g.subject_id
+                         WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
+                             AND g.academic_year = ? AND g.term = ?
+                         GROUP BY g.exam_type",
+                        $bindPeriodWithSchool([$year, $term])
+                )->fetchAll();
 
         $midAvg = null;
         $endAvg = null;
@@ -367,8 +376,8 @@ class HodController extends Controller
 
         $subjectCountTracked = Database::query(
             "SELECT COUNT(*) AS c FROM subjects sub
-             WHERE sub.category IN ($place) AND sub.is_offered = 1",
-            $categories
+             WHERE sub.category IN ($place) AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : ''),
+            $schoolId !== null ? array_merge($categories, [$schoolId]) : $categories
         )->fetch();
         $subjectsOffered = (int) ($subjectCountTracked['c'] ?? 0);
 

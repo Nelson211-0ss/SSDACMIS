@@ -201,13 +201,14 @@ class ResultsController extends Controller
 
         $cells = [];
         if ($subjectCols !== []) {
-            $sr = Database::query(
-                'SELECT tsr.student_id, tsr.subject_id, tsr.total_marks, tsr.letter_grade
+            $schoolId = Auth::schoolId();
+            $srSql = 'SELECT tsr.student_id, tsr.subject_id, tsr.total_marks, tsr.letter_grade
                  FROM term_subject_results tsr
-                 INNER JOIN subjects sub ON sub.id = tsr.subject_id AND sub.is_offered = 1
-                 WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ?',
-                [$classId, $year, $term]
-            )->fetchAll();
+                 INNER JOIN subjects sub ON sub.id = tsr.subject_id AND sub.is_offered = 1'
+                 . ($schoolId !== null ? ' AND sub.school_id = ?' : '')
+                 . ' WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ?';
+            $srParams = $schoolId !== null ? [$schoolId, $classId, $year, $term] : [$classId, $year, $term];
+            $sr = Database::query($srSql, $srParams)->fetchAll();
             foreach ($sr as $r) {
                 $sid = (int) $r['student_id'];
                 $bid = (int) $r['subject_id'];

@@ -28,9 +28,9 @@ class GradeController extends Controller
         $grades = $studentId
             ? Database::query(
                 "SELECT g.*, sub.name AS subject_name FROM grades g
-                 JOIN subjects sub ON sub.id = g.subject_id
+                 JOIN subjects sub ON sub.id = g.subject_id" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
                  WHERE g.student_id = ? ORDER BY g.term, sub.name",
-                [$studentId]
+                $schoolId !== null ? [$schoolId, $studentId] : [$studentId]
             )->fetchAll()
             : [];
 

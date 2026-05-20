@@ -191,6 +191,8 @@ class ReportController extends Controller
     private function offeredCurriculum(string $level, string $stream): array
     {
         $sql = "SELECT id, name, code, category FROM subjects WHERE is_offered = 1";
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) { $sql .= ' AND school_id = ?'; }
         $isUpper = ($level === 'Form 3' || $level === 'Form 4');
         if ($isUpper) {
             if ($stream === 'science') {
@@ -202,7 +204,9 @@ class ReportController extends Controller
             }
         }
         $sql .= " ORDER BY FIELD(category, 'core','science','arts','optional'), name";
-        return Database::query($sql)->fetchAll();
+        $params = [];
+        if ($schoolId !== null) $params[] = $schoolId;
+        return Database::query($sql, $params)->fetchAll();
     }
 
     /** South Sudan ACMIS rules: Mid (×/30) + End (×/70); overall average = Σ totals ÷ subjects counted. */
@@ -334,12 +338,12 @@ class ReportController extends Controller
         // The class's curriculum is the union of every stream's offered
         // subjects — the per-stream views below trim the column list to
         // what their students actually study (Science vs Arts).
+        $schoolId = Auth::schoolId();
         if ($isUpperForm) {
-            $subjects = Database::query(
-                "SELECT id, name, code, category FROM subjects
-                 WHERE is_offered = 1
-                 ORDER BY FIELD(category, 'core','science','arts','optional'), name"
-            )->fetchAll();
+            $subjectsSql = "SELECT id, name, code, category FROM subjects
+                 WHERE is_offered = 1" . ($schoolId !== null ? ' AND school_id = ?' : '') . "
+                 ORDER BY FIELD(category, 'core','science','arts','optional'), name";
+            $subjects = Database::query($subjectsSql, $schoolId !== null ? [$schoolId] : [])->fetchAll();
         } else {
             $subjects = $this->offeredCurriculum($level, 'none');
         }
@@ -349,14 +353,13 @@ class ReportController extends Controller
         foreach ($students as $s) $matrix[(int) $s['id']] = [];
 
         if ($students) {
-            $rows = Database::query(
-                "SELECT g.student_id, g.subject_id, g.exam_type, g.score
-                 FROM grades g
-                 INNER JOIN subjects sub ON sub.id = g.subject_id AND sub.is_offered = 1
-                 WHERE g.academic_year = ? AND g.term = ?
-                   AND g.student_id IN (SELECT id FROM students WHERE class_id = ?)",
-                [$year, $term, $classId]
-            )->fetchAll();
+                        $rowsSql = "SELECT g.student_id, g.subject_id, g.exam_type, g.score
+                                 FROM grades g
+                                 INNER JOIN subjects sub ON sub.id = g.subject_id AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
+                                 WHERE g.academic_year = ? AND g.term = ?
+                                     AND g.student_id IN (SELECT id FROM students WHERE class_id = ?)";
+                        $rowsParams = $schoolId !== null ? [$schoolId, $year, $term, $classId] : [$year, $term, $classId];
+                        $rows = Database::query($rowsSql, $rowsParams)->fetchAll();
             foreach ($rows as $r) {
                 $sid = (int) $r['student_id'];
                 $bid = (int) $r['subject_id'];

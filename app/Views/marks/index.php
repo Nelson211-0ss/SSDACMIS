@@ -13,8 +13,14 @@ $hodMarkCategories = $hodMarkCategories ?? [];
 $hodMarkSubjects   = $hodMarkSubjects   ?? [];
 $subjectsByCategory = [];
 foreach ($hodMarkSubjects as $_sub) {
-    $ck = (string) ($_sub['category'] ?? 'optional');
-    $subjectsByCategory[$ck][] = $_sub;
+  $ck = (string) ($_sub['category'] ?? 'optional');
+  $sid = (int) ($_sub['id'] ?? 0);
+  if ($sid <= 0) continue;
+  $subjectsByCategory[$ck][$sid] = $_ub = $_sub;
+}
+// Ensure each category is a numerically indexed list and remove duplicates by id
+foreach ($subjectsByCategory as $k => $map) {
+  $subjectsByCategory[$k] = array_values($map);
 }
 $formLabels = ['Form 1' => 'Form 1', 'Form 2' => 'Form 2', 'Form 3' => 'Form 3', 'Form 4' => 'Form 4'];
 $formBadgeTones = ['Form 1' => 'orange', 'Form 2' => 'green', 'Form 3' => 'blue', 'Form 4' => 'purple'];

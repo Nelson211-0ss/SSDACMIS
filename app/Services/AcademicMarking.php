@@ -211,16 +211,24 @@ final class AcademicMarking
             ];
         }
 
-        $grades = Database::query(
-            "SELECT g.subject_id,
-                    MAX(CASE WHEN g.exam_type = 'midterm' THEN g.score END) AS midterm,
-                    MAX(CASE WHEN g.exam_type = 'endterm' THEN g.score END) AS endterm
-             FROM grades g
-             INNER JOIN subjects sub ON sub.id = g.subject_id AND sub.is_offered = 1
-             WHERE g.student_id = ? AND g.academic_year = ? AND g.term = ?
-             GROUP BY g.subject_id",
-            [$studentId, $year, $term]
-        )->fetchAll();
+        // Only load grades for subjects returned by offeredSubjectsForStudent()
+        $subIds = array_column($subjects, 'id');
+        if ($subIds === []) {
+            $grades = [];
+        } else {
+            $sPlace = implode(',', array_fill(0, count($subIds), '?'));
+            $params = array_merge([$studentId, $year, $term], $subIds);
+            $grades = Database::query(
+                "SELECT g.subject_id,
+                        MAX(CASE WHEN g.exam_type = 'midterm' THEN g.score END) AS midterm,
+                        MAX(CASE WHEN g.exam_type = 'endterm' THEN g.score END) AS endterm
+                 FROM grades g
+                 WHERE g.student_id = ? AND g.academic_year = ? AND g.term = ?
+                   AND g.subject_id IN ($sPlace)
+                 GROUP BY g.subject_id",
+                $params
+            )->fetchAll();
+        }
 
         $byId = [];
         foreach ($grades as $g) {

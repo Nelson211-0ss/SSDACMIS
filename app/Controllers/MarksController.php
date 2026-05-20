@@ -195,6 +195,9 @@ class MarksController extends Controller
         $cats = $this->headOfCategories();
         if (!$cats) return [];
         $place = implode(',', array_fill(0, count($cats), '?'));
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND c.school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
         return Database::query(
             "SELECT c.id AS class_id, c.name AS class_name, c.level AS class_level,
                     sub.category,
@@ -202,11 +205,11 @@ class MarksController extends Controller
                     (SELECT COUNT(*) FROM students st WHERE st.class_id = c.id) AS student_count
              FROM classes c
              CROSS JOIN subjects sub
-             WHERE sub.is_offered = 1 AND sub.category IN ($place)
+             WHERE sub.is_offered = 1 AND sub.category IN ($place)" . $sf . "
              GROUP BY c.id, c.name, c.level, sub.category
              HAVING subject_count > 0
              ORDER BY c.level, c.name, sub.category",
-            $cats
+            array_merge($cats, $sp)
         )->fetchAll();
     }
 
@@ -223,12 +226,15 @@ class MarksController extends Controller
         }
         $place = implode(',', array_fill(0, count($categoriesInOrder), '?'));
 
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND sub.school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
         return Database::query(
             "SELECT sub.id, sub.name, sub.category
              FROM subjects sub
-             WHERE sub.category IN ($place) AND sub.is_offered = 1
+             WHERE sub.category IN ($place) AND sub.is_offered = 1{$sf}
              ORDER BY sub.category, sub.name",
-            $categoriesInOrder
+            array_merge($categoriesInOrder, $sp)
         )->fetchAll();
     }
 
@@ -760,9 +766,12 @@ class MarksController extends Controller
         $class = Database::query("SELECT id, name, level FROM classes WHERE id = ?", [$classId])->fetch();
         if (!$class) { http_response_code(404); return $this->view('errors/404'); }
 
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
         $subjects = Database::query(
-            "SELECT id, name, code FROM subjects WHERE category = ? AND is_offered = 1 ORDER BY name",
-            [$category]
+            "SELECT id, name, code FROM subjects WHERE category = ? AND is_offered = 1{$sf} ORDER BY name",
+            array_merge([$category], $sp)
         )->fetchAll();
         $filter   = $this->streamFilterFor($classId, $category);
         $students = Database::query(
@@ -850,8 +859,11 @@ class MarksController extends Controller
             return $this->view('errors/403');
         }
 
+        $schoolId = Auth::schoolId();
+        $sf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $sp = $schoolId !== null ? [$schoolId] : [];
         $allowedSubs = array_column(
-            Database::query("SELECT id FROM subjects WHERE category = ? AND is_offered = 1", [$category])->fetchAll(),
+            Database::query("SELECT id FROM subjects WHERE category = ? AND is_offered = 1{$sf}", array_merge([$category], $sp))->fetchAll(),
             'id'
         );
         $allowedSubs = array_map('intval', $allowedSubs);
@@ -874,8 +886,8 @@ class MarksController extends Controller
         $subLabels = [];
         foreach (
             Database::query(
-                'SELECT id, name FROM subjects WHERE category = ? AND is_offered = 1',
-                [$category]
+                'SELECT id, name FROM subjects WHERE category = ? AND is_offered = 1' . ($schoolId !== null ? ' AND school_id = ?' : ''),
+                array_merge([$category], $sp)
             )->fetchAll() as $sr
         ) {
             $subLabels[(int) $sr['id']] = (string) $sr['name'];
