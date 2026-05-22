@@ -167,18 +167,18 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
      ============================================================ -->
 <style>
   /* Platform KPI pills */
-  .platform-kpi-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:1.25rem; }
+  .platform-kpi-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:0.8rem; }
   .platform-kpi {
     display:inline-flex; align-items:center; gap:8px;
-    padding:8px 18px; border-radius:999px; font-size:.85rem; font-weight:600;
+    padding:6px 14px; border-radius:999px; font-size:.8rem; font-weight:600;
     background:var(--surface,#fff); border:1.5px solid transparent;
     box-shadow:0 1px 4px rgba(0,0,0,.07); text-decoration:none; color:inherit;
     transition:box-shadow .15s, transform .1s;
   }
   .platform-kpi:hover { box-shadow:0 3px 10px rgba(0,0,0,.12); transform:translateY(-1px); }
-  .platform-kpi > i { font-size:1rem; opacity:.85; }
-  .platform-kpi__val { font-size:1.05rem; font-weight:700; }
-  .platform-kpi__lbl { color:var(--text-muted,#6b7280); font-weight:400; font-size:.8rem; }
+  .platform-kpi > i { font-size:0.95rem; opacity:.85; }
+  .platform-kpi__val { font-size:1rem; font-weight:700; }
+  .platform-kpi__lbl { color:var(--text-muted,#6b7280); font-weight:400; font-size:.75rem; }
   .platform-kpi--blue   { border-color:#bfdbfe; } .platform-kpi--blue   > i { color:#2563eb; }
   .platform-kpi--green  { border-color:#bbf7d0; } .platform-kpi--green  > i { color:#16a34a; }
   .platform-kpi--orange { border-color:#fed7aa; } .platform-kpi--orange > i { color:#ea580c; }
@@ -189,43 +189,84 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   /* Per-school cards grid */
   .schools-grid {
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap:16px;
-    margin-bottom:2rem;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap:10px;
+    margin-bottom:1rem;
   }
   .school-card {
     background:var(--surface,#fff);
     border:1px solid var(--border,#e7e9ee);
-    border-radius:12px;
-    padding:16px;
-    display:flex; flex-direction:column; gap:10px;
+    border-radius:10px;
+    padding:12px;
+    display:flex; flex-direction:column; gap:8px;
     box-shadow:0 1px 4px rgba(0,0,0,.05);
     transition:box-shadow .15s, transform .1s;
     text-decoration:none; color:inherit;
   }
   .school-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.1); transform:translateY(-2px); }
-  .school-card__top { display:flex; align-items:center; gap:12px; }
+  .school-card__top { display:flex; align-items:center; gap:10px; }
   .school-card__logo {
-    width:48px; height:48px; border-radius:8px; object-fit:contain;
+    width:40px; height:40px; border-radius:6px; object-fit:contain;
     border:1px solid var(--border,#e7e9ee); background:#f9fafb; flex-shrink:0;
   }
   .school-card__logo-icon {
-    width:48px; height:48px; border-radius:8px; background:#eff6ff;
+    width:40px; height:40px; border-radius:6px; background:#eff6ff;
     display:flex; align-items:center; justify-content:center;
-    font-size:1.5rem; color:#3b82f6; flex-shrink:0;
+    font-size:1.25rem; color:#3b82f6; flex-shrink:0;
   }
-  .school-card__name { font-weight:700; font-size:.95rem; line-height:1.3; }
-  .school-card__code { font-size:.78rem; color:var(--text-muted,#6b7280); font-family:monospace; }
-  .school-card__stats { display:flex; flex-wrap:wrap; gap:8px; }
+  .school-card__name { font-weight:700; font-size:.9rem; line-height:1.3; }
+  .school-card__code { font-size:.7rem; color:var(--text-muted,#6b7280); font-family:monospace; }
+  .school-card__stats { display:flex; flex-wrap:wrap; gap:6px; }
   .school-card__stat {
-    display:flex; align-items:center; gap:5px;
-    font-size:.78rem; font-weight:600;
-    background:var(--surface-2,#f8f9fa); border-radius:6px;
-    padding:3px 9px; color:var(--text,#374151);
+    display:flex; align-items:center; gap:4px;
+    font-size:.7rem; font-weight:600;
+    background:var(--surface-2,#f8f9fa); border-radius:4px;
+    padding:2px 6px; color:var(--text,#374151);
   }
-  .school-card__stat > i { font-size:.8rem; opacity:.7; }
+  .school-card__stat > i { font-size:.75rem; opacity:.7; }
   .school-card__footer { display:flex; align-items:center; justify-content:space-between; }
   .school-card--inactive { opacity:.7; }
+
+  /* Stat pills */
+  .dash-stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .dash-stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1.5px solid transparent;
+    background: var(--surface, #fff);
+    color: inherit;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    transition: box-shadow .15s, transform .1s;
+  }
+  .dash-stat-pill:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); transform: translateY(-1px); }
+  .dash-stat-pill > i { font-size: 1rem; opacity: .85; }
+  .dash-stat-pill__value { font-size: 1rem; font-weight: 700; }
+  .dash-stat-pill__label { color: var(--text-muted, #6b7280); font-weight: 400; font-size: 0.8rem; }
+  .dash-stat-pill__delta { font-size: 0.75rem; color: #16a34a; }
+  .dash-stat-pill--orange { border-color: #fed7aa; }
+  .dash-stat-pill--orange > i { color: #ea580c; }
+  .dash-stat-pill--green  { border-color: #bbf7d0; }
+  .dash-stat-pill--green  > i { color: #16a34a; }
+  .dash-stat-pill--blue   { border-color: #bfdbfe; }
+  .dash-stat-pill--blue   > i { color: #2563eb; }
+  .dash-stat-pill--purple { border-color: #e9d5ff; }
+  .dash-stat-pill--purple > i { color: #7c3aed; }
+  .dash-stat-pill--indigo { border-color: #c7d2fe; }
+  .dash-stat-pill--indigo > i { color: #4f46e5; }
+  .dash-stat-pill--teal   { border-color: #99f6e4; }
+  .dash-stat-pill--teal   > i { color: #0d9488; }
+  .dash-stat-pill--red    { border-color: #fecaca; }
+  .dash-stat-pill--red    > i { color: #dc2626; }
 
 </style>
 
@@ -261,8 +302,44 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   </span>
 </div>
 
+<?php if ($isAdminish): ?>
+  <!-- School-level stat pills -->
+  <div class="dash-stat-row mb-3">
+    <a href="<?= $base ?>/students" class="dash-stat-pill dash-stat-pill--orange">
+      <i class="bi bi-people-fill"></i>
+      <span class="dash-stat-pill__value"><?= number_format($studentsTotal) ?></span>
+      <span class="dash-stat-pill__label">Students</span>
+      <?php if ($studThisMonth > 0): ?>
+        <span class="dash-stat-pill__delta"><i class="bi bi-arrow-up-right"></i><?= number_format($studThisMonth) ?> new</span>
+      <?php endif; ?>
+    </a>
+    <a href="<?= $base ?>/staff" class="dash-stat-pill dash-stat-pill--green">
+      <i class="bi bi-person-workspace"></i>
+      <span class="dash-stat-pill__value"><?= number_format($staffTotal) ?></span>
+      <span class="dash-stat-pill__label">Staff</span>
+    </a>
+    <a href="<?= $base ?>/classes" class="dash-stat-pill dash-stat-pill--blue">
+      <i class="bi bi-building-fill"></i>
+      <span class="dash-stat-pill__value"><?= number_format($classesTotal) ?></span>
+      <span class="dash-stat-pill__label">Classes</span>
+    </a>
+    <a href="<?= $base ?>/subjects" class="dash-stat-pill dash-stat-pill--purple">
+      <i class="bi bi-book-half"></i>
+      <span class="dash-stat-pill__value"><?= number_format($subjectsOffered) ?></span>
+      <span class="dash-stat-pill__label">Subjects offered</span>
+    </a>
+    <?php if ($showOpsKpis): ?>
+      <a href="<?= $base ?>/attendance" class="dash-stat-pill dash-stat-pill--<?= $attRate >= 80 ? 'green' : ($attRate >= 60 ? 'orange' : 'red') ?>">
+        <i class="bi bi-calendar-check"></i>
+        <span class="dash-stat-pill__value"><?= $attRate !== null ? $attRate . '%' : '—' ?></span>
+        <span class="dash-stat-pill__label">Attendance today</span>
+      </a>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
 <!-- Per-school cards -->
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
   <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-1"></i> All Schools</h5>
   <a href="<?= $base ?>/schools/create" class="btn btn-sm btn-primary">
     <i class="bi bi-plus-lg"></i> Add school
@@ -345,7 +422,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
 </div>
 
 <!-- Separator before the school-level analytics section -->
-<div class="d-flex align-items-center gap-2 mb-3 mt-2">
+<div class="d-flex align-items-center gap-2 mb-2 mt-1">
   <span class="fs-6 fw-semibold text-muted">
     <i class="bi bi-activity me-1"></i>Platform-wide analytics (all schools combined)
   </span>
@@ -356,7 +433,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
 
 <?php if ($isAdminish): ?>
 <?php if ($isSchoolAdmin && !empty($schoolProfile)): ?>
-  <div class="card border-0 shadow-sm mb-4 school-dash-profile">
+  <div class="card border-0 shadow-sm mb-2 school-dash-profile">
     <div class="card-body py-3">
       <div class="row g-3 align-items-start">
         <div class="col-md-8">
@@ -399,96 +476,10 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
 <?php endif; ?>
 
   <!-- ============================================================
-       Stat pills + Charts (merged into one visual block)
+       Charts
        ============================================================ -->
-  <div class="dash-stat-row mb-3">
-    <a href="<?= $base ?>/students" class="dash-stat-pill dash-stat-pill--orange">
-      <i class="bi bi-people-fill"></i>
-      <span class="dash-stat-pill__value"><?= number_format($studentsTotal) ?></span>
-      <span class="dash-stat-pill__label">Students</span>
-      <?php if ($studThisMonth > 0): ?>
-        <span class="dash-stat-pill__delta"><i class="bi bi-arrow-up-right"></i><?= number_format($studThisMonth) ?> new</span>
-      <?php endif; ?>
-    </a>
-    <a href="<?= $base ?>/staff" class="dash-stat-pill dash-stat-pill--green">
-      <i class="bi bi-person-workspace"></i>
-      <span class="dash-stat-pill__value"><?= number_format($staffTotal) ?></span>
-      <span class="dash-stat-pill__label">Staff</span>
-    </a>
-    <a href="<?= $base ?>/classes" class="dash-stat-pill dash-stat-pill--blue">
-      <i class="bi bi-building-fill"></i>
-      <span class="dash-stat-pill__value"><?= number_format($classesTotal) ?></span>
-      <span class="dash-stat-pill__label">Classes</span>
-    </a>
-    <a href="<?= $base ?>/subjects" class="dash-stat-pill dash-stat-pill--purple">
-      <i class="bi bi-book-half"></i>
-      <span class="dash-stat-pill__value"><?= number_format($subjectsOffered) ?></span>
-      <span class="dash-stat-pill__label">Subjects offered</span>
-    </a>
-    <?php if ($showOpsKpis): ?>
-      <a href="<?= $base ?>/hods" class="dash-stat-pill dash-stat-pill--indigo">
-        <i class="bi bi-mortarboard-fill"></i>
-        <span class="dash-stat-pill__value"><?= number_format($hodCount) ?></span>
-        <span class="dash-stat-pill__label">HODs</span>
-      </a>
-      <a href="<?= $base ?>/bursars" class="dash-stat-pill dash-stat-pill--teal">
-        <i class="bi bi-cash-coin"></i>
-        <span class="dash-stat-pill__value"><?= number_format($bursarCount) ?></span>
-        <span class="dash-stat-pill__label">Bursars</span>
-      </a>
-      <?php if ($attTotal > 0): ?>
-        <a href="<?= $base ?>/attendance" class="dash-stat-pill dash-stat-pill--<?= $attRate >= 80 ? 'green' : ($attRate >= 60 ? 'orange' : 'red') ?>">
-          <i class="bi bi-calendar-check"></i>
-          <span class="dash-stat-pill__value"><?= $attRate ?>%</span>
-          <span class="dash-stat-pill__label">Attendance today</span>
-        </a>
-      <?php endif; ?>
-    <?php endif; ?>
-  </div>
-  <style>
-    .dash-stat-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .dash-stat-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 14px;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-decoration: none;
-      border: 1.5px solid transparent;
-      background: var(--surface, #fff);
-      color: inherit;
-      box-shadow: 0 1px 4px rgba(0,0,0,.07);
-      transition: box-shadow .15s, transform .1s;
-    }
-    .dash-stat-pill:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); transform: translateY(-1px); }
-    .dash-stat-pill > i { font-size: 1rem; opacity: .85; }
-    .dash-stat-pill__value { font-size: 1rem; font-weight: 700; }
-    .dash-stat-pill__label { color: var(--text-muted, #6b7280); font-weight: 400; font-size: 0.8rem; }
-    .dash-stat-pill__delta { font-size: 0.75rem; color: #16a34a; }
-    .dash-stat-pill--orange { border-color: #fed7aa; }
-    .dash-stat-pill--orange > i { color: #ea580c; }
-    .dash-stat-pill--green  { border-color: #bbf7d0; }
-    .dash-stat-pill--green  > i { color: #16a34a; }
-    .dash-stat-pill--blue   { border-color: #bfdbfe; }
-    .dash-stat-pill--blue   > i { color: #2563eb; }
-    .dash-stat-pill--purple { border-color: #e9d5ff; }
-    .dash-stat-pill--purple > i { color: #7c3aed; }
-    .dash-stat-pill--indigo { border-color: #c7d2fe; }
-    .dash-stat-pill--indigo > i { color: #4f46e5; }
-    .dash-stat-pill--teal   { border-color: #99f6e4; }
-    .dash-stat-pill--teal   > i { color: #0d9488; }
-    .dash-stat-pill--red    { border-color: #fecaca; }
-    .dash-stat-pill--red    > i { color: #dc2626; }
-  </style>
-
   <!-- Charts -->
-  <div class="row g-3 mb-4">
+  <div class="row g-3 mb-2">
     <!-- Enrollment: wider + taller -->
     <div class="col-lg-7">
       <div class="card chart-card h-100">
@@ -503,16 +494,16 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
               <?= number_format($classTotal) ?> total
             </div>
           </div>
-          <div style="position:relative;min-height:260px;">
+          <div style="position:relative;min-height:200px;">
             <?php if (empty($classLabels) || $classTotal === 0): ?>
-              <div class="chart-empty" style="height:260px;">
+              <div class="chart-empty" style="height:200px;">
                 <div class="text-center">
                   <i class="bi bi-bar-chart d-block mb-2 fs-3 text-subtle"></i>
                   <?= empty($classLabels) ? 'No classes set up yet.' : 'No students enrolled yet.' ?>
                 </div>
               </div>
             <?php else: ?>
-              <canvas id="enrollmentChart" style="width:100%;height:260px;" aria-label="Enrollment per class" role="img"></canvas>
+              <canvas id="enrollmentChart" style="width:100%;height:200px;" aria-label="Enrollment per class" role="img"></canvas>
             <?php endif; ?>
           </div>
         </div>
@@ -531,11 +522,11 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
             </div>
           </div>
           <div class="row g-0 align-items-center">
-            <div class="col-5" style="position:relative;height:140px;">
+            <div class="col-5" style="position:relative;height:120px;">
               <?php if ($gTotal === 0): ?>
-                <div class="chart-empty" style="height:140px;">No data yet.</div>
+                <div class="chart-empty" style="height:120px;">No data yet.</div>
               <?php else: ?>
-                <canvas id="genderChart" style="width:100%;height:140px;" aria-label="Gender distribution" role="img"></canvas>
+                <canvas id="genderChart" style="width:100%;height:120px;" aria-label="Gender distribution" role="img"></canvas>
               <?php endif; ?>
             </div>
             <div class="col-7 ps-3">
@@ -564,11 +555,11 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
             </div>
           </div>
           <div class="row g-0 align-items-center">
-            <div class="col-5" style="position:relative;height:140px;">
+            <div class="col-5" style="position:relative;height:120px;">
               <?php if ($sectionTotal === 0): ?>
-                <div class="chart-empty" style="height:140px;">No data yet.</div>
+                <div class="chart-empty" style="height:120px;">No data yet.</div>
               <?php else: ?>
-                <canvas id="sectionChart" style="width:100%;height:140px;" aria-label="Section distribution" role="img"></canvas>
+                <canvas id="sectionChart" style="width:100%;height:120px;" aria-label="Section distribution" role="img"></canvas>
               <?php endif; ?>
             </div>
             <div class="col-7 ps-3">
@@ -587,7 +578,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   <!-- ============================================================
        Bottom row: Recent enrollments + Announcements
        ============================================================ -->
-  <div class="section-block mb-2">
+  <div class="section-block mb-1">
     <div class="section-block__head">
       <div>
         <h3 class="section-block__title"><i class="bi bi-activity"></i> Recent activity</h3>
