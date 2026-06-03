@@ -75,14 +75,14 @@ $studDeltaDir = $studThisMonth > $studLastMonth ? 'up'
 
 // ---- Enrollment per school (drives the bar chart) ----
 $schoolLabels = array_column($schoolDistribution ?? [], 'name');
+$schoolIds    = array_map(fn($r) => (string) (int) ($r['id'] ?? 0), $schoolDistribution ?? []);
 $schoolCounts = array_map(fn($r) => (int) $r['total'], $schoolDistribution ?? []);
-$schoolCodes  = array_column($schoolDistribution ?? [], 'code');
 $schoolTotal  = array_sum($schoolCounts);
 $schoolCount  = count($schoolDistribution ?? []);
 
-$enrollLabels = $useClassEnrollment ? $classLabels : $schoolLabels;
+$enrollLabels = $useClassEnrollment ? $classLabels : $schoolIds;
 $enrollCounts = $useClassEnrollment ? $classCounts : $schoolCounts;
-$enrollMeta   = $useClassEnrollment ? $classLevels : $schoolCodes;
+$enrollMeta   = $useClassEnrollment ? $classLevels : $schoolLabels;
 $enrollTotal  = $useClassEnrollment ? $classTotal : $schoolTotal;
 $hasEnrollmentChart = count($enrollLabels) > 0;
 
@@ -969,7 +969,8 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
                   if (enrollmentData.mode === 'class') {
                     return enrollmentData.labels[i] + (meta ? ' (' + meta + ')' : '');
                   }
-                  return enrollmentData.labels[i] + (meta ? ' (' + meta + ')' : '');
+                  var name = meta || ('School ' + enrollmentData.labels[i]);
+                  return name + ' (ID ' + enrollmentData.labels[i] + ')';
                 },
                 label: function (ctx) {
                   var n = ctx.parsed.y;
@@ -981,7 +982,13 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           scales: {
             x: {
               grid: { display: false, drawBorder: false },
-              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 } }
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 } },
+              title: {
+                display: enrollmentData.mode === 'school',
+                text: 'School ID',
+                color: theme.muted,
+                font: { family: theme.chartFont, size: 11, weight: '600' }
+              }
             },
             y: {
               beginAtZero: true,
