@@ -1,0 +1,611 @@
+/* Portal dashboards — SSDACMIS landing page design language
+   Scoped to .portal-dash on super admin, school admin, bursar, and HOD overviews. */
+
+.portal-dash {
+  --pd-navy: #0f172a;
+  --pd-text: #1e293b;
+  --pd-muted: #64748b;
+  --pd-bg: #f8fafc;
+  --pd-sky: #38bdf8;
+  --pd-radius: 22px;
+  --pd-radius-sm: 14px;
+  --pd-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.1);
+  --pd-shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
+  --pd-glass: rgba(255, 255, 255, 0.88);
+}
+
+.app-main:has(> .portal-dash),
+.app-page:has(.portal-dash) {
+  background: var(--pd-bg);
+}
+
+.portal-dash {
+  font-family: 'Inter', var(--bs-body-font-family, system-ui, sans-serif);
+  color: var(--pd-text);
+}
+
+/* ---------- Hero ---------- */
+.portal-dash .dash-hero {
+  background:
+    radial-gradient(ellipse 75% 55% at 100% 0%, rgba(56, 189, 248, 0.14), transparent 52%),
+    radial-gradient(ellipse 55% 45% at 0% 100%, rgba(37, 99, 235, 0.1), transparent 48%),
+    var(--pd-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--pd-radius);
+  box-shadow: var(--pd-shadow);
+  padding: 1.2rem 1.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.portal-dash .dash-hero--slim {
+  padding: 1rem 1.35rem;
+}
+
+.portal-dash .dash-hero__title {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--pd-navy);
+}
+
+.portal-dash .dash-hero--slim .dash-hero__title {
+  font-size: 1.15rem;
+}
+
+.portal-dash .dash-hero__role {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 80%, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 999px;
+}
+
+.portal-dash .dash-hero__sub {
+  font-size: 0.84rem;
+  color: var(--pd-muted);
+}
+
+.portal-dash .dash-hero__date {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-weight: 600;
+  color: var(--pd-muted);
+}
+
+.portal-dash .dash-hero__date i,
+.portal-dash .dash-hero__inline i {
+  color: var(--accent);
+}
+
+.portal-dash .icon-chip {
+  border-radius: 14px;
+  box-shadow: var(--pd-shadow-sm);
+}
+
+.portal-dash .dash-hero .btn-primary {
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  box-shadow: 0 10px 24px rgba(var(--accent-rgb), 0.32);
+}
+
+.portal-dash .dash-hero .btn-primary:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 12px 28px rgba(var(--accent-rgb), 0.38);
+}
+
+.portal-dash .dash-hero__btn {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.portal-dash .dash-hero__btn--announce {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(var(--accent-rgb), 0.28);
+}
+
+/* ---------- KPI cards ---------- */
+.portal-dash .kpi-card--dash,
+.portal-dash .bursar-dash .kpi-card,
+.portal-dash .hod-overview-kpi {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: var(--pd-radius-sm);
+  box-shadow: var(--pd-shadow-sm);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.portal-dash .kpi-card--dash:hover,
+.portal-dash .bursar-dash .kpi-card:hover,
+.portal-dash .hod-overview-kpi:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pd-shadow);
+}
+
+.portal-dash .kpi-card__value,
+.portal-dash .hod-overview-kpi__value {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-weight: 800;
+  color: var(--pd-navy);
+  letter-spacing: -0.02em;
+}
+
+.portal-dash .kpi-card__label,
+.portal-dash .hod-overview-kpi__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pd-muted);
+}
+
+.portal-dash .kpi-card__icon {
+  border-radius: 12px;
+}
+
+.portal-dash .hod-overview-kpi__icon {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+/* ---------- Section headings ---------- */
+.portal-dash .section-block__head {
+  margin-bottom: 0.75rem;
+}
+
+.portal-dash .section-block__title {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--pd-navy);
+  letter-spacing: -0.01em;
+}
+
+.portal-dash .section-block__title i {
+  color: var(--accent);
+}
+
+.portal-dash .section-block__sub {
+  color: var(--pd-muted);
+  font-size: 0.85rem;
+}
+
+/* ---------- Chart cards ---------- */
+.portal-dash .chart-card {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.07) !important;
+  border-radius: var(--pd-radius) !important;
+  box-shadow: var(--pd-shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.22s ease;
+}
+
+.portal-dash .chart-card:hover {
+  box-shadow: var(--pd-shadow);
+}
+
+.portal-dash .chart-card__title {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--pd-navy);
+  font-size: 0.95rem;
+}
+
+.portal-dash .chart-card__sub {
+  color: var(--pd-muted);
+}
+
+.portal-dash .chart-card__badge {
+  background: color-mix(in srgb, var(--accent-soft) 65%, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.portal-dash .chart-surface {
+  background: var(--pd-bg);
+  border-radius: var(--pd-radius-sm);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+/* ---------- Panels & tables ---------- */
+.portal-dash .sa-panel,
+.portal-dash .app-panel,
+.portal-dash .dash-card.card,
+.portal-dash .bursar-dash .dash-card {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.07) !important;
+  border-radius: var(--pd-radius) !important;
+  box-shadow: var(--pd-shadow-sm);
+  overflow: hidden;
+}
+
+.portal-dash .sa-panel__head,
+.portal-dash .app-panel__head,
+.portal-dash .dash-card > .card-header,
+.portal-dash .bursar-dash .dash-card .card-header {
+  background: linear-gradient(180deg, #fff 0%, var(--pd-bg) 100%);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--pd-navy);
+}
+
+.portal-dash .sa-table thead th,
+.portal-dash .table thead th {
+  background: var(--pd-bg) !important;
+  color: var(--pd-muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+}
+
+.portal-dash .sa-table tbody tr:hover td,
+.portal-dash .table-hover tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+}
+
+/* ---------- Period bar (bursar / HOD) ---------- */
+.portal-dash .period-bar,
+.portal-dash .hod-overview-period {
+  background: var(--pd-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--pd-radius-sm);
+  box-shadow: var(--pd-shadow-sm);
+}
+
+.portal-dash .period-bar__title {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--pd-navy);
+}
+
+.portal-dash .period-bar .btn-primary {
+  border-radius: 999px;
+  border: none;
+  box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.28);
+}
+
+/* ---------- HOD overview extras ---------- */
+.portal-dash .hod-overview-kpi--purple { border-left: 3px solid #7c3aed; }
+.portal-dash .hod-overview-kpi--blue { border-left: 3px solid var(--accent); }
+.portal-dash .hod-overview-kpi--green { border-left: 3px solid #10b981; }
+.portal-dash .hod-overview-kpi--orange { border-left: 3px solid #d97706; }
+
+.portal-dash .hod-overview-chart-card,
+.portal-dash .hod-chart-card {
+  border-radius: var(--pd-radius) !important;
+  border: 1px solid rgba(15, 23, 42, 0.07) !important;
+  box-shadow: var(--pd-shadow-sm);
+  background: #fff;
+}
+
+/* ---------- Bursar dashboard cards ---------- */
+.portal-dash.bursar-dash .pay-row {
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.portal-dash.bursar-dash .pay-row:hover {
+  background: color-mix(in srgb, var(--accent-soft) 35%, transparent);
+}
+
+.portal-dash .progress {
+  border-radius: 999px;
+  height: 0.5rem;
+  background: #e2e8f0;
+}
+
+.portal-dash .progress-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--pd-sky));
+}
+
+/* ---------- Profile / schools panel ---------- */
+.portal-dash .sa-panel--profile,
+.portal-dash .sa-profile.card {
+  border-radius: var(--pd-radius);
+  box-shadow: var(--pd-shadow-sm);
+}
+
+.portal-dash .sa-profile__title {
+  font-family: 'Manrope', 'Inter', sans-serif;
+  font-weight: 800;
+  color: var(--pd-navy);
+}
+
+/* ---------- Generic cards & recent activity ---------- */
+.portal-dash > .card,
+.portal-dash .row .card:not(.chart-card) {
+  border: 1px solid rgba(15, 23, 42, 0.07) !important;
+  border-radius: var(--pd-radius) !important;
+  box-shadow: var(--pd-shadow-sm);
+  background: #fff;
+  overflow: hidden;
+}
+
+.portal-dash .card > .card-header {
+  background: linear-gradient(180deg, #fff 0%, var(--pd-bg) 100%);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  font-weight: 700;
+  color: var(--pd-navy);
+}
+
+.portal-dash .recent-list__item {
+  border-radius: 10px;
+  margin: 0 0.5rem;
+  transition: background 0.15s;
+}
+
+.portal-dash .recent-list__item:hover {
+  background: color-mix(in srgb, var(--accent-soft) 40%, transparent);
+}
+
+.portal-dash .recent-list__avatar {
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.portal-dash .hod-overview-empty {
+  border-radius: var(--pd-radius) !important;
+  border: 1px solid rgba(15, 23, 42, 0.07) !important;
+  box-shadow: var(--pd-shadow-sm);
+}
+
+.portal-dash .hod-overview-chart-surface {
+  background: var(--pd-bg);
+  border-radius: var(--pd-radius-sm);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.portal-dash .card-header-icon {
+  border-radius: 10px;
+}
+
+/* ---------- Primary actions elsewhere on dash ---------- */
+.portal-dash .btn-primary:not(.dash-hero .btn-primary) {
+  border-radius: 999px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.25);
+}
+
+/* ============================================================
+   Dark mode — flat surfaces, minimal glow (no card gradients)
+   ============================================================ */
+[data-bs-theme="dark"] .portal-dash {
+  --pd-navy: #f1f5f9;
+  --pd-text: #e2e8f0;
+  --pd-muted: #94a3b8;
+  --pd-bg: #0f1115;
+  --pd-glass: var(--surface);
+  --pd-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --pd-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+[data-bs-theme="dark"] .app-main:has(> .portal-dash),
+[data-bs-theme="dark"] .app-page:has(.portal-dash) {
+  background: var(--pd-bg);
+}
+
+/* Hero — flat (override app.css radial washes) */
+[data-bs-theme="dark"] .portal-dash .dash-hero {
+  background: var(--surface) !important;
+  background-image: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--border);
+  box-shadow: var(--pd-shadow-sm);
+}
+
+[data-bs-theme="dark"] .portal-dash .dash-hero__title,
+[data-bs-theme="dark"] .portal-dash .section-block__title,
+[data-bs-theme="dark"] .portal-dash .chart-card__title,
+[data-bs-theme="dark"] .portal-dash .kpi-card__value,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__value,
+[data-bs-theme="dark"] .portal-dash .sa-profile__title {
+  color: var(--pd-navy);
+}
+
+[data-bs-theme="dark"] .portal-dash .dash-hero__role {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  color: #93c5fd;
+}
+
+[data-bs-theme="dark"] .portal-dash .dash-hero__date {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--pd-muted);
+}
+
+/* KPI, chart, panel, list cards — solid fills only */
+[data-bs-theme="dark"] .portal-dash .kpi-card--dash,
+[data-bs-theme="dark"] .portal-dash .bursar-dash .kpi-card,
+[data-bs-theme="dark"] .portal-dash .chart-card,
+[data-bs-theme="dark"] .portal-dash .sa-panel,
+[data-bs-theme="dark"] .portal-dash .app-panel,
+[data-bs-theme="dark"] .portal-dash .dash-card.card,
+[data-bs-theme="dark"] .portal-dash .bursar-dash .dash-card,
+[data-bs-theme="dark"] .portal-dash > .card,
+[data-bs-theme="dark"] .portal-dash .row .card:not(.chart-card),
+[data-bs-theme="dark"] .portal-dash .hod-overview-empty,
+[data-bs-theme="dark"] .portal-dash .hod-overview-chart-card,
+[data-bs-theme="dark"] .portal-dash .hod-chart-card {
+  background: var(--surface) !important;
+  background-image: none !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--pd-shadow-sm);
+}
+
+/* HOD KPI tone variants — strip app.css gradients */
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--purple,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--blue,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--green,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--orange {
+  background: var(--surface) !important;
+  background-image: none !important;
+  box-shadow: var(--pd-shadow-sm);
+}
+
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--purple { border-left-color: #a855f7; }
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--blue { border-left-color: #60a5fa; }
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--green { border-left-color: #4ade80; }
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi--orange { border-left-color: #fb923c; }
+
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--purple,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--blue,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--green,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--orange {
+  background: var(--surface-2) !important;
+  background-image: none !important;
+  box-shadow: none;
+}
+
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--purple { color: #c084fc; }
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--blue { color: #60a5fa; }
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--green { color: #4ade80; }
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi__icon--orange { color: #fb923c; }
+
+[data-bs-theme="dark"] .portal-dash .kpi-card__icon {
+  background: var(--surface-2) !important;
+  box-shadow: none;
+}
+
+/* Card headers — flat, no gradient fade */
+[data-bs-theme="dark"] .portal-dash .sa-panel__head,
+[data-bs-theme="dark"] .portal-dash .app-panel__head,
+[data-bs-theme="dark"] .portal-dash .dash-card > .card-header,
+[data-bs-theme="dark"] .portal-dash .bursar-dash .dash-card .card-header,
+[data-bs-theme="dark"] .portal-dash .card > .card-header {
+  background: var(--surface-2) !important;
+  background-image: none !important;
+  border-bottom-color: var(--border);
+  color: var(--pd-navy);
+}
+
+[data-bs-theme="dark"] .portal-dash .chart-card__badge {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.22);
+  color: #93c5fd;
+}
+
+[data-bs-theme="dark"] .portal-dash .chart-surface,
+[data-bs-theme="dark"] .portal-dash .hod-overview-chart-surface {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+[data-bs-theme="dark"] .portal-dash .period-bar,
+[data-bs-theme="dark"] .portal-dash .hod-overview-period {
+  background: var(--surface);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--border);
+  box-shadow: var(--pd-shadow-sm);
+}
+
+[data-bs-theme="dark"] .portal-dash .period-bar__title {
+  color: var(--pd-navy);
+}
+
+/* Tables & lists */
+[data-bs-theme="dark"] .portal-dash .sa-table thead th,
+[data-bs-theme="dark"] .portal-dash .table thead th {
+  background: var(--surface-2) !important;
+  color: var(--pd-muted);
+  border-bottom-color: var(--border);
+}
+
+[data-bs-theme="dark"] .portal-dash .sa-table tbody td,
+[data-bs-theme="dark"] .portal-dash .table tbody td {
+  border-bottom-color: var(--border);
+}
+
+[data-bs-theme="dark"] .portal-dash .sa-table tbody tr:hover td,
+[data-bs-theme="dark"] .portal-dash .table-hover tbody tr:hover td,
+[data-bs-theme="dark"] .portal-dash .recent-list__item:hover,
+[data-bs-theme="dark"] .portal-dash.bursar-dash .pay-row:hover {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+/* Buttons — solid accent, no gradients */
+[data-bs-theme="dark"] .portal-dash .dash-hero .btn-primary,
+[data-bs-theme="dark"] .portal-dash .dash-hero__btn--announce,
+[data-bs-theme="dark"] .portal-dash .btn-primary {
+  background: var(--accent) !important;
+  background-image: none !important;
+  border: 1px solid var(--accent-hover);
+  box-shadow: none;
+}
+
+[data-bs-theme="dark"] .portal-dash .dash-hero .btn-primary:hover,
+[data-bs-theme="dark"] .portal-dash .dash-hero__btn--announce:hover,
+[data-bs-theme="dark"] .portal-dash .btn-primary:hover {
+  background: var(--accent-hover) !important;
+  filter: none;
+  box-shadow: none;
+}
+
+[data-bs-theme="dark"] .portal-dash .dash-hero__btn--attendance,
+[data-bs-theme="dark"] .portal-dash .dash-hero__btn--marks {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-bs-theme="dark"] .portal-dash .dash-hero__btn--attendance:hover,
+[data-bs-theme="dark"] .portal-dash .dash-hero__btn--marks:hover {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  color: #93c5fd;
+}
+
+[data-bs-theme="dark"] .portal-dash .progress {
+  background: var(--surface-2);
+}
+
+[data-bs-theme="dark"] .portal-dash .progress-bar {
+  background: var(--accent) !important;
+  background-image: none !important;
+}
+
+/* Subtle hover — no heavy lift in dark */
+[data-bs-theme="dark"] .portal-dash .kpi-card--dash:hover,
+[data-bs-theme="dark"] .portal-dash .bursar-dash .kpi-card:hover,
+[data-bs-theme="dark"] .portal-dash .hod-overview-kpi:hover,
+[data-bs-theme="dark"] .portal-dash .chart-card:hover {
+  transform: none;
+  box-shadow: var(--pd-shadow-sm);
+  border-color: var(--border-strong) !important;
+}
+
+[data-bs-theme="dark"] .portal-dash .icon-chip {
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-dash .kpi-card--dash:hover,
+  .portal-dash .chart-card:hover {
+    transform: none;
+  }
+}

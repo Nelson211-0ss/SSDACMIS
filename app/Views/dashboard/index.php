@@ -107,7 +107,7 @@ $greetIcon  = $h < 12 ? 'bi-sunrise'   : ($h < 17 ? 'bi-sun'         : 'bi-moon-
 $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
 ?>
 
-<div class="dash-fly-root<?= $useOverviewUi ? ' sa-dash' : '' ?>">
+<div class="dash-fly-root<?= $useOverviewUi ? ' sa-dash portal-dash' : '' ?>">
 
 <!-- ============================================================
      Hero / greeting (compact, with inline quick actions)

@@ -7,7 +7,7 @@ $title  = 'Performance overview';
 $hasMarks = $gradeCount > 0;
 ?>
 
-<div class="hod-overview-page">
+<div class="hod-overview-page portal-dash">
 
 <form method="get"
       action="<?= $base ?>/hod/overview"

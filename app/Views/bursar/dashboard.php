@@ -56,7 +56,7 @@ $greetTone = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
   .bursar-dash .kpi-card__value { font-size: 1.3rem; }
 </style>
 
-<div class="bursar-dash d-flex flex-column gap-3">
+<div class="bursar-dash portal-dash d-flex flex-column gap-3">
 
   <!-- Hero -->
   <section class="dash-hero py-2">

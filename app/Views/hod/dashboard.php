@@ -45,6 +45,8 @@ $greetIcon = $h < 12 ? 'bi-sunrise' : ($h < 17 ? 'bi-sun' : 'bi-moon-stars');
 $greetTone = $h < 12 ? 'orange' : ($h < 17 ? 'yellow' : 'purple');
 ?>
 
+<div class="portal-dash hod-portal-dash d-flex flex-column gap-3">
+
 <!-- ============================================================
      Hero greeting (slim, single line of meta)
      ============================================================ -->
@@ -500,3 +502,5 @@ $greetTone = $h < 12 ? 'orange' : ($h < 17 ? 'yellow' : 'purple');
     </div>
   </div>
 <?php endif; ?>
+
+</div>
