@@ -231,8 +231,8 @@ $themesJson = json_encode(
         <div class="card-body">
 
           <p class="text-muted small mb-3">
-            Pick an accent color. The sidebar tint, buttons, links and active
-            navigation will all match.
+            Pick an accent color. Buttons, links, and active navigation will match.
+            The sidebar stays a clean white panel across all themes.
           </p>
 
           <div class="theme-picker">
@@ -413,10 +413,11 @@ $themesJson = json_encode(
   --p-accent-hover:  var(--accent-hover);
   --p-accent-soft:   var(--accent-soft);
   --p-accent-rgb:    var(--accent-rgb);
-  --p-sidebar-bg:    var(--sidebar-bg);
+  --p-sidebar-bg:    #ffffff;
 }
 .settings-preview__sidebar {
   background: var(--p-sidebar-bg);
+  border-right: 1px solid var(--border);
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -425,15 +426,16 @@ $themesJson = json_encode(
 .settings-preview__brand {
   display: flex; align-items: center; gap: .55rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
   font-size: .875rem;
   padding-bottom: .75rem;
-  border-bottom: 1px solid rgba(255,255,255,.12);
+  border-bottom: 1px solid var(--border);
 }
-.settings-preview__brand-icon i { color: #fff; font-size: 1.15rem; }
+.settings-preview__brand-icon i { color: var(--p-accent); font-size: 1.15rem; }
 .settings-preview__brand img {
   height: 28px; width: 28px; object-fit: contain;
-  background: rgba(255,255,255,.95); padding: 2px; border-radius: 6px;
+  background: #fff; border: 1px solid var(--border);
+  padding: 2px; border-radius: 6px;
   display: block;
 }
 .settings-preview__nav { display: flex; flex-direction: column; gap: 2px; }
@@ -442,15 +444,15 @@ $themesJson = json_encode(
   padding: .4rem .65rem;
   border-radius: var(--radius-sm);
   font-size: .8rem;
-  color: rgba(255,255,255,.78);
+  color: var(--text-muted);
 }
-.settings-preview__link i { color: rgba(255,255,255,.65); font-size: .9rem; }
+.settings-preview__link i { color: var(--text-muted); font-size: .9rem; }
 .settings-preview__link.is-active {
-  background: #fff;
-  color: var(--p-sidebar-bg);
+  background: var(--p-accent-soft);
+  color: var(--p-accent);
   font-weight: 600;
 }
-.settings-preview__link.is-active i { color: var(--p-sidebar-bg); }
+.settings-preview__link.is-active i { color: var(--p-accent); }
 
 .settings-preview__main {
   background: var(--surface-2, #f8fafc);
@@ -546,7 +548,6 @@ $themesJson = json_encode(
     preview.style.setProperty('--p-accent-hover', t.accent_hover);
     preview.style.setProperty('--p-accent-soft',  t.accent_soft);
     preview.style.setProperty('--p-accent-rgb',   t.accent_rgb);
-    preview.style.setProperty('--p-sidebar-bg',   t.sidebar_bg);
   }
 
   function setName() {

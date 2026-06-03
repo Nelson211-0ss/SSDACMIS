@@ -45,10 +45,9 @@ class Settings
     ];
 
     /**
-     * Curated theme palettes. The sidebar is rendered as a fully-colored
-     * panel; `sidebar_bg` is the deep variant of the accent that fills it.
-     * Hover/border/text overlays are uniform white-on-color (set in app.css)
-     * so they don't need to be repeated per theme.
+     * Curated accent palettes (buttons, links, active nav). The app sidebar
+     * uses a fixed light surface in app.css; `sidebar_bg` is kept for legacy
+     * data only and is not applied to the shell.
      */
     private const THEMES = [
         'blue' => [

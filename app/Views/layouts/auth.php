@@ -6,6 +6,8 @@ use App\Core\Settings;
 $schoolName  = Settings::get('school_name') ?: App::config('app.name');
 $schoolMotto = Settings::get('school_motto') ?? '';
 $schoolLogo  = Settings::logoUrl();
+$bodyClass   = $authBodyClass ?? 'auth-page auth-page--plain';
+$isLoginPage = str_contains($bodyClass, 'auth-page--login');
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -15,22 +17,32 @@ $schoolLogo  = Settings::logoUrl();
   <title><?= View::e($title ?? 'Sign in') ?> &middot; <?= View::e($schoolName) ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <?php if ($isLoginPage): ?>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="<?= View::asset($base, 'assets/css/auth-login.css') ?>" rel="stylesheet">
+  <?php else: ?>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/app.css') ?>" rel="stylesheet">
+  <?php endif; ?>
   <?php if ($schoolLogo): ?>
     <link rel="icon" type="image/png" href="<?= $base ?>/<?= View::e($schoolLogo) ?>">
   <?php endif; ?>
 </head>
-<body class="auth-page auth-page--plain">
+<body class="<?= View::e($bodyClass) ?>">
   <?= $content ?>
+  <?php if (empty($hideAuthFooter)): ?>
   <footer class="auth-credit" role="contentinfo">
     &copy; <?= date('Y') ?> <?= View::e($schoolName) ?> &middot;
     <strong>SSD-ACMIS</strong> by Nelson O. Ochan
     <span class="auth-credit__sep">|</span>
     SSD-iT Solutions
   </footer>
+  <?php endif; ?>
+  <?php if (!$isLoginPage): ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <?php endif; ?>
 </body>
 </html>

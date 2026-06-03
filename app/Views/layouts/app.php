@@ -94,7 +94,6 @@ $homeHref = $useBursarNav
       --accent-hover: <?= View::e($theme['accent_hover']) ?>;
       --accent-soft:  <?= View::e($theme['accent_soft']) ?>;
       --accent-rgb:   <?= View::e($theme['accent_rgb']) ?>;
-      --sidebar-bg:   <?= View::e($theme['sidebar_bg']) ?>;
     }
   </style>
   <script>

@@ -5,11 +5,7 @@ use App\Core\Auth;
 $router = new Router();
 
 // Public
-$router->get('/', function () {
-    $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
-    header('Location: ' . $base . '/login', true, 302);
-    exit;
-});
+$router->get('/',           'LandingController@index');
 $router->get('/login',      'AuthController@showLogin');
 $router->post('/login',     'AuthController@login');
 $router->get('/hod/login',     'AuthController@showHodLogin');
