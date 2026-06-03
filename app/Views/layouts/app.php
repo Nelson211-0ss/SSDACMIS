@@ -46,7 +46,7 @@ $bursarNav = [
 ];
 
 $mainNav = [
-    ['Dashboard',     'bi-speedometer2',      '/dashboard',     ['admin','school_admin','staff','student'], '/dashboard'],
+    ['Overview',      'bi-speedometer2',      '/dashboard',     ['admin','school_admin','staff','student'], '/dashboard'],
     ['Schools',       'bi-building-gear',     '/schools',       ['admin'],                                  '/schools'],
     ['Students',      'bi-people',            '/students',      ['admin','school_admin','staff'],           '/students'],
     ['Staff',         'bi-person-badge',      '/staff',         ['admin','school_admin'],                   '/staff'],
@@ -281,7 +281,7 @@ $homeHref = $useBursarNav
             <?php else: ?>
               <li>
                 <a class="dropdown-item" href="<?= $base ?>/dashboard">
-                  <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                  <i class="bi bi-speedometer2 me-2"></i> Overview
                 </a>
               </li>
             <?php endif; ?>
@@ -335,7 +335,13 @@ $homeHref = $useBursarNav
       include dirname(__DIR__) . '/bursar/_period_bar.php';
     endif; ?>
 
-    <?= $content ?? '' ?>
+    <?php if (!$useBursarNav && !$useHodNav): ?>
+      <div class="app-page">
+        <?= $content ?? '' ?>
+      </div>
+    <?php else: ?>
+      <?= $content ?? '' ?>
+    <?php endif; ?>
   </main>
 </div>
 

@@ -1,5 +1,10 @@
 <?php use App\Core\View; $layout = 'app'; $title = 'Grades'; ?>
-<h4 class="mb-3"><i class="bi bi-bar-chart"></i> Grades</h4>
+<?php
+$pageTitle = 'Grades';
+$pageSubtitle = 'View and manage student grade records.';
+$pageIcon = 'bi-bar-chart';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
 
 <?php if (!$isStudent): ?>
   <form class="card border-0 shadow-sm mb-3" method="get" action="<?= $base ?>/grades">

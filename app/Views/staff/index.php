@@ -4,16 +4,18 @@ $layout = 'app';
 $title = 'Staff';
 $catBadge = ['core'=>'bg-primary-subtle text-primary-emphasis','science'=>'bg-success-subtle text-success-emphasis','arts'=>'bg-warning-subtle text-warning-emphasis','optional'=>'bg-secondary-subtle text-secondary-emphasis'];
 $catLabel = ['core'=>'Core','science'=>'Science','arts'=>'Arts','optional'=>'Optional'];
-?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0"><i class="bi bi-person-badge"></i> Staff</h4>
-  <a class="btn btn-primary" href="<?= $base ?>/staff/create"><i class="bi bi-plus-lg"></i> Add Staff</a>
-</div>
 
-<div class="card border-0 shadow-sm">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0 align-middle">
-      <thead class="table-light">
+$pageTitle = 'Staff';
+$pageSubtitle = 'Teachers, roles, subjects, and department heads.';
+$pageIcon = 'bi-person-badge';
+$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/staff/create"><i class="bi bi-plus-lg"></i> Add staff</a>';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
+
+<div class="app-panel">
+  <div class="sa-table-wrap">
+    <table class="table table-hover sa-table align-middle mb-0">
+      <thead>
         <tr>
           <th>Name</th>
           <th>Email</th>
@@ -26,7 +28,7 @@ $catLabel = ['core'=>'Core','science'=>'Science','arts'=>'Arts','optional'=>'Opt
       </thead>
       <tbody>
       <?php if (empty($staff)): ?>
-        <tr><td colspan="7" class="text-center text-muted py-4">No staff yet.</td></tr>
+        <tr><td colspan="7" class="sa-empty">No staff yet. Add your first staff member to get started.</td></tr>
       <?php else: foreach ($staff as $s):
         $hodCats = array_filter(array_map('trim', explode(',', (string) ($s['hod_categories'] ?? ''))));
         $subjects = [];
@@ -52,7 +54,7 @@ $catLabel = ['core'=>'Core','science'=>'Science','arts'=>'Arts','optional'=>'Opt
           <td><span class="badge bg-info text-uppercase"><?= View::e($s['role'] ?? '—') ?></span></td>
           <td>
             <?php if (empty($subjects)): ?>
-              <span class="text-muted small">— none —</span>
+              <span class="text-muted small">—</span>
             <?php else: ?>
               <div class="d-flex flex-wrap gap-1">
                 <?php foreach ($subjects as $sub): ?>
@@ -65,7 +67,7 @@ $catLabel = ['core'=>'Core','science'=>'Science','arts'=>'Arts','optional'=>'Opt
           </td>
           <td><?= View::e($s['position'] ?: '—') ?></td>
           <td><?= View::e($s['phone'] ?: '—') ?></td>
-          <td class="text-end">
+          <td class="text-end text-nowrap">
             <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/staff/<?= (int)$s['id'] ?>/edit"><i class="bi bi-pencil"></i></a>
             <form class="d-inline" method="post" action="<?= $base ?>/staff/<?= (int)$s['id'] ?>/delete" data-confirm="Delete this staff member and their login?">
               <input type="hidden" name="_csrf" value="<?= $csrf ?>">

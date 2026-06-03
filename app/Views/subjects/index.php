@@ -36,19 +36,14 @@ foreach ($subjects as $s) if ((int) ($s['is_offered'] ?? 1) === 1) $totalOffered
 $totalAll = count($subjects);
 ?>
 
-<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
-  <div>
-    <h4 class="mb-1"><i class="bi bi-book"></i> Curriculum &amp; Subjects</h4>
-    <p class="text-muted small mb-0">
-      Curate the subjects this school actually teaches. Anything switched OFF is hidden from
-      mark entry, the HOD dashboard and report cards — historic grades remain untouched.
-    </p>
-  </div>
-  <span class="badge bg-info-subtle text-info-emphasis fs-6 align-self-center">
-    <i class="bi bi-toggles"></i>
-    <?= $totalOffered ?>/<?= $totalAll ?> subjects offered
-  </span>
-</div>
+<?php
+$pageTitle = 'Curriculum & subjects';
+$pageSubtitle = 'Toggle offered subjects — off hides them from marks and reports; historic grades stay.';
+$pageIcon = 'bi-book';
+$pageActionsHtml = '<span class="badge bg-info-subtle text-info-emphasis"><i class="bi bi-toggles"></i> '
+    . (int) $totalOffered . '/' . (int) $totalAll . ' offered</span>';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
 
 <?php if ($auth['role'] === 'admin' && !empty($schools)): ?>
   <form method="get" class="mb-3 d-flex gap-2 align-items-center">

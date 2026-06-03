@@ -1,7 +1,12 @@
 <?php use App\Core\View; $layout = 'app'; $title = 'Classes';
 $canManage = in_array($auth['role'], ['admin', 'school_admin'], true);
 ?>
-<h4 class="mb-3"><i class="bi bi-building"></i> Classes</h4>
+<?php
+$pageTitle = 'Classes';
+$pageSubtitle = 'Class lists, admission prefixes, and class teachers.';
+$pageIcon = 'bi-grid';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
 
 <?php if ($auth['role'] === 'admin' && !empty($schools)): ?>
   <form method="get" class="mb-3 d-flex gap-2 align-items-center">
@@ -54,8 +59,8 @@ $canManage = in_array($auth['role'], ['admin', 'school_admin'], true);
   <div class="col-lg-<?= $canManage ? 8 : 12 ?>">
     <div class="card border-0 shadow-sm">
       <div class="table-responsive">
-        <table class="table mb-0 align-middle">
-          <thead class="table-light">
+        <table class="table table-hover sa-table mb-0 align-middle">
+          <thead>
             <tr>
               <th>Name</th><th>Level</th><th>Adm. Prefix</th><th>Students</th><th>Class Teacher</th>
               <?= $canManage ? '<th></th>' : '' ?>

@@ -7,12 +7,12 @@ $studentsEmptyMessage = empty($students)
     ? (trim((string) ($search ?? '')) !== '' ? 'No matching students.' : 'No students yet.')
     : '';
 ?>
-<div class="page-header mb-4">
-  <div>
-    <h2 class="h4 mb-1"><i class="bi bi-people text-primary"></i> Students</h2>
-    <p class="page-header__sub mb-0">Search, edit, or register learners. Admission numbers follow each class prefix.</p>
-  </div>
-  <div class="d-flex flex-wrap gap-2">
+<?php
+$pageTitle = 'Students';
+$pageSubtitle = 'Search, edit, or register learners. Admission numbers follow each class prefix.';
+$pageIcon = 'bi-people';
+ob_start();
+?>
     <?php if (($auth['role'] ?? '') === 'admin'): ?>
       <a class="btn btn-outline-danger" href="<?= $base ?>/students/clear-all"
          title="Remove every learner, marks, attendance, fees, and student login accounts">
@@ -28,11 +28,13 @@ $studentsEmptyMessage = empty($students)
       </a>
     <?php endif; ?>
     <a class="btn btn-primary" href="<?= $base ?>/students/create"><i class="bi bi-plus-lg"></i> Add student</a>
-  </div>
-</div>
+<?php
+$pageActionsHtml = ob_get_clean();
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
 
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header py-3 d-flex align-items-center gap-2 border-0 border-bottom bg-transparent">
+<div class="card mb-3 filter-panel">
+  <div class="card-header d-flex align-items-center gap-2">
     <span class="card-header-icon card-header-icon--blue flex-shrink-0" aria-hidden="true"><i class="bi bi-search"></i></span>
     <div>
       <strong class="d-block">Find students</strong>
@@ -64,15 +66,15 @@ $studentsEmptyMessage = empty($students)
   </div>
 </div>
 
-<div class="card border-0 shadow-sm overflow-hidden">
-  <div class="card-header py-3 border-0 border-bottom bg-transparent d-flex align-items-center gap-2">
+<div class="app-panel overflow-hidden">
+  <div class="app-panel__head d-flex align-items-center gap-2" style="padding:.7rem 1rem;border-bottom:1px solid var(--border);background:var(--surface-2);">
     <span class="card-header-icon card-header-icon--blue flex-shrink-0" aria-hidden="true"><i class="bi bi-list-ul"></i></span>
     <strong>All students</strong>
     <span class="text-muted small fw-normal ms-1">(newest registrations first)</span>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
+    <table class="table table-hover sa-table align-middle mb-0">
+      <thead>
         <tr>
           <th scope="col" class="text-nowrap">Adm. no.</th>
           <th scope="col">Name</th>

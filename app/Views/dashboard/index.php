@@ -2,14 +2,48 @@
 use App\Core\View;
 
 $layout = 'app';
-$title  = 'Dashboard';
+$title  = 'Overview';
 
 $role        = $auth['role'] ?? 'guest';
 $isAdmin     = !empty($isAdmin) || $role === 'admin';
 $isSchoolAdmin = ($role === 'school_admin');
+$isStaff       = ($role === 'staff');
 // Must match DashboardController scope: admins, per-school admins, and staff see analytics.
-$isAdminish  = in_array($role, ['admin', 'school_admin', 'staff'], true);
-$showOpsKpis = ($isAdmin || $isSchoolAdmin);
+$isAdminish    = in_array($role, ['admin', 'school_admin', 'staff'], true);
+$showOpsKpis   = ($isAdmin || $isSchoolAdmin);
+$useOverviewUi = $isAdminish;
+$showSchoolKpis = $isSchoolAdmin || $isStaff;
+
+// School profile logo for overview panel (school admin).
+$profileLogoUrl = '';
+if (!empty($schoolProfile['logo'])) {
+    $logoRel = trim((string) $schoolProfile['logo']);
+    if ($logoRel !== '' && str_starts_with(ltrim($logoRel, '/'), 'uploads/')) {
+        $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
+        if (is_file($abs)) {
+            $profileLogoUrl = rtrim($base, '/') . '/' . ltrim($logoRel, '/');
+        }
+    }
+}
+
+$useClassEnrollment = !$isAdmin;
+
+$classLabels = array_column($classDistribution ?? [], 'name');
+$classCounts = array_map(fn($r) => (int) $r['total'], $classDistribution ?? []);
+$classLevels = array_column($classDistribution ?? [], 'level');
+$classTotal  = array_sum($classCounts);
+
+$enrollmentChartTitle = $isAdmin ? 'Enrollment per school' : 'Enrollment per class';
+$enrollmentChartSub   = $isAdmin
+    ? 'Students enrolled at each school on the platform'
+    : 'Students currently enrolled in each class';
+$analyticsSub = $isAdmin
+    ? 'Combined enrollment and demographics across all schools.'
+    : 'Class enrollment and student demographics for your school.';
+$flyCharts      = $isAdmin ? 4 : 3;
+$flyProfile     = ($isSchoolAdmin && !empty($schoolProfile)) ? 5 : 0;
+$flyActivity    = $isAdmin ? 6 : ($flyProfile ? 6 : 5);
+$flyActivityRow = $flyActivity + 1;
 $adminOps    = $adminOps ?? [];
 $schoolProfile   = $schoolProfile   ?? null;
 $schoolsOverview = $schoolsOverview ?? [];
@@ -39,11 +73,18 @@ $staffThisMonth = (int) ($deltas['staff_this_month']    ?? 0);
 $studDeltaDir = $studThisMonth > $studLastMonth ? 'up'
               : ($studThisMonth < $studLastMonth ? 'down' : 'flat');
 
-// ---- Class distribution (drives the bar chart) ----
-$classLabels = array_column($classDistribution ?? [], 'name');
-$classCounts = array_map(fn($r) => (int) $r['total'], $classDistribution ?? []);
-$classLevels = array_column($classDistribution ?? [], 'level');
-$classTotal  = array_sum($classCounts);
+// ---- Enrollment per school (drives the bar chart) ----
+$schoolLabels = array_column($schoolDistribution ?? [], 'name');
+$schoolCounts = array_map(fn($r) => (int) $r['total'], $schoolDistribution ?? []);
+$schoolCodes  = array_column($schoolDistribution ?? [], 'code');
+$schoolTotal  = array_sum($schoolCounts);
+$schoolCount  = count($schoolDistribution ?? []);
+
+$enrollLabels = $useClassEnrollment ? $classLabels : $schoolLabels;
+$enrollCounts = $useClassEnrollment ? $classCounts : $schoolCounts;
+$enrollMeta   = $useClassEnrollment ? $classLevels : $schoolCodes;
+$enrollTotal  = $useClassEnrollment ? $classTotal : $schoolTotal;
+$hasEnrollmentChart = count($enrollLabels) > 0;
 
 // ---- Demographics ----
 $gMale   = (int) ($genderBreakdown['male']   ?? 0);
@@ -66,12 +107,12 @@ $greetIcon  = $h < 12 ? 'bi-sunrise'   : ($h < 17 ? 'bi-sun'         : 'bi-moon-
 $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
 ?>
 
-<div class="<?= ($isAdmin || $isSchoolAdmin) ? 'admin-dash' : '' ?>">
+<div class="dash-fly-root<?= $useOverviewUi ? ' sa-dash' : '' ?>">
 
 <!-- ============================================================
      Hero / greeting (compact, with inline quick actions)
      ============================================================ -->
-<section class="dash-hero<?= ($isAdmin || $isSchoolAdmin) ? ' dash-hero--admin' : '' ?>">
+<section class="dash-hero dash-fly dash-fly--1<?= ($isAdmin || $isSchoolAdmin) ? ' dash-hero--admin' : '' ?><?= $useOverviewUi ? ' dash-hero--slim dash-hero--sa' : '' ?>">
   <div class="dash-hero__content d-flex align-items-center gap-3">
     <span class="icon-chip icon-chip--<?= $greetTone ?> d-none d-sm-inline-grid">
       <i class="bi <?= $greetIcon ?>"></i>
@@ -80,7 +121,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       <h2 class="dash-hero__title">
         <?= $greeting ?>, <?= View::e($auth['name']) ?>.
         <?php if ($isAdmin): ?>
-          <span class="dash-hero__role">Administrator</span>
+          <span class="dash-hero__role">Super admin</span>
         <?php elseif ($isSchoolAdmin): ?>
           <span class="dash-hero__role">School admin</span>
         <?php endif; ?>
@@ -89,29 +130,9 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         <span class="dash-hero__date">
           <i class="bi bi-calendar3"></i><?= date('l, M j, Y') ?>
         </span>
-        <?php if ($isAdmin): ?>
+        <?php if ($isSchoolAdmin && empty($schoolProfile)): ?>
           <span class="dash-hero__inline">
-            <i class="bi bi-shield-check"></i>
-            <?= !empty($platformTotals) ? number_format((int)$platformTotals['schools']) . ' school' . ((int)$platformTotals['schools'] !== 1 ? 's' : '') . ' · ' . number_format((int)$platformTotals['students']) . ' students' : 'Platform overview' ?>
-          </span>
-        <?php elseif ($isSchoolAdmin): ?>
-          <span class="dash-hero__inline">
-            <i class="bi bi-building-check"></i>
-            <?= $schoolProfile
-              ? View::e((string) $schoolProfile['name'])
-              : 'Your school dashboard' ?>
-          </span>
-        <?php endif; ?>
-        <?php if ($isAdminish): ?>
-          <span class="dash-hero__inline">
-            <i class="bi bi-people"></i>
-            <?= number_format($studentsTotal) ?>
-            student<?= $studentsTotal === 1 ? '' : 's' ?>
-          </span>
-          <span class="dash-hero__inline">
-            <i class="bi bi-building"></i>
-            <?= number_format($classesTotal) ?>
-            class<?= $classesTotal === 1 ? '' : 'es' ?>
+            <i class="bi bi-building-check"></i> Your school
           </span>
         <?php endif; ?>
       </p>
@@ -120,17 +141,24 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
 
   <?php if ($isAdminish): ?>
     <div class="dash-hero__actions">
-      <a href="<?= $base ?>/students/create" class="btn btn-primary btn-sm">
-        <i class="bi bi-person-plus"></i> Add student
-      </a>
       <?php if ($isAdmin): ?>
-        <a href="<?= $base ?>/teaching" class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
-          <i class="bi bi-diagram-3"></i> Teaching
+        <a href="<?= $base ?>/schools/create" class="btn btn-primary btn-sm">
+          <i class="bi bi-building"></i> Add school
+        </a>
+        <a href="<?= $base ?>/schools" class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
+          <i class="bi bi-buildings"></i> Schools
         </a>
         <a href="<?= $base ?>/settings" class="btn btn-sm dash-hero__btn dash-hero__btn--marks">
           <i class="bi bi-gear"></i> Settings
         </a>
-      <?php elseif ($isSchoolAdmin): ?>
+        <a href="<?= $base ?>/announcements" class="btn btn-sm dash-hero__btn dash-hero__btn--announce">
+          <i class="bi bi-megaphone"></i> Announce
+        </a>
+      <?php else: ?>
+      <a href="<?= $base ?>/students/create" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-plus"></i> Add student
+      </a>
+      <?php if ($isSchoolAdmin): ?>
         <a href="<?= $base ?>/teaching" class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
           <i class="bi bi-diagram-3"></i> Teaching
         </a>
@@ -156,363 +184,319 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
          class="btn btn-sm dash-hero__btn dash-hero__btn--announce">
         <i class="bi bi-megaphone"></i> Announce
       </a>
+      <?php endif; ?>
     </div>
   <?php endif; ?>
 </section>
 
 
 <?php if ($isAdmin && !empty($schoolsOverview)): ?>
-<!-- ============================================================
-     Super-Admin Platform Overview
-     ============================================================ -->
-<style>
-  /* Platform KPI pills */
-  .platform-kpi-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:0.8rem; }
-  .platform-kpi {
-    display:inline-flex; align-items:center; gap:8px;
-    padding:6px 14px; border-radius:999px; font-size:.8rem; font-weight:600;
-    background:var(--surface,#fff); border:1.5px solid transparent;
-    box-shadow:0 1px 4px rgba(0,0,0,.07); text-decoration:none; color:inherit;
-    transition:box-shadow .15s, transform .1s;
-  }
-  .platform-kpi:hover { box-shadow:0 3px 10px rgba(0,0,0,.12); transform:translateY(-1px); }
-  .platform-kpi > i { font-size:0.95rem; opacity:.85; }
-  .platform-kpi__val { font-size:1rem; font-weight:700; }
-  .platform-kpi__lbl { color:var(--text-muted,#6b7280); font-weight:400; font-size:.75rem; }
-  .platform-kpi--blue   { border-color:#bfdbfe; } .platform-kpi--blue   > i { color:#2563eb; }
-  .platform-kpi--green  { border-color:#bbf7d0; } .platform-kpi--green  > i { color:#16a34a; }
-  .platform-kpi--orange { border-color:#fed7aa; } .platform-kpi--orange > i { color:#ea580c; }
-  .platform-kpi--teal   { border-color:#99f6e4; } .platform-kpi--teal   > i { color:#0d9488; }
-  .platform-kpi--purple { border-color:#e9d5ff; } .platform-kpi--purple > i { color:#7c3aed; }
-  .platform-kpi--indigo { border-color:#c7d2fe; } .platform-kpi--indigo > i { color:#4f46e5; }
+<?php
+  $ptSchools   = (int) ($platformTotals['schools']   ?? 0);
+  $ptActive    = (int) ($platformTotals['active']    ?? 0);
+  $ptStudents  = (int) ($platformTotals['students']  ?? 0);
+  $ptStaff     = (int) ($platformTotals['staff']     ?? 0);
+  $ptHods      = (int) ($platformTotals['hods']      ?? 0);
+  $ptBursars   = (int) ($platformTotals['bursars']   ?? 0);
+?>
 
-  /* Per-school cards grid */
-  .schools-grid {
-    display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap:10px;
-    margin-bottom:1rem;
-  }
-  .school-card {
-    background:var(--surface,#fff);
-    border:1px solid var(--border,#e7e9ee);
-    border-radius:10px;
-    padding:12px;
-    display:flex; flex-direction:column; gap:8px;
-    box-shadow:0 1px 4px rgba(0,0,0,.05);
-    transition:box-shadow .15s, transform .1s;
-    text-decoration:none; color:inherit;
-  }
-  .school-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.1); transform:translateY(-2px); }
-  .school-card__top { display:flex; align-items:center; gap:10px; }
-  .school-card__logo {
-    width:40px; height:40px; border-radius:6px; object-fit:contain;
-    border:1px solid var(--border,#e7e9ee); background:#f9fafb; flex-shrink:0;
-  }
-  .school-card__logo-icon {
-    width:40px; height:40px; border-radius:6px; background:#eff6ff;
-    display:flex; align-items:center; justify-content:center;
-    font-size:1.25rem; color:#3b82f6; flex-shrink:0;
-  }
-  .school-card__name { font-weight:700; font-size:.9rem; line-height:1.3; }
-  .school-card__code { font-size:.7rem; color:var(--text-muted,#6b7280); font-family:monospace; }
-  .school-card__stats { display:flex; flex-wrap:wrap; gap:6px; }
-  .school-card__stat {
-    display:flex; align-items:center; gap:4px;
-    font-size:.7rem; font-weight:600;
-    background:var(--surface-2,#f8f9fa); border-radius:4px;
-    padding:2px 6px; color:var(--text,#374151);
-  }
-  .school-card__stat > i { font-size:.75rem; opacity:.7; }
-  .school-card__footer { display:flex; align-items:center; justify-content:space-between; }
-  .school-card--inactive { opacity:.7; }
-
-  /* Stat pills */
-  .dash-stat-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .dash-stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 14px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    border: 1.5px solid transparent;
-    background: var(--surface, #fff);
-    color: inherit;
-    box-shadow: 0 1px 4px rgba(0,0,0,.07);
-    transition: box-shadow .15s, transform .1s;
-  }
-  .dash-stat-pill:hover { box-shadow: 0 3px 10px rgba(0,0,0,.12); transform: translateY(-1px); }
-  .dash-stat-pill > i { font-size: 1rem; opacity: .85; }
-  .dash-stat-pill__value { font-size: 1rem; font-weight: 700; }
-  .dash-stat-pill__label { color: var(--text-muted, #6b7280); font-weight: 400; font-size: 0.8rem; }
-  .dash-stat-pill__delta { font-size: 0.75rem; color: #16a34a; }
-  .dash-stat-pill--orange { border-color: #fed7aa; }
-  .dash-stat-pill--orange > i { color: #ea580c; }
-  .dash-stat-pill--green  { border-color: #bbf7d0; }
-  .dash-stat-pill--green  > i { color: #16a34a; }
-  .dash-stat-pill--blue   { border-color: #bfdbfe; }
-  .dash-stat-pill--blue   > i { color: #2563eb; }
-  .dash-stat-pill--purple { border-color: #e9d5ff; }
-  .dash-stat-pill--purple > i { color: #7c3aed; }
-  .dash-stat-pill--indigo { border-color: #c7d2fe; }
-  .dash-stat-pill--indigo > i { color: #4f46e5; }
-  .dash-stat-pill--teal   { border-color: #99f6e4; }
-  .dash-stat-pill--teal   > i { color: #0d9488; }
-  .dash-stat-pill--red    { border-color: #fecaca; }
-  .dash-stat-pill--red    > i { color: #dc2626; }
-
-</style>
-
-<!-- Platform KPI pills -->
-<div class="platform-kpi-row">
-  <a href="<?= $base ?>/schools" class="platform-kpi platform-kpi--blue">
-    <i class="bi bi-building-fill"></i>
-    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['schools'] ?? 0)) ?></span>
-    <span class="platform-kpi__lbl">School<?= ((int)($platformTotals['schools'] ?? 0)) !== 1 ? 's' : '' ?></span>
-    <?php if ((int)($platformTotals['active'] ?? 0) < (int)($platformTotals['schools'] ?? 0)): ?>
-      <span class="platform-kpi__lbl">(<?= (int)$platformTotals['active'] ?> active)</span>
-    <?php endif; ?>
-  </a>
-  <a href="<?= $base ?>/students" class="platform-kpi platform-kpi--orange">
-    <i class="bi bi-people-fill"></i>
-    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['students'] ?? 0)) ?></span>
-    <span class="platform-kpi__lbl">Total students</span>
-  </a>
-  <a href="<?= $base ?>/staff" class="platform-kpi platform-kpi--green">
-    <i class="bi bi-person-workspace"></i>
-    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['staff'] ?? 0)) ?></span>
-    <span class="platform-kpi__lbl">Total staff</span>
-  </a>
-  <span class="platform-kpi platform-kpi--indigo">
-    <i class="bi bi-mortarboard-fill"></i>
-    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['hods'] ?? 0)) ?></span>
-    <span class="platform-kpi__lbl">HODs</span>
-  </span>
-  <span class="platform-kpi platform-kpi--teal">
-    <i class="bi bi-cash-coin"></i>
-    <span class="platform-kpi__val"><?= number_format((int)($platformTotals['bursars'] ?? 0)) ?></span>
-    <span class="platform-kpi__lbl">Bursars</span>
-  </span>
-</div>
-
-<?php if ($isAdminish): ?>
-  <!-- School-level stat pills -->
-  <div class="dash-stat-row mb-3">
-    <a href="<?= $base ?>/students" class="dash-stat-pill dash-stat-pill--orange">
-      <i class="bi bi-people-fill"></i>
-      <span class="dash-stat-pill__value"><?= number_format($studentsTotal) ?></span>
-      <span class="dash-stat-pill__label">Students</span>
-      <?php if ($studThisMonth > 0): ?>
-        <span class="dash-stat-pill__delta"><i class="bi bi-arrow-up-right"></i><?= number_format($studThisMonth) ?> new</span>
-      <?php endif; ?>
-    </a>
-    <a href="<?= $base ?>/staff" class="dash-stat-pill dash-stat-pill--green">
-      <i class="bi bi-person-workspace"></i>
-      <span class="dash-stat-pill__value"><?= number_format($staffTotal) ?></span>
-      <span class="dash-stat-pill__label">Staff</span>
-    </a>
-    <a href="<?= $base ?>/classes" class="dash-stat-pill dash-stat-pill--blue">
-      <i class="bi bi-building-fill"></i>
-      <span class="dash-stat-pill__value"><?= number_format($classesTotal) ?></span>
-      <span class="dash-stat-pill__label">Classes</span>
-    </a>
-    <a href="<?= $base ?>/subjects" class="dash-stat-pill dash-stat-pill--purple">
-      <i class="bi bi-book-half"></i>
-      <span class="dash-stat-pill__value"><?= number_format($subjectsOffered) ?></span>
-      <span class="dash-stat-pill__label">Subjects offered</span>
-    </a>
-    <?php if ($showOpsKpis): ?>
-      <a href="<?= $base ?>/attendance" class="dash-stat-pill dash-stat-pill--<?= $attRate >= 80 ? 'green' : ($attRate >= 60 ? 'orange' : 'red') ?>">
-        <i class="bi bi-calendar-check"></i>
-        <span class="dash-stat-pill__value"><?= $attRate !== null ? $attRate . '%' : '—' ?></span>
-        <span class="dash-stat-pill__label">Attendance today</span>
-      </a>
-    <?php endif; ?>
-  </div>
-<?php endif; ?>
-
-<!-- Per-school cards -->
-<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-  <h5 class="mb-0"><i class="bi bi-grid-3x3-gap me-1"></i> All Schools</h5>
-  <a href="<?= $base ?>/schools/create" class="btn btn-sm btn-primary">
-    <i class="bi bi-plus-lg"></i> Add school
-  </a>
-</div>
-<div class="schools-grid mb-4">
-  <?php foreach ($schoolsOverview as $sc):
-    $logoPath = '';
-    $logoRel  = trim((string)($sc['logo'] ?? ''));
-    if ($logoRel !== '' && str_starts_with(ltrim($logoRel,'/'), 'uploads/')) {
-      $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
-      if (is_file($abs)) {
-        $logoPath = rtrim($base, '/') . '/' . ltrim($logoRel, '/');
-      }
-    }
-    $students = (int)($sc['student_count'] ?? 0);
-    $staff    = (int)($sc['staff_count']   ?? 0);
-    $hods     = (int)($sc['hod_count']     ?? 0);
-    $bursars  = (int)($sc['bursar_count']  ?? 0);
-    $classes  = (int)($sc['class_count']   ?? 0);
-    $male     = (int)($sc['male_count']    ?? 0);
-    $female   = (int)($sc['female_count']  ?? 0);
-    $isActive = ($sc['status'] ?? '') === 'active';
-  ?>
-  <a href="<?= $base ?>/schools/<?= (int)$sc['id'] ?>"
-     class="school-card<?= !$isActive ? ' school-card--inactive' : '' ?>">
-    <div class="school-card__top">
-      <?php if ($logoPath !== ''): ?>
-        <img src="<?= View::e($logoPath) ?>" alt="" class="school-card__logo">
-      <?php else: ?>
-        <div class="school-card__logo-icon"><i class="bi bi-building"></i></div>
-      <?php endif; ?>
-      <div style="min-width:0;">
-        <div class="school-card__name"><?= View::e((string)$sc['name']) ?></div>
-        <div class="school-card__code"><?= View::e((string)$sc['code']) ?></div>
-      </div>
-    </div>
-
-    <div class="school-card__stats">
-      <span class="school-card__stat">
-        <i class="bi bi-people-fill" style="color:#ea580c;"></i>
-        <?= number_format($students) ?> student<?= $students !== 1 ? 's' : '' ?>
-      </span>
-      <span class="school-card__stat">
-        <i class="bi bi-person-workspace" style="color:#16a34a;"></i>
-        <?= number_format($staff) ?> staff
-      </span>
-      <span class="school-card__stat">
-        <i class="bi bi-building-fill" style="color:#2563eb;"></i>
-        <?= number_format($classes) ?> class<?= $classes !== 1 ? 'es' : '' ?>
-      </span>
-      <?php if ($hods > 0): ?>
-        <span class="school-card__stat">
-          <i class="bi bi-mortarboard-fill" style="color:#4f46e5;"></i>
-          <?= number_format($hods) ?> HOD<?= $hods !== 1 ? 's' : '' ?>
-        </span>
-      <?php endif; ?>
-      <?php if ($bursars > 0): ?>
-        <span class="school-card__stat">
-          <i class="bi bi-cash-coin" style="color:#0d9488;"></i>
-          <?= number_format($bursars) ?> bursar<?= $bursars !== 1 ? 's' : '' ?>
-        </span>
-      <?php endif; ?>
-      <?php if ($male + $female > 0): ?>
-        <span class="school-card__stat">
-          <i class="bi bi-gender-ambiguous" style="color:#7c3aed;"></i>
-          <?= number_format($male) ?>M / <?= number_format($female) ?>F
-        </span>
-      <?php endif; ?>
-    </div>
-
-    <div class="school-card__footer">
-      <span class="badge <?= $isActive ? 'bg-success-subtle text-success-emphasis' : 'bg-secondary-subtle text-secondary-emphasis' ?>">
-        <?= $isActive ? 'Active' : 'Inactive' ?>
-      </span>
-      <span class="small text-muted"><i class="bi bi-arrow-right"></i> View</span>
-    </div>
-  </a>
-  <?php endforeach; ?>
-</div>
-
-<!-- Separator before the school-level analytics section -->
-<div class="d-flex align-items-center gap-2 mb-2 mt-1">
-  <span class="fs-6 fw-semibold text-muted">
-    <i class="bi bi-activity me-1"></i>Platform-wide analytics (all schools combined)
-  </span>
-  <hr class="flex-grow-1 my-0">
-</div>
-
-<?php endif; /* end $isAdmin platform overview */ ?>
-
-<?php if ($isAdminish): ?>
-<?php if ($isSchoolAdmin && !empty($schoolProfile)): ?>
-  <div class="card border-0 shadow-sm mb-2 school-dash-profile">
-    <div class="card-body py-3">
-      <div class="row g-3 align-items-start">
-        <div class="col-md-8">
-          <h3 class="h6 fw-semibold mb-2">
-            <i class="bi bi-building text-primary"></i>
-            <?= View::e((string) $schoolProfile['name']) ?>
-          </h3>
-          <div class="small text-muted d-flex flex-wrap gap-3">
-            <span><strong>Code:</strong> <?= View::e((string) ($schoolProfile['code'] ?? '—')) ?></span>
-            <span><strong>Status:</strong> <?= View::e(ucfirst((string) ($schoolProfile['status'] ?? '—'))) ?></span>
-          </div>
-          <?php
-            $addr = trim((string) ($schoolProfile['address'] ?? ''));
-            $em   = trim((string) ($schoolProfile['email'] ?? ''));
-            $ph   = trim((string) ($schoolProfile['phone'] ?? ''));
-          ?>
-          <?php if ($addr !== ''): ?>
-            <p class="small mb-1 mt-2 mb-0 text-body-secondary"><?= nl2br(View::e($addr)) ?></p>
+<section class="sa-metrics sa-metrics--compact dash-fly dash-fly--2" aria-label="Platform totals">
+  <div class="dash-kpi-grid dash-kpi-grid--sa mb-3">
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/schools" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-buildings"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Schools</div>
+          <div class="kpi-card__value"><?= number_format($ptSchools) ?></div>
+          <?php if ($ptActive < $ptSchools): ?>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($ptActive) ?> active</div>
           <?php endif; ?>
-          <div class="small mt-2 d-flex flex-wrap gap-3">
-            <?php if ($em !== ''): ?>
-              <span><i class="bi bi-envelope me-1"></i><a href="mailto:<?= View::e($em) ?>"><?= View::e($em) ?></a></span>
-            <?php endif; ?>
-            <?php if ($ph !== ''): ?>
-              <span><i class="bi bi-telephone me-1"></i><?= View::e($ph) ?></span>
-            <?php endif; ?>
-          </div>
         </div>
-        <div class="col-md-4 text-md-end">
-          <span class="badge rounded-pill <?= ($schoolProfile['status'] ?? '') === 'active' ? 'text-bg-success' : 'text-bg-secondary' ?> align-middle">
-            Your organisation
-          </span>
-          <p class="small text-muted mt-2 mb-0">
-            Contact your system administrator to update school branding and global settings.
-          </p>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--orange"><i class="bi bi-people-fill"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Students</div>
+          <div class="kpi-card__value"><?= number_format($ptStudents) ?></div>
+          <?php if ($studThisMonth > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--up"><i class="bi bi-arrow-up-right"></i><?= number_format($studThisMonth) ?> this month</div>
+          <?php endif; ?>
         </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/staff" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--green"><i class="bi bi-person-workspace"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Staff</div>
+          <div class="kpi-card__value"><?= number_format($ptStaff) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/classes" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--purple"><i class="bi bi-grid"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Classes</div>
+          <div class="kpi-card__value"><?= number_format($classesTotal) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/hods" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--indigo"><i class="bi bi-mortarboard-fill"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">HODs</div>
+          <div class="kpi-card__value"><?= number_format($ptHods) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/bursars" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--teal"><i class="bi bi-cash-coin"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Bursars</div>
+          <div class="kpi-card__value"><?= number_format($ptBursars) ?></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <?php if ($showOpsKpis): ?>
+  <div class="dash-kpi-grid dash-kpi-grid--4 mb-3">
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/attendance" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--<?= $attRate !== null && $attRate >= 80 ? 'success' : ($attRate !== null && $attRate >= 60 ? 'warning' : 'danger') ?>">
+          <i class="bi bi-calendar-check"></i>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Attendance today</div>
+          <div class="kpi-card__value"><?= $attRate !== null ? $attRate . '%' : '—' ?></div>
+          <?php if ($attTotal > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($attPresent) ?> present · <?= number_format($attAbsent) ?> absent</div>
+          <?php endif; ?>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/teaching" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--warning"><i class="bi bi-diagram-3"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Teaching slots</div>
+          <div class="kpi-card__value"><?= number_format($teachingCount) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--<?= $unassignedCount > 0 ? 'danger' : 'success' ?>">
+          <i class="bi bi-person-exclamation"></i>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Unassigned students</div>
+          <div class="kpi-card__value"><?= number_format($unassignedCount) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/subjects" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--accent"><i class="bi bi-book-half"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Subjects offered</div>
+          <div class="kpi-card__value"><?= number_format($subjectsOffered) ?></div>
+        </div>
+      </a>
+    </div>
+  </div>
+  <?php endif; ?>
+</section>
+
+<?php elseif ($showSchoolKpis): ?>
+<section class="sa-metrics sa-metrics--compact dash-fly dash-fly--2" aria-label="School totals">
+  <div class="dash-kpi-grid <?= $isSchoolAdmin ? 'dash-kpi-grid--sa' : 'dash-kpi-grid--4' ?> mb-3">
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--orange"><i class="bi bi-people-fill"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Students</div>
+          <div class="kpi-card__value"><?= number_format($studentsTotal) ?></div>
+          <?php if ($studThisMonth > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--up"><i class="bi bi-arrow-up-right"></i><?= number_format($studThisMonth) ?> this month</div>
+          <?php endif; ?>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/staff" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--green"><i class="bi bi-person-workspace"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Staff</div>
+          <div class="kpi-card__value"><?= number_format($staffTotal) ?></div>
+          <?php if ($staffThisMonth > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($staffThisMonth) ?> new this month</div>
+          <?php endif; ?>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/classes" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--purple"><i class="bi bi-grid"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Classes</div>
+          <div class="kpi-card__value"><?= number_format($classesTotal) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/subjects" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--accent"><i class="bi bi-book-half"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Subjects offered</div>
+          <div class="kpi-card__value"><?= number_format($subjectsOffered) ?></div>
+        </div>
+      </a>
+    </div>
+    <?php if ($isSchoolAdmin): ?>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/hods" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--indigo"><i class="bi bi-mortarboard-fill"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">HODs</div>
+          <div class="kpi-card__value"><?= number_format($hodCount) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/bursars" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--teal"><i class="bi bi-cash-coin"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Bursars</div>
+          <div class="kpi-card__value"><?= number_format($bursarCount) ?></div>
+        </div>
+      </a>
+    </div>
+    <?php endif; ?>
+  </div>
+
+  <?php if ($showOpsKpis): ?>
+  <div class="dash-kpi-grid dash-kpi-grid--4 mb-3">
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/attendance" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--<?= $attRate !== null && $attRate >= 80 ? 'success' : ($attRate !== null && $attRate >= 60 ? 'warning' : 'danger') ?>">
+          <i class="bi bi-calendar-check"></i>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Attendance today</div>
+          <div class="kpi-card__value"><?= $attRate !== null ? $attRate . '%' : '—' ?></div>
+          <?php if ($attTotal > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($attPresent) ?> present · <?= number_format($attAbsent) ?> absent</div>
+          <?php endif; ?>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/teaching" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--warning"><i class="bi bi-diagram-3"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Teaching slots</div>
+          <div class="kpi-card__value"><?= number_format($teachingCount) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--<?= $unassignedCount > 0 ? 'danger' : 'success' ?>">
+          <i class="bi bi-person-exclamation"></i>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Unassigned students</div>
+          <div class="kpi-card__value"><?= number_format($unassignedCount) ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/announcements" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--yellow"><i class="bi bi-megaphone-fill"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Announcements</div>
+          <div class="kpi-card__value"><?= number_format(count($announcements ?? [])) ?></div>
+          <div class="kpi-card__delta kpi-card__delta--flat">Latest notices</div>
+        </div>
+      </a>
+    </div>
+  </div>
+  <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($isAdminish): ?>
+
+  <?php if ($useOverviewUi && !$isAdmin): ?>
+  <div class="section-block mb-2 dash-fly dash-fly--3">
+    <div class="section-block__head">
+      <div>
+        <h3 class="section-block__title"><i class="bi bi-bar-chart-line"></i> Analytics</h3>
+        <p class="section-block__sub"><?= View::e($analyticsSub) ?></p>
       </div>
     </div>
   </div>
-<?php endif; ?>
+  <?php elseif ($isAdmin && !empty($schoolsOverview)): ?>
+  <div class="section-block mb-2 dash-fly dash-fly--3">
+    <div class="section-block__head">
+      <div>
+        <h3 class="section-block__title"><i class="bi bi-bar-chart-line"></i> Analytics</h3>
+        <p class="section-block__sub"><?= View::e($analyticsSub) ?></p>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
 
-  <!-- ============================================================
-       Charts
-       ============================================================ -->
-  <!-- Charts -->
-  <div class="row g-3 mb-2">
-    <!-- Enrollment: wider + taller -->
+  <div class="row g-3 mb-2 overview-analytics-row dash-fly dash-fly--<?= (int) $flyCharts ?>" aria-label="Analytics charts">
     <div class="col-lg-7">
       <div class="card chart-card h-100">
         <div class="card-body">
           <div class="chart-card__head">
             <div>
-              <h3 class="chart-card__title">Enrollment per class</h3>
-              <p class="chart-card__sub">Students currently enrolled in each class</p>
+              <h3 class="chart-card__title"><?= View::e($enrollmentChartTitle) ?></h3>
+              <p class="chart-card__sub"><?= View::e($enrollmentChartSub) ?></p>
             </div>
             <div class="chart-card__badge">
-              <i class="bi bi-bar-chart-fill"></i>
-              <?= number_format($classTotal) ?> total
+              <i class="bi bi-<?= $useClassEnrollment ? 'bar-chart-fill' : 'buildings' ?>"></i>
+              <?= number_format($enrollTotal) ?> enrolled
+              <?php if ($isAdmin): ?>
+                · <?= number_format($schoolCount) ?> school<?= $schoolCount === 1 ? '' : 's' ?>
+              <?php else: ?>
+                · <?= number_format(count($enrollLabels)) ?> class<?= count($enrollLabels) === 1 ? '' : 'es' ?>
+              <?php endif; ?>
             </div>
           </div>
-          <div style="position:relative;min-height:200px;">
-            <?php if (empty($classLabels) || $classTotal === 0): ?>
-              <div class="chart-empty" style="height:200px;">
+          <div class="chart-surface chart-surface--bar-side">
+            <?php if (!$hasEnrollmentChart): ?>
+              <div class="chart-empty">
                 <div class="text-center">
-                  <i class="bi bi-bar-chart d-block mb-2 fs-3 text-subtle"></i>
-                  <?= empty($classLabels) ? 'No classes set up yet.' : 'No students enrolled yet.' ?>
+                  <i class="bi bi-<?= $useClassEnrollment ? 'grid' : 'buildings' ?> d-block mb-2 fs-3 text-subtle"></i>
+                  <?php if ($useClassEnrollment): ?>
+                    No classes set up yet.
+                    <div class="mt-2"><a href="<?= $base ?>/classes" class="btn btn-sm btn-outline-primary">Manage classes</a></div>
+                  <?php else: ?>
+                    No schools on the system yet.
+                    <?php if ($isAdmin): ?>
+                      <div class="mt-2"><a href="<?= $base ?>/schools/create" class="btn btn-sm btn-outline-primary">Add school</a></div>
+                    <?php endif; ?>
+                  <?php endif; ?>
                 </div>
               </div>
             <?php else: ?>
-              <canvas id="enrollmentChart" style="width:100%;height:200px;" aria-label="Enrollment per class" role="img"></canvas>
+              <canvas id="enrollmentChart" aria-label="<?= View::e($enrollmentChartTitle) ?>" role="img"></canvas>
             <?php endif; ?>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Demographics + Section stacked on the right -->
     <div class="col-lg-5 d-flex flex-column gap-3">
-
       <div class="card chart-card flex-fill">
         <div class="card-body pb-2">
           <div class="chart-card__head mb-1">
@@ -522,12 +506,14 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
             </div>
           </div>
           <div class="row g-0 align-items-center">
-            <div class="col-5" style="position:relative;height:120px;">
-              <?php if ($gTotal === 0): ?>
-                <div class="chart-empty" style="height:120px;">No data yet.</div>
-              <?php else: ?>
-                <canvas id="genderChart" style="width:100%;height:120px;" aria-label="Gender distribution" role="img"></canvas>
-              <?php endif; ?>
+            <div class="col-5">
+              <div class="chart-surface chart-surface--donut-side">
+                <?php if ($gTotal === 0): ?>
+                  <div class="chart-empty">No data yet.</div>
+                <?php else: ?>
+                  <canvas id="genderChart" aria-label="Gender distribution" role="img"></canvas>
+                <?php endif; ?>
+              </div>
             </div>
             <div class="col-7 ps-3">
               <ul class="donut-legend mb-2">
@@ -551,19 +537,21 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           <div class="chart-card__head mb-1">
             <div>
               <h3 class="chart-card__title">Section split</h3>
-              <p class="chart-card__sub">Day vs Boarding &middot; <?= number_format($sectionTotal) ?></p>
+              <p class="chart-card__sub">Day vs boarding · <?= number_format($sectionTotal) ?></p>
             </div>
           </div>
           <div class="row g-0 align-items-center">
-            <div class="col-5" style="position:relative;height:120px;">
-              <?php if ($sectionTotal === 0): ?>
-                <div class="chart-empty" style="height:120px;">No data yet.</div>
-              <?php else: ?>
-                <canvas id="sectionChart" style="width:100%;height:120px;" aria-label="Section distribution" role="img"></canvas>
-              <?php endif; ?>
+            <div class="col-5">
+              <div class="chart-surface chart-surface--donut-side">
+                <?php if ($sectionTotal === 0): ?>
+                  <div class="chart-empty">No data yet.</div>
+                <?php else: ?>
+                  <canvas id="sectionChart" aria-label="Section distribution" role="img"></canvas>
+                <?php endif; ?>
+              </div>
             </div>
             <div class="col-7 ps-3">
-              <ul class="donut-legend">
+              <ul class="donut-legend mb-0">
                 <li><span class="donut-legend__swatch" style="background:#14b8a6"></span><span class="donut-legend__label">Day</span><span class="donut-legend__value"><?= number_format($sectionDay) ?></span></li>
                 <li><span class="donut-legend__swatch" style="background:#f59e0b"></span><span class="donut-legend__label">Boarding</span><span class="donut-legend__value"><?= number_format($sectionBoarding) ?></span></li>
               </ul>
@@ -571,14 +559,121 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           </div>
         </div>
       </div>
-
     </div>
   </div>
+
+  <?php if ($isSchoolAdmin && !empty($schoolProfile)):
+    $profileActive = ($schoolProfile['status'] ?? '') === 'active';
+    $profileAddr   = trim((string) ($schoolProfile['address'] ?? ''));
+    $profileEm     = trim((string) ($schoolProfile['email'] ?? ''));
+    $profilePh     = trim((string) ($schoolProfile['phone'] ?? ''));
+  ?>
+  <section class="sa-panel sa-panel--profile mb-3 dash-fly dash-fly--<?= (int) $flyProfile ?>">
+    <div class="card-body py-2 px-3">
+      <div class="sa-profile__main sa-profile__main--compact">
+        <?php if ($profileLogoUrl !== ''): ?>
+          <img src="<?= View::e($profileLogoUrl) ?>" alt="" class="sa-profile__logo sa-profile__logo--sm">
+        <?php else: ?>
+          <span class="sa-profile__logo sa-profile__logo--sm sa-profile__logo--placeholder" aria-hidden="true"><i class="bi bi-building"></i></span>
+        <?php endif; ?>
+        <div class="sa-profile__body flex-grow-1" style="min-width:0;">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <h3 class="sa-profile__title h6 mb-0"><?= View::e((string) $schoolProfile['name']) ?></h3>
+            <span class="sa-status <?= $profileActive ? 'sa-status--on' : 'sa-status--off' ?>">
+              <?= $profileActive ? 'Active' : 'Inactive' ?>
+            </span>
+            <code class="sa-code"><?= View::e((string) ($schoolProfile['code'] ?? '—')) ?></code>
+          </div>
+          <div class="small text-muted d-flex flex-wrap gap-2 mt-1">
+            <?php if ($profileEm !== ''): ?>
+              <span><i class="bi bi-envelope"></i> <a href="mailto:<?= View::e($profileEm) ?>"><?= View::e($profileEm) ?></a></span>
+            <?php endif; ?>
+            <?php if ($profilePh !== ''): ?>
+              <span><i class="bi bi-telephone"></i> <?= View::e($profilePh) ?></span>
+            <?php endif; ?>
+            <?php if ($profileAddr !== ''): ?>
+              <span><i class="bi bi-geo-alt"></i> <?= View::e($profileAddr) ?></span>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <?php endif; ?>
+
+  <?php if ($isAdmin && !empty($schoolsOverview)): ?>
+  <section class="sa-panel mb-3 dash-fly dash-fly--5">
+    <div class="sa-panel__head">
+      <div>
+        <h3 class="sa-panel__title">Schools</h3>
+        <p class="sa-panel__sub"><?= number_format(count($schoolsOverview)) ?> registered · tap a row to manage</p>
+      </div>
+      <a href="<?= $base ?>/schools" class="btn btn-sm btn-outline-secondary">View all</a>
+    </div>
+    <div class="sa-table-wrap">
+      <table class="table sa-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>School</th>
+            <th class="text-end d-none d-md-table-cell">Students</th>
+            <th class="text-end d-none d-lg-table-cell">Staff</th>
+            <th class="text-end d-none d-lg-table-cell">Classes</th>
+            <th>Status</th>
+            <th class="text-end"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($schoolsOverview as $sc):
+            $logoPath = '';
+            $logoRel  = trim((string)($sc['logo'] ?? ''));
+            if ($logoRel !== '' && str_starts_with(ltrim($logoRel,'/'), 'uploads/')) {
+              $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
+              if (is_file($abs)) {
+                $logoPath = rtrim($base, '/') . '/' . ltrim($logoRel, '/');
+              }
+            }
+            $students = (int)($sc['student_count'] ?? 0);
+            $staff    = (int)($sc['staff_count']   ?? 0);
+            $classes  = (int)($sc['class_count']   ?? 0);
+            $isActive = ($sc['status'] ?? '') === 'active';
+          ?>
+          <tr class="<?= !$isActive ? 'sa-table__row--muted' : '' ?>">
+            <td>
+              <a href="<?= $base ?>/schools/<?= (int)$sc['id'] ?>" class="sa-school-cell">
+                <?php if ($logoPath !== ''): ?>
+                  <img src="<?= View::e($logoPath) ?>" alt="" class="sa-school-cell__logo" width="36" height="36">
+                <?php else: ?>
+                  <span class="sa-school-cell__logo sa-school-cell__logo--placeholder" aria-hidden="true"><i class="bi bi-building"></i></span>
+                <?php endif; ?>
+                <span class="sa-school-cell__text">
+                  <span class="sa-school-cell__name"><?= View::e((string)$sc['name']) ?></span>
+                  <span class="sa-school-cell__code"><?= View::e((string)$sc['code']) ?></span>
+                </span>
+              </a>
+            </td>
+            <td class="text-end fw-semibold d-none d-md-table-cell"><?= number_format($students) ?></td>
+            <td class="text-end d-none d-lg-table-cell"><?= number_format($staff) ?></td>
+            <td class="text-end d-none d-lg-table-cell"><?= number_format($classes) ?></td>
+            <td>
+              <span class="sa-status <?= $isActive ? 'sa-status--on' : 'sa-status--off' ?>">
+                <?= $isActive ? 'Active' : 'Inactive' ?>
+              </span>
+            </td>
+            <td class="text-end">
+              <a href="<?= $base ?>/schools/<?= (int)$sc['id'] ?>" class="btn btn-sm btn-link sa-table__link">Open</a>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <?php endif; ?>
 
   <!-- ============================================================
        Bottom row: Recent enrollments + Announcements
        ============================================================ -->
-  <div class="section-block mb-1">
+  <div class="section-block mb-1 dash-fly dash-fly--<?= (int) $flyActivity ?>">
     <div class="section-block__head">
       <div>
         <h3 class="section-block__title"><i class="bi bi-activity"></i> Recent activity</h3>
@@ -586,7 +681,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </div>
     </div>
   </div>
-  <div class="row g-3">
+  <div class="row g-3 dash-fly dash-fly--<?= (int) $flyActivityRow ?>">
     <div class="col-xl-7">
       <div class="card h-100">
         <div class="card-header d-flex align-items-center justify-content-between">
@@ -768,7 +863,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
 
 </div>
 
-<?php if ($isAdminish && ($classTotal > 0 || $gTotal > 0 || $sectionTotal > 0)): ?>
+<?php if ($isAdminish && ($hasEnrollmentChart || $gTotal > 0 || $sectionTotal > 0)): ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
 <script>
   // Theme-aware Chart.js bootstrapping. Reads CSS vars at draw time so
@@ -777,10 +872,11 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   (function () {
     'use strict';
 
-    var classData  = <?= json_encode([
-      'labels' => $classLabels,
-      'data'   => $classCounts,
-      'levels' => $classLevels,
+    var enrollmentData = <?= json_encode([
+      'labels' => $enrollLabels,
+      'data'   => $enrollCounts,
+      'meta'   => $enrollMeta,
+      'mode'   => $useClassEnrollment ? 'class' : 'school',
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     var genderData = <?= json_encode([
@@ -835,17 +931,17 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
         '#ec4899', // pink
         '#14b8a6'  // teal
       ];
-      var colors = classData.labels.map(function (_, i) {
+      var colors = enrollmentData.labels.map(function (_, i) {
         return palette[i % palette.length];
       });
 
       charts.enrollment = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: classData.labels,
+          labels: enrollmentData.labels,
           datasets: [{
             label: 'Students',
-            data: classData.data,
+            data: enrollmentData.data,
             backgroundColor: colors,
             hoverBackgroundColor: colors,
             borderRadius: 10,
@@ -869,8 +965,11 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
               callbacks: {
                 title: function (items) {
                   var i = items[0].dataIndex;
-                  var lvl = classData.levels[i];
-                  return classData.labels[i] + (lvl ? ' (' + lvl + ')' : '');
+                  var meta = enrollmentData.meta[i] || '';
+                  if (enrollmentData.mode === 'class') {
+                    return enrollmentData.labels[i] + (meta ? ' (' + meta + ')' : '');
+                  }
+                  return enrollmentData.labels[i] + (meta ? ' (' + meta + ')' : '');
                 },
                 label: function (ctx) {
                   var n = ctx.parsed.y;

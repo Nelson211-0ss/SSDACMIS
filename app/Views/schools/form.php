@@ -23,22 +23,23 @@ if ($isEdit) {
     }
 }
 ?>
-<div class="mb-3">
-  <a href="<?= $base ?>/schools" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left"></i> Back to Schools
-  </a>
+<div class="app-toolbar mb-3">
+    <a href="<?= $base ?>/schools" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Schools
+    </a>
 </div>
 
-<div class="card border-0 shadow-sm" style="max-width:760px;">
-  <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
-    <h5 class="mb-0">
-      <i class="bi bi-building"></i>
-      <?= $isEdit ? 'Edit School — ' . View::e($school['name']) : 'Add New School' ?>
-    </h5>
-    <p class="text-muted small mt-1 mb-0">
-      These details appear on every official document produced for this school (report cards, receipts, exam permits, admission letters).
-    </p>
+<div class="page-header" style="max-width:760px;">
+    <div>
+      <h2><?= $isEdit ? 'Edit school' : 'New school' ?></h2>
+      <p class="page-header__sub mb-0">
+        <?= $isEdit ? View::e($school['name']) . ' — ' : '' ?>
+        Used on report cards, receipts, exam permits, and admission letters.
+      </p>
+    </div>
   </div>
+
+  <div class="card sa-profile border-0" style="max-width:760px;">
   <div class="card-body px-4 pb-4">
     <form method="post" action="<?= $action ?>" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<?= $csrf ?>">

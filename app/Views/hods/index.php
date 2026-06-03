@@ -2,23 +2,18 @@
 use App\Core\View;
 $layout = 'app';
 $title  = 'Heads of Department';
-?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-  <div>
-    <h4 class="mb-1"><i class="bi bi-mortarboard-fill"></i> Heads of Department</h4>
-    <p class="text-muted small mb-0">
-      HOD accounts sign in at <code class="small"><?= $base ?>/login</code> (same page as everyone else) and can enter marks for every subject across Form&nbsp;1–4.
-    </p>
-  </div>
-  <a class="btn btn-primary" href="<?= $base ?>/hods/create">
-    <i class="bi bi-plus-lg"></i> Add HOD
-  </a>
-</div>
 
-<div class="card border-0 shadow-sm">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
+$pageTitle = 'Heads of Department';
+$pageSubtitle = 'HOD accounts sign in at <code class="sa-code">' . View::e($base) . '/login</code> and enter marks for subjects across Form 1–4.';
+$pageIcon = 'bi-mortarboard-fill';
+$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/hods/create"><i class="bi bi-plus-lg"></i> Add HOD</a>';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
+
+<div class="app-panel">
+  <div class="sa-table-wrap">
+    <table class="table table-hover sa-table align-middle mb-0">
+      <thead>
         <tr>
           <th>Name</th>
           <th>Email (login)</th>
@@ -31,9 +26,7 @@ $title  = 'Heads of Department';
       <tbody>
         <?php if (empty($hods)): ?>
           <tr>
-            <td colspan="6" class="text-center text-muted py-4">
-              No HOD accounts yet. Click <strong>Add HOD</strong> to create one.
-            </td>
+            <td colspan="6" class="sa-empty">No HOD accounts yet. Click <strong>Add HOD</strong> to create one.</td>
           </tr>
         <?php else: foreach ($hods as $h): ?>
           <tr>
@@ -53,19 +46,16 @@ $title  = 'Heads of Department';
             </td>
             <td>
               <?php if (($h['status'] ?? 'active') === 'active'): ?>
-                <span class="badge bg-success-subtle text-success-emphasis">Active</span>
+                <span class="sa-status sa-status--on">Active</span>
               <?php else: ?>
-                <span class="badge bg-secondary-subtle text-secondary-emphasis">Disabled</span>
+                <span class="sa-status sa-status--off">Disabled</span>
               <?php endif; ?>
             </td>
-            <td class="text-muted small"><?= View::e(substr((string) $h['created_at'], 0, 10)) ?></td>
-            <td class="text-end">
-              <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/hods/<?= (int) $h['id'] ?>/edit">
-                <i class="bi bi-pencil"></i>
-              </a>
-              <form class="d-inline" method="post"
-                    action="<?= $base ?>/hods/<?= (int) $h['id'] ?>/delete"
-                    data-confirm="Delete this HOD account? They will no longer be able to sign in.">
+            <td class="text-muted small"><?= View::e(substr((string) ($h['created_at'] ?? ''), 0, 10)) ?></td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/hods/<?= (int) $h['id'] ?>/edit"><i class="bi bi-pencil"></i></a>
+              <form class="d-inline" method="post" action="<?= $base ?>/hods/<?= (int) $h['id'] ?>/delete"
+                    data-confirm="Remove this HOD account? They will no longer be able to sign in.">
                 <input type="hidden" name="_csrf" value="<?= $csrf ?>">
                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
               </form>

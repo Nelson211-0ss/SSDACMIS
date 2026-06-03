@@ -9,7 +9,12 @@ $paid    = (float) ($bill['paid_amount']  ?? 0);
 $balance = max(0.0, $total - $paid);
 $status  = (string) ($bill['status'] ?? 'not_paid');
 ?>
-<h4 class="mb-3"><i class="bi bi-cash-coin"></i> My Fees</h4>
+<?php
+$pageTitle = 'My fees';
+$pageSubtitle = 'View your fee balance and payment history.';
+$pageIcon = 'bi-cash-coin';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
 
 <?php if (!$student): ?>
   <div class="alert alert-warning">

@@ -66,14 +66,24 @@ class DashboardController extends Controller
             )->fetch()['c'] ?? 0);
         }
 
-        // ---------- Class distribution ----------
-        $classDistribution = [];
+        // ---------- Enrollment charts: per-school (super admin) / per-class (school scope) ----------
+        $schoolDistribution = [];
+        $classDistribution  = [];
         if ($isAdminish) {
+            if ($isAdmin) {
+                $schoolDistribution = Database::query(
+                    "SELECT s.id, s.name, s.code, COUNT(st.id) AS total
+                     FROM schools s
+                     LEFT JOIN students st ON st.school_id = s.id
+                     GROUP BY s.id, s.name, s.code
+                     ORDER BY s.name ASC"
+                )->fetchAll();
+            }
             $classDistribution = Database::query(
                 "SELECT c.id, c.name, COALESCE(c.level, '') AS level, COUNT(s.id) AS total
                  FROM classes c
                  LEFT JOIN students s ON s.class_id = c.id" .
-                ($schoolId !== null ? " WHERE c.school_id = ?" : "") .
+                ($schoolId !== null ? ' WHERE c.school_id = ?' : '') .
                 " GROUP BY c.id, c.name, c.level ORDER BY c.name ASC",
                 $sp
             )->fetchAll();
@@ -236,6 +246,7 @@ class DashboardController extends Controller
             'isAdmin',
             'stats',
             'deltas',
+            'schoolDistribution',
             'classDistribution',
             'genderBreakdown',
             'sectionBreakdown',

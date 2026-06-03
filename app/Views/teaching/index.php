@@ -5,12 +5,12 @@ $title = 'Teaching Assignments';
 $catLabel = ['core'=>'Compulsory Core','science'=>'Science','arts'=>'Arts','optional'=>'Optional'];
 $catBadge = ['core'=>'bg-primary-subtle text-primary-emphasis','science'=>'bg-success-subtle text-success-emphasis','arts'=>'bg-warning-subtle text-warning-emphasis','optional'=>'bg-secondary-subtle text-secondary-emphasis'];
 ?>
-<h4 class="mb-3"><i class="bi bi-diagram-3"></i> Teaching Assignments</h4>
-<p class="text-muted small mb-3">
-  Use this page to (a) appoint <strong>Heads of Department</strong> who upload
-  marks for an entire department across every class, and (b) optionally assign
-  individual teachers to a single subject in a single class.
-</p>
+<?php
+$pageTitle = 'Teaching assignments';
+$pageSubtitle = 'Appoint HODs by department and assign teachers to class × subject slots.';
+$pageIcon = 'bi-diagram-3';
+include dirname(__DIR__) . '/_partials/app_page_header.php';
+?>
 
 <!-- Department Heads ====================================================== -->
 <div class="card border-0 shadow-sm mb-4">
