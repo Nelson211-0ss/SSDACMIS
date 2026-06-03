@@ -85,9 +85,7 @@ $homeHref = $useBursarNav
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/app.css') ?>" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/portal-dash.css') ?>" rel="stylesheet">
-  <?php if ($schoolLogo): ?>
-    <link rel="icon" type="image/png" href="<?= $base ?>/<?= View::e($schoolLogo) ?>">
-  <?php endif; ?>
+  <?php require __DIR__ . '/../partials/favicon.php'; ?>
   <style>
     /* Admin-customized theme - injected per request */
     :root {

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SSDACMIS">
+  <defs>
+    <linearGradient id="g" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1E40AF"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#g)"/>
+  <path fill="#fff" d="M16 8.5 7.5 13.25 16 18l8.5-4.75L16 8.5z"/>
+  <path fill="#fff" fill-opacity=".92" d="M7.5 13.25v2.35L16 20.9l8.5-5.3v-2.35L16 18 7.5 13.25z"/>
+  <circle cx="23.25" cy="11.75" r="1.35" fill="#38BDF8"/>
+</svg>

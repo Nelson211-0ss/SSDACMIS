@@ -27,9 +27,7 @@ $isLoginPage = str_contains($bodyClass, 'auth-page--login');
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/app.css') ?>" rel="stylesheet">
   <?php endif; ?>
-  <?php if ($schoolLogo): ?>
-    <link rel="icon" type="image/png" href="<?= $base ?>/<?= View::e($schoolLogo) ?>">
-  <?php endif; ?>
+  <?php require __DIR__ . '/../partials/favicon.php'; ?>
 </head>
 <body class="<?= View::e($bodyClass) ?>">
   <?= $content ?>
