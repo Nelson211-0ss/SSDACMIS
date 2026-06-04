@@ -217,6 +217,12 @@
   font-size: 0.72rem;
 }
 
+/* Bursar dashboard — avoid clipping chart legends and axis labels */
+.portal-dash.bursar-dash .chart-card,
+.portal-dash.bursar-dash .bursar-chart-card {
+  overflow: visible !important;
+}
+
 .portal-dash .chart-surface {
   background: var(--pd-bg);
   border-radius: var(--pd-radius-sm);

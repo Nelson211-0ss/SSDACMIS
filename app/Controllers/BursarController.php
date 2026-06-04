@@ -116,7 +116,7 @@ class BursarController extends Controller
              LEFT JOIN student_fees sf ON sf.id = p.student_fee_id
              LEFT JOIN users u ON u.id = p.recorded_by
              WHERE 1=1" . ($schoolId !== null ? ' AND p.school_id = ?' : '') . "
-             ORDER BY p.id DESC LIMIT 8",
+             ORDER BY p.id DESC LIMIT 5",
             $sp
         )->fetchAll();
 

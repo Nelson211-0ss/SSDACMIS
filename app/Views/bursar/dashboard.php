@@ -51,60 +51,72 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
 ?>
 
 <style>
-  /* ----- Bursar dashboard "fit on one page" tuning -----
-   * The dashboard is laid out as four stacked rows: hero, KPIs, the
-   * main 3-column row (collection by class · recent payments · term
-   * breakdown), and a tiny progress strip. Tables and the recent-
-   * payments list scroll *inside* their cards so the page itself
-   * doesn't introduce vertical scrolling on typical 13"+ screens. */
-  .bursar-dash .dash-row    { min-height: 0; }
-  .bursar-dash .dash-card   { display: flex; flex-direction: column; min-height: 0; }
-  .bursar-dash .dash-card .table { font-size: 0.84rem; }
-  .bursar-dash .dash-card .table th,
-  .bursar-dash .dash-card .table td { padding: 0.45rem 0.6rem; }
-  .bursar-dash .dash-card .card-header { padding: 0.55rem 0.85rem; font-size: 0.9rem; }
-  .bursar-dash .dash-card .card-body   { padding: 0.75rem 0.85rem; }
-  .bursar-dash .dash-scroll { overflow-y: auto; min-height: 0; }
-  .bursar-dash .dash-payments { max-height: 24rem; }
-
-  /* Recent payment row: bigger square photo + cleaner alignment */
-  .bursar-dash .pay-row {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 0.75rem;
-    align-items: center;
-    padding: 0.6rem 0.85rem;
-  }
-  .bursar-dash .pay-row + .pay-row { border-top: 1px solid var(--bs-border-color-translucent); }
-  .bursar-dash .pay-row__name  { font-weight: 600; line-height: 1.2; }
-  .bursar-dash .pay-row__meta  { font-size: 0.75rem; color: var(--bs-secondary-color); }
-  .bursar-dash .pay-row__amt   { font-weight: 700; font-size: 0.95rem; }
-
-  /* Tighter KPI cards so all four fit on a 1280-wide viewport
-   * alongside the page sidebar without wrapping. */
-  .bursar-dash .kpi-card { padding: 0.7rem 0.85rem; }
-  .bursar-dash .kpi-card__value { font-size: 1.3rem; }
-
-  /* ----- Analytics charts ----- */
-  .bursar-dash .bursar-chart-card .card-body { display: flex; flex-direction: column; }
-  .bursar-dash .chart-surface {
-    position: relative;
+  /* Bursar dashboard — readable sections, charts fully visible */
+  .bursar-dash {
     width: 100%;
-    flex: 1 1 auto;
+    max-width: 100%;
+    --bd-gap: 0.85rem;
+    --bd-chart-primary: clamp(220px, 27vh, 300px);
+    --bd-chart-detail: clamp(200px, 23vh, 260px);
   }
-  .bursar-dash .chart-surface--tall   { height: 280px; }
-  .bursar-dash .chart-surface--medium { height: 240px; }
-  .bursar-dash .chart-surface--donut  { height: 220px; }
-  .bursar-dash .chart-surface canvas { max-width: 100%; }
+
+  .bursar-dash .kpi-card { padding: 0.75rem 1rem; }
+  .bursar-dash .kpi-card__value { font-size: 1.3rem; line-height: 1.2; }
+  .bursar-dash .kpi-card__delta { font-size: 0.72rem; }
+
+  .bursar-dash__charts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bd-gap);
+  }
+
+  .bursar-dash .bursar-charts-row > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .bursar-dash .bursar-charts-row .card {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .bursar-dash .bursar-chart-card .card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 0.85rem 1rem;
+  }
+
+  .bursar-dash .dash-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
   .bursar-dash .chart-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
+    flex-shrink: 0;
   }
-  .bursar-dash .chart-head__title { font-weight: 700; font-size: 0.95rem; margin: 0; }
-  .bursar-dash .chart-head__sub { font-size: 0.78rem; color: var(--bs-secondary-color); margin: 0; }
+  .bursar-dash .chart-head__title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.3;
+  }
+  .bursar-dash .chart-head__sub {
+    font-size: 0.78rem;
+    color: var(--bs-secondary-color);
+    margin: 0.2rem 0 0;
+    line-height: 1.35;
+  }
   .bursar-dash .chart-badge {
     font-size: 0.72rem;
     font-weight: 600;
@@ -113,7 +125,65 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     background: var(--accent-soft, #e3f2fd);
     color: var(--accent, #1e88e5);
     white-space: nowrap;
+    flex-shrink: 0;
   }
+
+  .bursar-dash .chart-surface {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  .bursar-dash .chart-surface canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .bursar-dash .bursar-charts-row--primary .chart-surface--tall {
+    height: var(--bd-chart-primary);
+  }
+  .bursar-dash .bursar-charts-row--detail .chart-surface--medium {
+    height: var(--bd-chart-detail);
+  }
+
+  .bursar-dash .chart-status-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    height: var(--bd-chart-primary);
+  }
+  .bursar-dash .chart-surface--donut {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    max-width: 52%;
+  }
+
+  .bursar-dash .chart-legend {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .bursar-dash .chart-legend li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+  .bursar-dash .chart-legend__dot {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
   .bursar-dash .chart-empty {
     display: grid;
     place-items: center;
@@ -121,23 +191,61 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
     color: var(--bs-secondary-color);
     font-size: 0.85rem;
     text-align: center;
+    padding: 1rem;
   }
-  .bursar-dash .chart-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
-    margin-top: 0.75rem;
-    padding: 0;
-    list-style: none;
+
+  .bursar-dash .dash-card .card-header {
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+    flex-shrink: 0;
   }
-  .bursar-dash .chart-legend li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
-  .bursar-dash .chart-legend__dot { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex-shrink: 0; }
+  .bursar-dash .dash-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: var(--bd-chart-detail);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bursar-dash .pay-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.65rem;
+    align-items: center;
+    padding: 0.55rem 1rem;
+  }
+  .bursar-dash .pay-row + .pay-row { border-top: 1px solid var(--bs-border-color-translucent); }
+  .bursar-dash .pay-row__name  { font-weight: 600; font-size: 0.82rem; line-height: 1.25; }
+  .bursar-dash .pay-row__meta  { font-size: 0.74rem; color: var(--bs-secondary-color); line-height: 1.35; }
+  .bursar-dash .pay-row__amt   { font-weight: 700; font-size: 0.9rem; }
+
+  /* Large desktop: balance chart rows without crushing text */
+  @media (min-width: 1200px) and (min-height: 800px) {
+    .bursar-dash {
+      --bd-chart-primary: clamp(240px, 30vh, 340px);
+      --bd-chart-detail: clamp(210px, 25vh, 300px);
+    }
+  }
+
+  @media (max-width: 991.98px) {
+    .bursar-dash .chart-status-body {
+      flex-direction: column;
+      height: auto;
+      min-height: 14rem;
+    }
+    .bursar-dash .chart-surface--donut {
+      max-width: 100%;
+      height: 11rem;
+    }
+    .bursar-dash .dash-scroll { max-height: none; }
+  }
 </style>
 
 <div class="bursar-dash portal-dash d-flex flex-column gap-3">
 
   <!-- KPI strip -->
-  <div class="row g-2">
+  <div class="row g-3 bursar-dash__kpis">
     <div class="col-6 col-xl-3">
       <a href="<?= $base ?>/bursar/students" class="kpi-card kpi-card--compact h-100">
         <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-people-fill"></i></div>
@@ -196,7 +304,8 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
   <!-- ============================================================
        Statistical analysis — charts (bar · line · doughnut)
        ============================================================ -->
-  <div class="row g-2 align-items-stretch">
+  <div class="bursar-dash__charts">
+  <div class="row g-3 align-items-stretch bursar-charts-row bursar-charts-row--primary">
 
     <!-- Monthly collection trend (line / area) -->
     <div class="col-12 col-xl-8">
@@ -235,23 +344,29 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
               <p class="chart-head__sub"><?= number_format($students) ?> students · <?= View::e($term) ?></p>
             </div>
           </div>
-          <div class="chart-surface chart-surface--donut">
+          <div class="chart-status-body">
+            <div class="chart-surface chart-surface--donut">
+              <?php if ($hasStatusChart): ?>
+                <canvas id="bursarStatusChart" role="img" aria-label="Payment status distribution"></canvas>
+              <?php else: ?>
+                <div class="chart-empty">No status data yet.</div>
+              <?php endif; ?>
+            </div>
             <?php if ($hasStatusChart): ?>
-              <canvas id="bursarStatusChart" role="img" aria-label="Payment status distribution"></canvas>
-            <?php else: ?>
-              <div class="chart-empty">No status data yet.</div>
+            <ul class="chart-legend">
+              <li><span class="chart-legend__dot" style="background:#22c55e"></span>Paid · <?= number_format($paidCount) ?></li>
+              <li><span class="chart-legend__dot" style="background:#f39c12"></span>Partial · <?= number_format($partialCount) ?></li>
+              <li><span class="chart-legend__dot" style="background:#ef4444"></span>Not paid · <?= number_format($unpaidCount) ?></li>
+            </ul>
             <?php endif; ?>
           </div>
-          <?php if ($hasStatusChart): ?>
-          <ul class="chart-legend">
-            <li><span class="chart-legend__dot" style="background:#2ecc71"></span>Paid · <?= number_format($paidCount) ?></li>
-            <li><span class="chart-legend__dot" style="background:#f39c12"></span>Partial · <?= number_format($partialCount) ?></li>
-            <li><span class="chart-legend__dot" style="background:#e74c3c"></span>Not paid · <?= number_format($unpaidCount) ?></li>
-          </ul>
-          <?php endif; ?>
         </div>
       </div>
     </div>
+
+  </div>
+
+  <div class="row g-3 align-items-stretch bursar-charts-row bursar-charts-row--detail">
 
     <!-- Expected vs collected by class (grouped bar) -->
     <div class="col-12 col-lg-6 col-xl-4">
@@ -322,7 +437,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
                 $av_photo = $p['photo_path'] ?? '';
                 $av_first = $p['first_name'] ?? '';
                 $av_last  = $p['last_name']  ?? '';
-                $av_size  = 56;
+                $av_size  = 48;
                 $av_shape = 'square';
                 include dirname(__DIR__) . '/_partials/student_avatar.php';
               ?>
@@ -352,6 +467,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
       </div>
     </div>
 
+  </div>
   </div>
   <?php endif; ?>
 
@@ -447,13 +563,32 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
       };
     }
 
+    function chartLayout(extra) {
+      extra = extra || {};
+      return {
+        padding: {
+          top: extra.top || 6,
+          right: extra.right || 10,
+          bottom: extra.bottom || 6,
+          left: extra.left || 6
+        }
+      };
+    }
+
     function gridScales(theme, opts) {
       opts = opts || {};
       return {
         x: {
           stacked: !!opts.stacked,
           grid: { display: false, drawBorder: false },
-          ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 } }
+            ticks: {
+            color: theme.muted,
+            font: { family: theme.chartFont, size: 10 },
+            maxRotation: 45,
+            minRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 8
+          }
         },
         y: {
           stacked: !!opts.stacked,
@@ -461,7 +596,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
           grid: { color: theme.border, drawBorder: false },
           ticks: {
             color: theme.muted,
-            font: { family: theme.chartFont, size: 11 },
+            font: { family: theme.chartFont, size: 10 },
             callback: function (val) {
               if (val >= 1000000) return (val / 1000000) + 'M';
               if (val >= 1000) return (val / 1000) + 'k';
@@ -470,6 +605,12 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
           }
         }
       };
+    }
+
+    function resizeCharts() {
+      Object.keys(charts).forEach(function (k) {
+        if (charts[k]) charts[k].resize();
+      });
     }
 
     function buildTrend(theme) {
@@ -502,6 +643,7 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: chartLayout({ bottom: 6 }),
           plugins: {
             legend: { display: false },
             tooltip: Object.assign(baseTooltip(theme), {
@@ -536,8 +678,19 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: chartLayout({ bottom: 14 }),
           plugins: {
-            legend: { position: 'bottom', labels: { color: theme.muted, font: { family: theme.chartFont, size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 8, padding: 12 } },
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: theme.muted,
+                font: { family: theme.chartFont, size: 10 },
+                usePointStyle: true,
+                pointStyle: 'rectRounded',
+                boxWidth: 10,
+                padding: 10
+              }
+            },
             tooltip: Object.assign(baseTooltip(theme), {
               callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + money(c.parsed.y); } }
             })
@@ -562,8 +715,19 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: chartLayout({ bottom: 14 }),
           plugins: {
-            legend: { position: 'bottom', labels: { color: theme.muted, font: { family: theme.chartFont, size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 8, padding: 12 } },
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: theme.muted,
+                font: { family: theme.chartFont, size: 10 },
+                usePointStyle: true,
+                pointStyle: 'rectRounded',
+                boxWidth: 10,
+                padding: 10
+              }
+            },
             tooltip: Object.assign(baseTooltip(theme), {
               callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + money(c.parsed.y); } }
             })
@@ -591,7 +755,8 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '64%',
+          layout: chartLayout(),
+          cutout: '62%',
           plugins: {
             legend: { display: false },
             tooltip: Object.assign(baseTooltip(theme), {
@@ -626,14 +791,40 @@ $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APO
       }, 50);
     }
 
+    function observeChartSurfaces() {
+      if (!window.ResizeObserver) return;
+      var dash = document.querySelector('.bursar-dash');
+      if (!dash) return;
+      var timer;
+      var ro = new ResizeObserver(function () {
+        clearTimeout(timer);
+        timer = setTimeout(resizeCharts, 80);
+      });
+      dash.querySelectorAll('.chart-surface').forEach(function (el) { ro.observe(el); });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-      whenReady(renderAll);
+      whenReady(function () {
+        renderAll();
+        requestAnimationFrame(function () {
+          resizeCharts();
+          observeChartSurfaces();
+        });
+      });
       var obs = new MutationObserver(function (m) {
         for (var i = 0; i < m.length; i++) {
-          if (m[i].attributeName === 'data-bs-theme') { whenReady(renderAll); break; }
+          if (m[i].attributeName === 'data-bs-theme') {
+            whenReady(function () { renderAll(); requestAnimationFrame(resizeCharts); });
+            break;
+          }
         }
       });
       obs.observe(document.documentElement, { attributes: true });
+      var resizeTimer;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resizeCharts, 150);
+      });
     });
   })();
 </script>
