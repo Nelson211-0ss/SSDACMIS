@@ -68,9 +68,10 @@ $mainNav = [
 
 $initial = strtoupper(mb_substr($auth['name'] ?? '?', 0, 1));
 $pageTitle = $title ?? $schoolName;
-$useEnterpriseUi = in_array($role, ['admin', 'school_admin'], true)
-    && !$useBursarNav
-    && !$useHodNav;
+// Super admin, school admin, Bursar Fees Module, and HOD portal share the enterprise shell.
+$useEnterpriseUi = $useBursarNav
+    || $useHodNav
+    || (in_array($role, ['admin', 'school_admin'], true) && !$useBursarNav && !$useHodNav);
 $homeHref = $useBursarNav
     ? $base . '/bursar'
     : ($useHodNav ? $base . '/hod' : $base . '/dashboard');

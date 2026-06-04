@@ -1,5 +1,5 @@
 /* ============================================================
-   SSD-ACMIS Enterprise UI — Super Admin & School Admin
+   SSD-ACMIS Enterprise UI — Admin, School Admin, Bursar & HOD
    Visual-only layer: same content, nav, and workflows.
    Scoped to .app-shell--enterprise
    ============================================================ */
@@ -350,11 +350,33 @@
 
 .app-shell--enterprise .app-page,
 .app-shell--enterprise .app-main > .portal-dash,
-.app-shell--enterprise .app-main > .dash-fly-root {
+.app-shell--enterprise .app-main > .dash-fly-root,
+.app-shell--enterprise .app-main > .bursar-dash,
+.app-shell--enterprise .app-main > .bursar-page,
+.app-shell--enterprise .app-main > .hod-overview-page,
+.app-shell--enterprise .app-main > .hod-portal-dash {
   width: 100%;
   max-width: 100%;
   margin-left: 0;
   margin-right: 0;
+}
+
+/* Bursar period selector (layout include, sits above page content) */
+.app-shell--enterprise .app-main > .bursar-period-bar {
+  width: 100%;
+  margin-bottom: var(--content-gap);
+}
+
+.app-shell--enterprise .bursar-period-bar .card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--surface);
+}
+
+.app-shell--enterprise .bursar-period-bar .badge.bg-primary-subtle {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
 }
 
 .app-shell--enterprise .app-page {
@@ -620,16 +642,84 @@
   background: var(--bg);
 }
 
+/* Hero blocks — all portals (admin overview, bursar, HOD) */
+.app-shell--enterprise .dash-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-shell--enterprise .dash-hero__date,
+.app-shell--enterprise .dash-hero__inline {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.app-shell--enterprise .dash-hero__date i,
+.app-shell--enterprise .dash-hero__inline i {
+  color: var(--accent);
+}
+
+/* HOD period bar + overview cards */
+.app-shell--enterprise .period-bar,
+.app-shell--enterprise .hod-overview-period {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-shell--enterprise .period-bar__title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.app-shell--enterprise .hod-overview-kpi,
+.app-shell--enterprise .hod-overview-card,
+.app-shell--enterprise .hod-overview-empty,
+.app-shell--enterprise .hod-chart-card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--surface);
+}
+
+.app-shell--enterprise .hod-overview-kpi--purple { border-left: 3px solid #7c3aed; }
+.app-shell--enterprise .hod-overview-kpi--blue { border-left: 3px solid var(--accent); }
+.app-shell--enterprise .hod-overview-kpi--green { border-left: 3px solid var(--success); }
+.app-shell--enterprise .hod-overview-kpi--orange { border-left: 3px solid var(--warning); }
+
+.app-shell--enterprise .hod-overview-chart-surface {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* Bursar dashboard cards */
+.app-shell--enterprise .bursar-dash .dash-card,
+.app-shell--enterprise .bursar-page .card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
 /* Overview / portal-dash — same horizontal alignment as topbar */
 @media (min-width: 992px) {
   .app-shell--enterprise .app-main > .portal-dash,
   .app-shell--enterprise .app-main > .dash-fly-root.portal-dash,
-  .app-shell--enterprise .app-main > .dash-fly-root.sa-dash {
+  .app-shell--enterprise .app-main > .dash-fly-root.sa-dash,
+  .app-shell--enterprise .app-main > .bursar-dash,
+  .app-shell--enterprise .app-main > .bursar-page,
+  .app-shell--enterprise .app-main > .hod-overview-page,
+  .app-shell--enterprise .app-main > .hod-portal-dash {
     padding-top: 0;
   }
 
   .app-shell--enterprise .portal-dash .dash-hero:first-child,
-  .app-shell--enterprise .portal-dash > .dash-hero:first-child {
+  .app-shell--enterprise .portal-dash > .dash-hero:first-child,
+  .app-shell--enterprise .bursar-dash > .dash-hero:first-child,
+  .app-shell--enterprise .bursar-page > .dash-hero:first-child {
     margin-top: 0;
   }
 }
@@ -857,6 +947,18 @@ html[data-bs-theme="dark"] .app-shell--enterprise .portal-dash .btn-primary {
 html[data-bs-theme="dark"] .app-shell--enterprise .portal-dash .progress-bar {
   background: var(--accent);
   background-image: none;
+}
+
+html[data-bs-theme="dark"] .app-shell--enterprise .dash-hero,
+html[data-bs-theme="dark"] .app-shell--enterprise .period-bar,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-period,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-kpi,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-card,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-empty,
+html[data-bs-theme="dark"] .app-shell--enterprise .bursar-period-bar .card {
+  background: var(--surface) !important;
+  background-image: none !important;
+  border-color: var(--border) !important;
 }
 
 html[data-bs-theme="dark"] .app-shell--enterprise .kpi-card:hover,
