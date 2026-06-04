@@ -7,8 +7,9 @@
   --pd-muted: #64748b;
   --pd-bg: #f8fafc;
   --pd-sky: #38bdf8;
-  --pd-radius: 22px;
-  --pd-radius-sm: 14px;
+  --pd-radius: 8px;
+  --pd-radius-sm: 6px;
+  --card-radius: var(--pd-radius);
   --pd-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.1);
   --pd-shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
   --pd-glass: rgba(255, 255, 255, 0.88);
@@ -33,7 +34,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.95);
-  border-radius: var(--pd-radius);
+  border-radius: var(--card-radius);
   box-shadow: var(--pd-shadow);
   padding: 1.2rem 1.45rem;
   margin-bottom: 1.25rem;
@@ -88,7 +89,7 @@
 }
 
 .portal-dash .icon-chip {
-  border-radius: 14px;
+  border-radius: 6px;
   box-shadow: var(--pd-shadow-sm);
 }
 
@@ -153,11 +154,11 @@
 }
 
 .portal-dash .kpi-card__icon {
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .portal-dash .hod-overview-kpi__icon {
-  border-radius: 12px;
+  border-radius: 6px;
   box-shadow: none;
 }
 
@@ -223,10 +224,13 @@
   overflow: visible !important;
 }
 
-.portal-dash .chart-surface {
-  background: var(--pd-bg);
-  border-radius: var(--pd-radius-sm);
-  border: 1px solid rgba(15, 23, 42, 0.05);
+/* Plot area sits flush inside the chart card — no nested “card in card” */
+.portal-dash .chart-surface,
+.portal-dash .hod-overview-chart-surface {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* ---------- Panels & tables ---------- */
@@ -304,7 +308,7 @@
 
 /* ---------- Bursar dashboard cards ---------- */
 .portal-dash.bursar-dash .pay-row {
-  border-radius: 10px;
+  border-radius: 4px;
   transition: background 0.15s;
 }
 
@@ -354,7 +358,7 @@
 }
 
 .portal-dash .recent-list__item {
-  border-radius: 10px;
+  border-radius: 4px;
   margin: 0 0.5rem;
   transition: background 0.15s;
 }
@@ -364,7 +368,7 @@
 }
 
 .portal-dash .recent-list__avatar {
-  border-radius: 12px;
+  border-radius: 6px;
   font-weight: 700;
 }
 
@@ -374,14 +378,8 @@
   box-shadow: var(--pd-shadow-sm);
 }
 
-.portal-dash .hod-overview-chart-surface {
-  background: var(--pd-bg);
-  border-radius: var(--pd-radius-sm);
-  border: 1px solid rgba(15, 23, 42, 0.05);
-}
-
 .portal-dash .card-header-icon {
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 /* ---------- Primary actions elsewhere on dash ---------- */
@@ -515,8 +513,8 @@
 
 [data-bs-theme="dark"] .portal-dash .chart-surface,
 [data-bs-theme="dark"] .portal-dash .hod-overview-chart-surface {
-  background: var(--surface-2);
-  border-color: var(--border);
+  background: transparent;
+  border: none;
 }
 
 [data-bs-theme="dark"] .portal-dash .period-bar,

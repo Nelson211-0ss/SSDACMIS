@@ -38,7 +38,8 @@
   /* Geometry */
   --radius-sm: .375rem;
   --radius:    .5rem;
-  --radius-lg: .75rem;
+  --radius-lg: .5rem;
+  --card-radius: var(--radius-sm);
 
   --sidebar-w: 260px;
   --topbar-h:  60px;
@@ -225,9 +226,10 @@ body:has(.report-student-layout) {
 .app-sidebar__nav {
   list-style: none;
   margin: 0;
-  padding: 1rem .75rem;
+  padding: 0.65rem 0.75rem 0.5rem;
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .app-sidebar__section {
   font-size: .68rem;
@@ -235,14 +237,17 @@ body:has(.report-student-layout) {
   text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--sidebar-text-subtle);
-  padding: .5rem .75rem;
-  margin-top: .25rem;
+  padding: .4rem .75rem .2rem;
+  margin-top: .15rem;
+}
+.app-sidebar__section:first-child {
+  margin-top: 0;
 }
 .app-sidebar__link {
   display: flex;
   align-items: center;
   gap: .65rem;
-  padding: .5rem .75rem;
+  padding: .45rem .75rem;
   margin-bottom: 1px;
   border-radius: var(--radius-sm);
   color: var(--sidebar-text);
@@ -270,25 +275,51 @@ body:has(.report-student-layout) {
 }
 .app-sidebar__link.is-active i { color: var(--sidebar-active-icon); }
 .app-sidebar__footer {
-  padding: .9rem 1.25rem 1rem;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 0.6rem 1rem 0.7rem;
+  background: #ffffff;
   border-top: 1px solid var(--sidebar-border);
-  font-size: .72rem;
+  font-size: 0.62rem;
   color: var(--sidebar-text-subtle);
-  line-height: 1.45;
+  line-height: 1.35;
+}
+html[data-bs-theme="dark"] .app-sidebar__footer {
+  background: var(--sidebar-bg);
 }
 .app-sidebar__footer-school {
+  margin: 0 0 0.28rem;
   font-weight: 500;
   color: var(--sidebar-text);
-  margin-bottom: .35rem;
+  font-size: 0.62rem;
+  line-height: 1.3;
+  word-wrap: break-word;
 }
 .app-sidebar__footer-credit {
-  padding-top: .35rem;
-  border-top: 1px dashed var(--sidebar-border);
-  font-size: .68rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  margin: 0;
+  padding-top: 0.28rem;
+  border-top: 1px solid var(--sidebar-border);
+  font-size: 0.6rem;
+  line-height: 1.3;
+}
+.app-sidebar__footer-credit-line {
+  display: block;
+}
+.app-sidebar__footer-credit-by,
+.app-sidebar__footer-credit-org {
+  color: var(--sidebar-text-subtle);
+}
+.app-sidebar__footer-credit-org {
+  display: block;
+  font-size: 0.58rem;
 }
 .app-sidebar__footer-credit strong {
   color: var(--sidebar-text-strong);
-  letter-spacing: .03em;
+  letter-spacing: .02em;
+  font-weight: 600;
 }
 /* Mobile close button is on the brand row of the colored sidebar */
 .app-sidebar__close { color: var(--sidebar-text); }
@@ -474,7 +505,7 @@ body:has(.report-student-layout) {
 }
 
 .entity-form__card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   border: 1px solid var(--border);
   border-inline-start: 4px solid var(--accent);
   box-shadow: var(--shadow-sm);
@@ -564,7 +595,7 @@ body:has(.report-student-layout) {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--card-radius);
   box-shadow: var(--shadow-xs);
 }
 .card-header, .card-footer {
@@ -583,7 +614,7 @@ body:has(.report-student-layout) {
   display: block;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--card-radius);
   padding: 1.25rem;
   text-decoration: none;
   color: inherit;
@@ -2987,7 +3018,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   background:
     radial-gradient(circle at 100% 0%, rgba(var(--accent-rgb), .14), transparent 55%),
     radial-gradient(circle at 0% 100%, rgba(var(--accent-rgb), .08), transparent 55%),
@@ -3117,7 +3148,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   padding: .6rem 0.8rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   text-decoration: none;
   color: inherit;
   overflow: hidden;
@@ -3146,7 +3177,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .kpi-card__icon {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
   font-size: 1.1rem;
@@ -4528,10 +4559,10 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   letter-spacing: -.015em;
 }
 
-/* ---------- Cards: rounded with soft neutral shadow ---------- */
+/* ---------- Cards: softly rounded with neutral shadow ---------- */
 .card {
   border: 1px solid var(--border);
-  border-radius: 1rem;
+  border-radius: var(--card-radius);
   box-shadow: 0 1px 2px rgba(17, 24, 39, .04);
   transition: box-shadow .15s ease, border-color .15s ease;
 }
@@ -4540,7 +4571,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .card.border-0.shadow-sm {
   border: 1px solid var(--border) !important;
-  border-radius: 1rem !important;
+  border-radius: var(--card-radius) !important;
   box-shadow: 0 1px 2px rgba(17, 24, 39, .04) !important;
 }
 .card-header {
@@ -4615,7 +4646,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   position: relative;
   overflow: hidden;
   padding: 1.1rem 1.25rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: 0 1px 2px rgba(17, 24, 39, .04);
@@ -4680,7 +4711,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 
 /* ---------- KPI cards: clean surface with airy spacing ---------- */
 .kpi-card {
-  border-radius: 1rem;
+  border-radius: var(--card-radius);
   padding: 1.1rem 1.15rem;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -4700,7 +4731,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .kpi-card__icon {
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: 6px;
   font-size: 1.25rem;
   background: #f1f3f6;
   color: #4b5563;
@@ -4737,7 +4768,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 [data-bs-theme="dark"] .kpi-card__icon--info   { background: rgba(29, 127, 179, .20); color: #6ab4dc; }
 [data-bs-theme="dark"] .kpi-card__icon--danger { background: rgba(220, 38, 38, .20);  color: #f37d7d; }
 
-.kpi-card--xs .kpi-card__icon { width: 40px; height: 40px; border-radius: 12px; font-size: 1.05rem; }
+.kpi-card--xs .kpi-card__icon { width: 40px; height: 40px; border-radius: 6px; font-size: 1.05rem; }
 
 .kpi-card__value {
   font-size: 1.6rem;
@@ -4760,7 +4791,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .kpi-card__delta--flat { background: transparent; color: var(--text-muted); }
 
 /* ---------- Chart cards: simple ---------- */
-.chart-card { border-radius: 1rem; }
+.chart-card { border-radius: var(--card-radius); }
 .chart-card__title {
   font-size: .95rem;
   font-weight: 600;
@@ -4804,7 +4835,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 [data-bs-theme="dark"] .period-bar--warn .period-bar__icon { background: rgba(217, 138, 30, .20); color: #f7b54e; }
 
 /* ---------- Form cards (HOD mark entry): match global card radius ---------- */
-.form-card { border-radius: 1rem; overflow: hidden; }
+.form-card { border-radius: var(--card-radius); overflow: hidden; }
 .form-card:hover {
   border-color: var(--border-strong);
   box-shadow: 0 4px 14px -6px rgba(17, 24, 39, .08);
@@ -4976,7 +5007,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 
 /* ---------- Stat-card (legacy): plain ---------- */
 .stat-card {
-  border-radius: var(--radius);
+  border-radius: var(--card-radius);
   background: var(--surface);
   box-shadow: 0 1px 2px rgba(17, 24, 39, .04);
 }
@@ -4992,7 +5023,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: 6px;
   background: #f1f3f6;
   color: #4b5563;
   font-size: 1.1rem;
@@ -5062,7 +5093,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   place-items: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 10px;
+  border-radius: 4px;
   margin-right: .4rem;
   vertical-align: middle;
   font-size: 1rem;
@@ -5911,7 +5942,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 
 .hod-overview-card {
   position: relative;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   border: 1px solid var(--border);
   background: var(--surface);
   box-shadow: 0 10px 34px -26px rgba(15, 23, 42, 0.18);
@@ -5954,9 +5985,13 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: 0.65rem;
 }
 .hod-exam-compare__item {
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 0.85rem 1rem;
   border: 1px solid var(--border);
+}
+.hod-overview-card__footer .hod-exam-compare__item {
+  background: var(--surface-2);
+  border: none;
 }
 .hod-exam-compare__item--mid {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.03));
@@ -5989,7 +6024,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   width: 3.5rem;
   height: 3.5rem;
   margin: 0 auto;
-  border-radius: 1rem;
+  border-radius: var(--card-radius);
   display: grid;
   place-items: center;
   font-size: 1.5rem;
@@ -6310,7 +6345,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .sa-profile.card {
   border: 1px solid var(--border) !important;
   box-shadow: none !important;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
 }
 .sa-profile__main {
   display: flex;
@@ -6533,7 +6568,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .app-page .card,
 .app-page .card.border-0.shadow-sm {
   border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--card-radius) !important;
   box-shadow: 0 1px 2px rgba(17, 24, 39, .04) !important;
   background: var(--surface);
 }
@@ -6550,7 +6585,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .app-page .card-header-icon {
   width: 2rem;
   height: 2rem;
-  border-radius: 0.5rem;
+  border-radius: 0.25rem;
   display: inline-grid;
   place-items: center;
   font-size: 0.95rem;
@@ -6744,5 +6779,51 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .app-page .page-header__actions .btn {
     flex: 1 1 auto;
   }
+}
+
+/* ============================================================
+   Global card geometry — all app pages & dashboards
+   Single outer card; chart plot areas are not nested cards.
+   ============================================================ */
+
+.app-shell .card,
+.app-shell .stat-card,
+.app-shell .kpi-card,
+.app-shell .chart-card,
+.app-shell .form-card,
+.app-shell .sa-panel,
+.app-shell .app-panel,
+.app-shell .dash-card,
+.app-shell .bursar-chart-card,
+.app-shell .hod-overview-card,
+.app-shell .hod-overview-empty,
+.app-shell .hod-chart-card,
+.app-shell .entity-form__card,
+.app-shell .student-roster-filter-card,
+.app-shell .marks-assignment-tile,
+.app-shell .reports-page__filters.card,
+.app-shell .marks-page__filters.card {
+  border-radius: var(--card-radius) !important;
+}
+
+.chart-card .chart-surface,
+.bursar-chart-card .chart-surface,
+.chart-card .chart-empty,
+.hod-overview-card .hod-overview-chart-surface,
+.portal-dash .chart-surface,
+.portal-dash .hod-overview-chart-surface {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.chart-card .card-body,
+.bursar-chart-card .card-body {
+  padding-bottom: 1rem;
+}
+
+.hod-overview-card__body--chart {
+  padding-top: 0.25rem !important;
 }
 

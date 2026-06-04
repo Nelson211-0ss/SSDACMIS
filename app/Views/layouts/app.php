@@ -221,13 +221,14 @@ $homeHref = $useBursarNav
     </ul>
 
     <div class="app-sidebar__footer">
-      <div class="app-sidebar__footer-school">
+      <p class="app-sidebar__footer-school">
         &copy; <?= date('Y') ?> <?= View::e($schoolName) ?>
-      </div>
+      </p>
       <div class="app-sidebar__footer-credit">
-        <strong>SSD-ACMIS</strong>
-        <span class="text-muted"> by Nelson O. Ochan</span><br>
-        <span class="text-muted">SSD-iT Solutions</span>
+        <span class="app-sidebar__footer-credit-line">
+          <strong>SSD-ACMIS</strong><span class="app-sidebar__footer-credit-by"> by Nelson O. Ochan</span>
+        </span>
+        <span class="app-sidebar__footer-credit-org">SSD-iT Solutions</span>
       </div>
     </div>
   </aside>

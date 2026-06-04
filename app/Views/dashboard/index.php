@@ -10,7 +10,7 @@ $isSchoolAdmin = ($role === 'school_admin');
 $isStaff       = ($role === 'staff');
 // Must match DashboardController scope: admins, per-school admins, and staff see analytics.
 $isAdminish    = in_array($role, ['admin', 'school_admin', 'staff'], true);
-$showOpsKpis   = ($isAdmin || $isSchoolAdmin);
+$showOpsKpis   = $isAdmin;
 $useOverviewUi = $isAdminish;
 $showSchoolKpis = $isSchoolAdmin || $isStaff;
 
@@ -379,55 +379,6 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
     </div>
     <?php endif; ?>
   </div>
-
-  <?php if ($showOpsKpis): ?>
-  <div class="dash-kpi-grid dash-kpi-grid--4 mb-3">
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/attendance" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--<?= $attRate !== null && $attRate >= 80 ? 'success' : ($attRate !== null && $attRate >= 60 ? 'warning' : 'danger') ?>">
-          <i class="bi bi-calendar-check"></i>
-        </div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Attendance today</div>
-          <div class="kpi-card__value"><?= $attRate !== null ? $attRate . '%' : '—' ?></div>
-          <?php if ($attTotal > 0): ?>
-            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($attPresent) ?> present · <?= number_format($attAbsent) ?> absent</div>
-          <?php endif; ?>
-        </div>
-      </a>
-    </div>
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/teaching" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--warning"><i class="bi bi-diagram-3"></i></div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Teaching slots</div>
-          <div class="kpi-card__value"><?= number_format($teachingCount) ?></div>
-        </div>
-      </a>
-    </div>
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/students" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--<?= $unassignedCount > 0 ? 'danger' : 'success' ?>">
-          <i class="bi bi-person-exclamation"></i>
-        </div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Unassigned students</div>
-          <div class="kpi-card__value"><?= number_format($unassignedCount) ?></div>
-        </div>
-      </a>
-    </div>
-    <div class="dash-kpi-grid__item">
-      <a href="<?= $base ?>/announcements" class="kpi-card kpi-card--dash">
-        <div class="kpi-card__icon kpi-card__icon--yellow"><i class="bi bi-megaphone-fill"></i></div>
-        <div class="kpi-card__body">
-          <div class="kpi-card__label">Announcements</div>
-          <div class="kpi-card__value"><?= number_format(count($announcements ?? [])) ?></div>
-          <div class="kpi-card__delta kpi-card__delta--flat">Latest notices</div>
-        </div>
-      </a>
-    </div>
-  </div>
-  <?php endif; ?>
 </section>
 <?php endif; ?>
 

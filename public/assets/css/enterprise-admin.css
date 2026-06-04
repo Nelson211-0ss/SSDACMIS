@@ -35,10 +35,11 @@
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.1);
 
-  --radius-sm: 10px;
-  --radius:    14px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
+  --radius-sm: 4px;
+  --radius:    6px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --card-radius: var(--radius-xl);
 
   --sidebar-w: 260px;
   --sidebar-inset: 18px;
@@ -102,16 +103,17 @@
     max-height: calc(100vh - (var(--sidebar-inset) * 2));
     margin: 0;
     border: 1px solid var(--sidebar-border);
-    border-radius: 18px;
+    border-radius: var(--card-radius);
     background: var(--sidebar-bg);
     box-shadow: var(--shadow-md);
   }
 }
 
 .app-shell--enterprise .app-sidebar__brand {
-  min-height: var(--topbar-h);
-  padding: 1rem 1.25rem;
+  min-height: auto;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
 }
 
 .app-shell--enterprise .app-sidebar__brand-logo {
@@ -134,7 +136,7 @@
 }
 
 .app-shell--enterprise .app-sidebar__nav {
-  padding: 1.15rem 1rem 1.25rem;
+  padding: 0.6rem 0.85rem 0.4rem;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
@@ -143,16 +145,20 @@
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  padding: 0.65rem 0.9rem 0.35rem;
-  margin-top: 0.35rem;
+  padding: 0.4rem 0.75rem 0.18rem;
+  margin-top: 0.2rem;
+}
+
+.app-shell--enterprise .app-sidebar__section:first-child {
+  margin-top: 0;
 }
 
 .app-shell--enterprise .app-sidebar__link {
-  gap: 0.75rem;
-  padding: 0.58rem 0.9rem;
-  margin-bottom: 3px;
-  border-radius: 14px;
-  font-size: 0.875rem;
+  gap: 0.65rem;
+  padding: 0.46rem 0.75rem;
+  margin-bottom: 2px;
+  border-radius: var(--radius-lg);
+  font-size: 0.84rem;
   font-weight: 500;
   transition:
     background 0.2s ease,
@@ -162,12 +168,12 @@
 }
 
 .app-shell--enterprise .app-sidebar__link i {
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   display: inline-grid;
   place-items: center;
-  font-size: 1.05rem;
-  border-radius: 10px;
+  font-size: 0.95rem;
+  border-radius: 8px;
   background: rgba(148, 163, 184, 0.1);
   color: var(--sidebar-icon);
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
@@ -197,10 +203,19 @@
   color: var(--sidebar-active-icon);
 }
 
+.app-shell--enterprise .app-sidebar {
+  overflow: hidden;
+}
+
 .app-shell--enterprise .app-sidebar__footer {
-  padding: 1rem 1.35rem 1.15rem;
-  background: var(--surface-2);
-  border-radius: 0 0 16px 16px;
+  padding: 0.55rem 1rem 0.65rem;
+  background: #ffffff;
+  border-top: 1px solid var(--sidebar-border);
+  border-radius: 0 0 var(--card-radius) var(--card-radius);
+}
+
+html[data-bs-theme="dark"] .app-shell--enterprise .app-sidebar__footer {
+  background: var(--sidebar-bg);
 }
 
 .app-shell--enterprise .app-sidebar__footer-credit strong {
@@ -231,7 +246,7 @@
     top: var(--content-inset);
     z-index: 1020;
     margin: var(--content-inset) var(--content-inset) 0 0;
-    border-radius: 18px;
+    border-radius: var(--card-radius);
   }
 }
 
@@ -408,7 +423,7 @@
 .app-shell--enterprise .app-page .card,
 .app-shell--enterprise .app-page .card.border-0.shadow-sm {
   border: 1px solid var(--border) !important;
-  border-radius: var(--radius-xl) !important;
+  border-radius: var(--card-radius) !important;
   box-shadow: var(--shadow-sm) !important;
   background: var(--surface);
   transition: box-shadow 0.22s ease, border-color 0.22s ease;
@@ -437,7 +452,7 @@
 .app-shell--enterprise .app-page .app-panel,
 .app-shell--enterprise .sa-panel,
 .app-shell--enterprise .app-panel {
-  border-radius: var(--radius-xl);
+  border-radius: var(--card-radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   background: var(--surface);
@@ -450,7 +465,7 @@
 }
 
 .app-shell--enterprise .stat-card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   box-shadow: var(--shadow-xs);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -462,7 +477,7 @@
 
 /* KPI cards */
 .app-shell--enterprise .kpi-card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   padding: 1.25rem 1.35rem;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.22s ease, transform 0.22s ease;
@@ -479,7 +494,7 @@
 }
 
 .app-shell--enterprise .chart-card {
-  border-radius: var(--radius-xl) !important;
+  border-radius: var(--card-radius) !important;
   box-shadow: var(--shadow-sm);
 }
 
@@ -630,8 +645,9 @@
   --pd-muted: #64748b;
   --pd-bg: #f5f8fc;
   --pd-sky: var(--accent);
-  --pd-radius: 22px;
-  --pd-radius-sm: 16px;
+  --pd-radius: 8px;
+  --pd-radius-sm: 6px;
+  --card-radius: var(--pd-radius);
   --pd-shadow: 0 12px 32px rgba(var(--accent-rgb), 0.1);
   --pd-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.06);
   --pd-glass: rgba(255, 255, 255, 0.94);
@@ -646,7 +662,7 @@
 .app-shell--enterprise .dash-hero {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--card-radius);
   box-shadow: var(--shadow-sm);
 }
 
@@ -680,7 +696,7 @@
 .app-shell--enterprise .hod-overview-empty,
 .app-shell--enterprise .hod-chart-card {
   border: 1px solid var(--border) !important;
-  border-radius: var(--radius-xl) !important;
+  border-radius: var(--card-radius) !important;
   box-shadow: var(--shadow-sm) !important;
   background: var(--surface);
 }
@@ -690,17 +706,20 @@
 .app-shell--enterprise .hod-overview-kpi--green { border-left: 3px solid var(--success); }
 .app-shell--enterprise .hod-overview-kpi--orange { border-left: 3px solid var(--warning); }
 
-.app-shell--enterprise .hod-overview-chart-surface {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+.app-shell--enterprise .chart-card .chart-surface,
+.app-shell--enterprise .bursar-chart-card .chart-surface,
+.app-shell--enterprise .hod-overview-card .hod-overview-chart-surface {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 /* Bursar dashboard cards */
 .app-shell--enterprise .bursar-dash .dash-card,
 .app-shell--enterprise .bursar-page .card {
   border: 1px solid var(--border) !important;
-  border-radius: var(--radius-xl) !important;
+  border-radius: var(--card-radius) !important;
   box-shadow: var(--shadow-sm) !important;
 }
 
@@ -727,7 +746,7 @@
 .app-shell--enterprise .portal-dash .dash-hero {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--pd-radius);
+  border-radius: var(--card-radius);
   box-shadow: var(--pd-shadow-sm);
 }
 
@@ -868,7 +887,7 @@
     top: 0;
     bottom: 0;
     max-height: 100vh;
-    border-radius: 0 18px 18px 0;
+    border-radius: 0 var(--card-radius) var(--card-radius) 0;
     background: var(--sidebar-bg);
     box-shadow: var(--shadow-lg);
   }

@@ -8,8 +8,8 @@
   --lp-muted: #64748b;
   --lp-success: #10b981;
   --lp-white: #ffffff;
-  --lp-radius: 22px;
-  --lp-radius-sm: 14px;
+  --lp-radius: 8px;
+  --lp-radius-sm: 6px;
   --lp-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.12);
   --lp-shadow-lg: 0 32px 64px -16px rgba(15, 23, 42, 0.18);
   --lp-glass: rgba(255, 255, 255, 0.72);
@@ -72,7 +72,7 @@ body.landing-page {
 .lp-logo__mark {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 6px;
   background: linear-gradient(135deg, var(--lp-blue), var(--lp-sky));
   color: #fff;
   display: grid;
@@ -100,7 +100,7 @@ body.landing-page {
   background: var(--lp-white);
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 1.4rem;
   color: var(--lp-navy);
   box-shadow: var(--lp-shadow);
