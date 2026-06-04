@@ -68,6 +68,9 @@ $mainNav = [
 
 $initial = strtoupper(mb_substr($auth['name'] ?? '?', 0, 1));
 $pageTitle = $title ?? $schoolName;
+$useEnterpriseUi = in_array($role, ['admin', 'school_admin'], true)
+    && !$useBursarNav
+    && !$useHodNav;
 $homeHref = $useBursarNav
     ? $base . '/bursar'
     : ($useHodNav ? $base . '/hod' : $base . '/dashboard');
@@ -85,6 +88,9 @@ $homeHref = $useBursarNav
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/app.css') ?>" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/portal-dash.css') ?>" rel="stylesheet">
+  <?php if ($useEnterpriseUi): ?>
+  <link href="<?= View::asset($base, 'assets/css/enterprise-admin.css') ?>" rel="stylesheet">
+  <?php endif; ?>
   <?php require __DIR__ . '/../partials/favicon.php'; ?>
   <style>
     /* Admin-customized theme - injected per request */
@@ -106,7 +112,7 @@ $homeHref = $useBursarNav
   </script>
 </head>
 <body>
-<div class="app-shell">
+<div class="app-shell<?= $useEnterpriseUi ? ' app-shell--enterprise' : '' ?>">
 
   <aside class="app-sidebar" id="appSidebar">
     <a class="app-sidebar__brand" href="<?= View::e($homeHref) ?>">
