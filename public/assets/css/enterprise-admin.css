@@ -6,10 +6,11 @@
 
 .app-shell--enterprise {
   /* Academic SaaS palette */
-  --accent:        #0f4c81;
-  --accent-hover:  #0d3f6b;
-  --accent-soft:   #e8f1fa;
-  --accent-rgb:    15, 76, 129;
+  /* Uniform brand blue (matches sidebar active state) */
+  --accent:        #1e88e5;
+  --accent-hover:  #1976d2;
+  --accent-soft:   #e3f2fd;
+  --accent-rgb:    30, 136, 229;
   --secondary:     #1e88e5;
   --secondary-rgb: 30, 136, 229;
 
@@ -27,7 +28,7 @@
   --success: #2ecc71;
   --warning: #f39c12;
   --danger:  #e74c3c;
-  --info:    #1e88e5;
+  --info:    var(--accent);
 
   --shadow-xs: 0 1px 2px rgba(15, 76, 129, 0.04);
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
@@ -66,7 +67,7 @@
   --sidebar-active-shadow: 0 4px 14px rgba(30, 136, 229, 0.22);
   --sidebar-icon: #94a3b8;
   --sidebar-active-icon: #ffffff;
-  --sidebar-brand-icon: #0f4c81;
+  --sidebar-brand-icon: #1e88e5;
 
   --bs-primary: var(--accent);
   --bs-primary-rgb: var(--accent-rgb);
@@ -180,7 +181,7 @@
 
 .app-shell--enterprise .app-sidebar__link:hover i {
   background: rgba(30, 136, 229, 0.12);
-  color: var(--secondary);
+  color: var(--accent);
 }
 
 .app-shell--enterprise .app-sidebar__link.is-active {
@@ -377,7 +378,7 @@
 
 .app-shell--enterprise .page-header__icon,
 .app-shell--enterprise .app-page .page-header__icon {
-  color: var(--secondary);
+  color: var(--accent);
 }
 
 /* ---------- Cards & panels ---------- */
@@ -475,14 +476,14 @@
 .app-shell--enterprise .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(15, 76, 129, 0.18);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.22);
 }
 
 .app-shell--enterprise .btn-primary:hover,
 .app-shell--enterprise .btn-primary:focus {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  box-shadow: 0 4px 12px rgba(15, 76, 129, 0.22);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.28);
   transform: translateY(-1px);
 }
 
@@ -513,7 +514,7 @@
 
 .app-shell--enterprise .form-control:focus,
 .app-shell--enterprise .form-select:focus {
-  border-color: color-mix(in srgb, var(--secondary) 55%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
   box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.12);
 }
 
@@ -533,7 +534,7 @@
 }
 
 .app-shell--enterprise .compact-search .input-group:focus-within {
-  border-color: color-mix(in srgb, var(--secondary) 50%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
   box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1), var(--shadow-sm);
 }
 
@@ -606,10 +607,10 @@
   --pd-text: #1e293b;
   --pd-muted: #64748b;
   --pd-bg: #f5f8fc;
-  --pd-sky: #1e88e5;
+  --pd-sky: var(--accent);
   --pd-radius: 22px;
   --pd-radius-sm: 16px;
-  --pd-shadow: 0 12px 32px rgba(15, 76, 129, 0.1);
+  --pd-shadow: 0 12px 32px rgba(var(--accent-rgb), 0.1);
   --pd-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.06);
   --pd-glass: rgba(255, 255, 255, 0.94);
 }
@@ -654,7 +655,7 @@
 .app-shell--enterprise .portal-dash .dash-hero__btn--announce {
   background: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 4px 14px rgba(15, 76, 129, 0.2);
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.22);
 }
 
 .app-shell--enterprise .portal-dash .dash-hero .btn-primary:hover,
