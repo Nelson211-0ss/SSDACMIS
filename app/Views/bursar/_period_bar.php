@@ -22,44 +22,67 @@ if ($relReq === '' || !str_starts_with($relReq, '/bursar') || $relReq === '/burs
     $relReq = '/bursar';
 }
 if ($reqQs !== '') $relReq .= '?' . $reqQs;
+
+$isBursarDashboard = ($relReq === '/bursar');
 ?>
 <div class="bursar-period-bar mb-3">
-  <form method="post" action="<?= $base ?>/bursar/period" class="card border-0 shadow-sm">
-    <input type="hidden" name="_csrf" value="<?= $csrf ?>">
-    <input type="hidden" name="return" value="<?= View::e($relReq) ?>">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body py-2 px-3">
+      <form method="post" action="<?= $base ?>/bursar/period" class="d-flex flex-wrap align-items-center gap-2">
+        <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+        <input type="hidden" name="return" value="<?= View::e($relReq) ?>">
 
-    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center gap-2">
-      <span class="badge bg-primary-subtle text-primary-emphasis d-inline-flex align-items-center gap-1 me-1">
-        <i class="bi bi-calendar-event"></i>
-        Active period
-      </span>
+        <span class="badge bg-primary-subtle text-primary-emphasis d-inline-flex align-items-center gap-1">
+          <i class="bi bi-calendar-event"></i>
+          Active period
+        </span>
 
-      <label class="form-label small fw-semibold mb-0 ms-1" for="periodYear">Year</label>
-      <select id="periodYear" name="year" class="form-select form-select-sm" style="width:auto;">
-        <?php foreach ($years as $y): ?>
-          <option value="<?= View::e($y) ?>" <?= $y === $activeYear ? 'selected' : '' ?>>
-            <?= View::e($y) ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
+        <label class="form-label small fw-semibold mb-0" for="periodYear">Year</label>
+        <select id="periodYear" name="year" class="form-select form-select-sm" style="width:auto;">
+          <?php foreach ($years as $y): ?>
+            <option value="<?= View::e($y) ?>" <?= $y === $activeYear ? 'selected' : '' ?>>
+              <?= View::e($y) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
 
-      <label class="form-label small fw-semibold mb-0 ms-2" for="periodTerm">Term</label>
-      <select id="periodTerm" name="term" class="form-select form-select-sm" style="width:auto;">
-        <?php foreach (FeesService::TERMS as $t): ?>
-          <option value="<?= View::e($t) ?>" <?= $t === $activeTerm ? 'selected' : '' ?>>
-            <?= View::e($t) ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
+        <label class="form-label small fw-semibold mb-0" for="periodTerm">Term</label>
+        <select id="periodTerm" name="term" class="form-select form-select-sm" style="width:auto;">
+          <?php foreach (FeesService::TERMS as $t): ?>
+            <option value="<?= View::e($t) ?>" <?= $t === $activeTerm ? 'selected' : '' ?>>
+              <?= View::e($t) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
 
-      <button type="submit" class="btn btn-primary btn-sm">
-        <i class="bi bi-check2"></i> Apply
-      </button>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-check2"></i> Apply
+        </button>
 
-      <span class="ms-auto small text-muted d-none d-md-inline">
-        <i class="bi bi-info-circle"></i>
-        All bills, payments, and reports below are scoped to this year &amp; term.
-      </span>
+        <?php if (!$isBursarDashboard): ?>
+          <span class="ms-auto small text-muted d-none d-md-inline">
+            <i class="bi bi-info-circle"></i>
+            All bills, payments, and reports below are scoped to this year &amp; term.
+          </span>
+        <?php endif; ?>
+      </form>
+
+      <?php if ($isBursarDashboard): ?>
+        <div class="d-flex flex-wrap gap-2 mt-2 pt-2 border-top">
+          <a href="<?= $base ?>/bursar/students" class="btn btn-primary btn-sm">
+            <i class="bi bi-receipt-cutoff"></i> Record payment
+          </a>
+          <a href="<?= $base ?>/bursar/exam-permits" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-shield-check"></i> Exam permits
+          </a>
+          <a href="<?= $base ?>/bursar/structure" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-sliders"></i> Fees setup
+          </a>
+          <a href="<?= $base ?>/bursar/reports/balances" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-graph-down-arrow"></i> Balances
+          </a>
+        </div>
+      <?php endif; ?>
     </div>
-  </form>
+  </div>
 </div>

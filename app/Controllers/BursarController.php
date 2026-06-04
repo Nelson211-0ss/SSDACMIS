@@ -120,6 +120,21 @@ class BursarController extends Controller
             $sp
         )->fetchAll();
 
+        // Monthly collection trend across the active academic year — drives
+        // the line chart on the dashboard. Scoped to payments whose bill
+        // belongs to the selected year so the trend matches the period.
+        $monthlyTrend = Database::query(
+            "SELECT DATE_FORMAT(p.payment_date, '%Y-%m') AS ym,
+                    COALESCE(SUM(p.amount), 0) AS total,
+                    COUNT(*)                   AS cnt
+             FROM payments p
+             LEFT JOIN student_fees sf ON sf.id = p.student_fee_id
+             WHERE sf.academic_year = ?" . ($schoolId !== null ? ' AND p.school_id = ?' : '') . "
+             GROUP BY ym
+             ORDER BY ym",
+            array_merge([$year], $sp)
+        )->fetchAll();
+
         return $this->view('bursar/dashboard', [
             'year'           => $year,
             'term'           => $term,
@@ -127,6 +142,7 @@ class BursarController extends Controller
             'byLevel'        => $byLevel,
             'byTerm'         => $byTerm,
             'recentPayments' => $recentPayments,
+            'monthlyTrend'   => $monthlyTrend,
         ]);
     }
 

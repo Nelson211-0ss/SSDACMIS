@@ -1,6 +1,5 @@
 <?php
 use App\Core\View;
-use App\Services\FeesService;
 
 $layout = 'app';
 $title  = 'Bursar Dashboard';
@@ -14,10 +13,41 @@ $partialCount = (int) ($totals['partial_count'] ?? 0);
 $unpaidCount  = (int) ($totals['unpaid_count']  ?? 0);
 $collectedPct = $expected > 0 ? min(100, round(($collected / $expected) * 100, 1)) : 0;
 
-$h = (int) date('G');
-$greeting  = $h < 12 ? 'Good morning' : ($h < 17 ? 'Good afternoon' : 'Good evening');
-$greetIcon = $h < 12 ? 'bi-sunrise'   : ($h < 17 ? 'bi-sun'         : 'bi-moon-stars');
-$greetTone = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
+// ---- Chart datasets ------------------------------------------------------
+// Collection by class (grouped bar): expected vs collected vs outstanding.
+$byLevel     = $byLevel     ?? [];
+$byTerm      = $byTerm      ?? [];
+$monthlyTrend = $monthlyTrend ?? [];
+
+$classLabels      = array_map(fn($r) => (string) $r['level'], $byLevel);
+$classExpected    = array_map(fn($r) => round((float) $r['expected'], 2), $byLevel);
+$classCollected   = array_map(fn($r) => round((float) $r['collected'], 2), $byLevel);
+$classOutstanding = array_map(fn($r) => round((float) $r['outstanding'], 2), $byLevel);
+
+// Per-term comparison (bar): expected vs collected by term.
+$termLabels    = array_map(fn($r) => (string) $r['term'], $byTerm);
+$termExpected  = array_map(fn($r) => round((float) $r['expected'], 2), $byTerm);
+$termCollected = array_map(fn($r) => round((float) $r['collected'], 2), $byTerm);
+
+// Monthly collection trend (line/area): label months human-readably.
+$trendLabels = array_map(function ($r) {
+    $ts = strtotime(((string) $r['ym']) . '-01');
+    return $ts ? date('M Y', $ts) : (string) $r['ym'];
+}, $monthlyTrend);
+$trendTotals = array_map(fn($r) => round((float) $r['total'], 2), $monthlyTrend);
+$trendCounts = array_map(fn($r) => (int) $r['cnt'], $monthlyTrend);
+
+// Payment status mix (doughnut).
+$statusLabels = ['Paid', 'Partial', 'Not paid'];
+$statusCounts = [$paidCount, $partialCount, $unpaidCount];
+
+$hasClassChart  = count($classLabels) > 0 && (array_sum($classExpected) > 0 || array_sum($classCollected) > 0);
+$hasTrendChart  = count($trendLabels) > 0 && array_sum($trendTotals) > 0;
+$hasTermChart   = count($termLabels) > 0 && (array_sum($termExpected) > 0 || array_sum($termCollected) > 0);
+$hasStatusChart = ($paidCount + $partialCount + $unpaidCount) > 0;
+$hasAnyChart    = $hasClassChart || $hasTrendChart || $hasTermChart || $hasStatusChart;
+
+$jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
 ?>
 
 <style>
@@ -54,48 +84,57 @@ $greetTone = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
    * alongside the page sidebar without wrapping. */
   .bursar-dash .kpi-card { padding: 0.7rem 0.85rem; }
   .bursar-dash .kpi-card__value { font-size: 1.3rem; }
+
+  /* ----- Analytics charts ----- */
+  .bursar-dash .bursar-chart-card .card-body { display: flex; flex-direction: column; }
+  .bursar-dash .chart-surface {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+  .bursar-dash .chart-surface--tall   { height: 280px; }
+  .bursar-dash .chart-surface--medium { height: 240px; }
+  .bursar-dash .chart-surface--donut  { height: 220px; }
+  .bursar-dash .chart-surface canvas { max-width: 100%; }
+  .bursar-dash .chart-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .bursar-dash .chart-head__title { font-weight: 700; font-size: 0.95rem; margin: 0; }
+  .bursar-dash .chart-head__sub { font-size: 0.78rem; color: var(--bs-secondary-color); margin: 0; }
+  .bursar-dash .chart-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-soft, #e3f2fd);
+    color: var(--accent, #1e88e5);
+    white-space: nowrap;
+  }
+  .bursar-dash .chart-empty {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--bs-secondary-color);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  .bursar-dash .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-top: 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+  .bursar-dash .chart-legend li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+  .bursar-dash .chart-legend__dot { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex-shrink: 0; }
 </style>
 
 <div class="bursar-dash portal-dash d-flex flex-column gap-3">
-
-  <!-- Hero -->
-  <section class="dash-hero py-2">
-    <div class="dash-hero__content d-flex align-items-center gap-3">
-      <span class="icon-chip icon-chip--<?= $greetTone ?> d-none d-sm-inline-grid">
-        <i class="bi <?= $greetIcon ?>"></i>
-      </span>
-      <div class="flex-grow-1" style="min-width:0;">
-        <h2 class="dash-hero__title h5 mb-1">
-          <?= $greeting ?>, <?= View::e($auth['name']) ?>.
-        </h2>
-        <p class="dash-hero__sub mb-0 small">
-          <span class="dash-hero__date">
-            <i class="bi bi-calendar3"></i><?= date('l, M j, Y') ?>
-          </span>
-          <span class="dash-hero__inline">
-            <i class="bi bi-cash-coin"></i> AY <?= View::e($year) ?>
-          </span>
-          <span class="dash-hero__inline">
-            <i class="bi bi-bookmark-star"></i> <?= View::e($term) ?>
-          </span>
-        </p>
-      </div>
-    </div>
-    <div class="dash-hero__actions">
-      <a href="<?= $base ?>/bursar/students" class="btn btn-primary btn-sm">
-        <i class="bi bi-receipt-cutoff"></i> Record payment
-      </a>
-      <a href="<?= $base ?>/bursar/exam-permits" class="btn btn-outline-success btn-sm">
-        <i class="bi bi-shield-check"></i> Exam permits
-      </a>
-      <a href="<?= $base ?>/bursar/structure" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-sliders"></i> Fees setup
-      </a>
-      <a href="<?= $base ?>/bursar/reports/balances" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-graph-down-arrow"></i> Balances
-      </a>
-    </div>
-  </section>
 
   <!-- KPI strip -->
   <div class="row g-2">
@@ -153,79 +192,105 @@ $greetTone = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
     </div>
   </div>
 
-  <!-- Slim collection progress strip -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body py-2 px-3">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-        <strong class="small">
-          <i class="bi bi-bar-chart-steps"></i>
-          Collection · <?= View::e($year) ?> · <?= View::e($term) ?>
-        </strong>
-        <span class="d-flex flex-wrap gap-1">
-          <span class="badge <?= FeesService::statusBadgeClass('paid') ?>">Paid <?= number_format($paidCount) ?></span>
-          <span class="badge <?= FeesService::statusBadgeClass('partial') ?>">Partial <?= number_format($partialCount) ?></span>
-          <span class="badge <?= FeesService::statusBadgeClass('not_paid') ?>">Not paid <?= number_format($unpaidCount) ?></span>
-        </span>
-      </div>
-      <div class="progress" role="progressbar" aria-valuenow="<?= $collectedPct ?>" aria-valuemin="0" aria-valuemax="100" style="height: 0.95rem;">
-        <div class="progress-bar bg-success" style="width: <?= $collectedPct ?>%"><?= $collectedPct ?>%</div>
-      </div>
-      <div class="d-flex justify-content-between small text-muted mt-1">
-        <span>Collected: <strong><?= number_format($collected, 2) ?></strong></span>
-        <span>Outstanding: <strong class="text-danger"><?= number_format($outstanding, 2) ?></strong></span>
-        <span>Expected: <strong><?= number_format($expected, 2) ?></strong></span>
+  <?php if ($hasAnyChart): ?>
+  <!-- ============================================================
+       Statistical analysis — charts (bar · line · doughnut)
+       ============================================================ -->
+  <div class="row g-2 align-items-stretch">
+
+    <!-- Monthly collection trend (line / area) -->
+    <div class="col-12 col-xl-8">
+      <div class="card bursar-chart-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="chart-head">
+            <div>
+              <h3 class="chart-head__title"><i class="bi bi-graph-up-arrow text-primary me-1"></i> Collection trend</h3>
+              <p class="chart-head__sub">Total amount collected per month · AY <?= View::e($year) ?></p>
+            </div>
+            <span class="chart-badge"><i class="bi bi-cash-stack"></i> <?= number_format(array_sum($trendTotals), 2) ?></span>
+          </div>
+          <div class="chart-surface chart-surface--tall">
+            <?php if ($hasTrendChart): ?>
+              <canvas id="bursarTrendChart" role="img" aria-label="Monthly collection trend"></canvas>
+            <?php else: ?>
+              <div class="chart-empty">
+                <div>
+                  <i class="bi bi-graph-up d-block fs-3 mb-2"></i>
+                  No payments recorded for this academic year yet.
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Main 3-column row: by-class · recent payments · term breakdown -->
-  <div class="row g-2 dash-row align-items-stretch">
-
-    <!-- By-class -->
-    <div class="col-12 col-xl-5">
-      <div class="card dash-card h-100 border-0 shadow-sm">
-        <div class="card-header bg-white d-flex align-items-center justify-content-between">
-          <span class="d-flex align-items-center fw-semibold">
-            <span class="card-header-icon card-header-icon--blue me-2" aria-hidden="true"><i class="bi bi-mortarboard"></i></span>
-            By class · <?= View::e($term) ?>
-          </span>
-          <a href="<?= $base ?>/bursar/students" class="small text-decoration-none">
-            View students <i class="bi bi-arrow-right small"></i>
-          </a>
+    <!-- Payment status mix (doughnut) -->
+    <div class="col-12 col-xl-4">
+      <div class="card bursar-chart-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="chart-head">
+            <div>
+              <h3 class="chart-head__title"><i class="bi bi-pie-chart-fill text-primary me-1"></i> Payment status</h3>
+              <p class="chart-head__sub"><?= number_format($students) ?> students · <?= View::e($term) ?></p>
+            </div>
+          </div>
+          <div class="chart-surface chart-surface--donut">
+            <?php if ($hasStatusChart): ?>
+              <canvas id="bursarStatusChart" role="img" aria-label="Payment status distribution"></canvas>
+            <?php else: ?>
+              <div class="chart-empty">No status data yet.</div>
+            <?php endif; ?>
+          </div>
+          <?php if ($hasStatusChart): ?>
+          <ul class="chart-legend">
+            <li><span class="chart-legend__dot" style="background:#2ecc71"></span>Paid · <?= number_format($paidCount) ?></li>
+            <li><span class="chart-legend__dot" style="background:#f39c12"></span>Partial · <?= number_format($partialCount) ?></li>
+            <li><span class="chart-legend__dot" style="background:#e74c3c"></span>Not paid · <?= number_format($unpaidCount) ?></li>
+          </ul>
+          <?php endif; ?>
         </div>
-        <div class="dash-scroll table-responsive">
-          <table class="table table-sm mb-0 align-middle">
-            <thead class="table-light sticky-top" style="top: 0;">
-              <tr>
-                <th>Class</th>
-                <th class="text-end">Stud.</th>
-                <th class="text-end">Expected</th>
-                <th class="text-end">Collected</th>
-                <th class="text-end">Outstanding</th>
-                <th style="width: 120px;">Progress</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($byLevel)): ?>
-                <tr><td colspan="6" class="text-center text-muted py-4">No fees assigned yet. Set up the fees structure to get started.</td></tr>
-              <?php else: foreach ($byLevel as $r):
-                $exp = (float) $r['expected']; $col = (float) $r['collected'];
-                $pct = $exp > 0 ? min(100, round(($col / $exp) * 100)) : 0; ?>
-                <tr>
-                  <td><span class="badge bg-primary-subtle text-primary-emphasis"><?= View::e($r['level']) ?></span></td>
-                  <td class="text-end"><?= number_format((int) $r['students']) ?></td>
-                  <td class="text-end"><?= number_format($exp, 2) ?></td>
-                  <td class="text-end text-success"><?= number_format($col, 2) ?></td>
-                  <td class="text-end text-danger"><?= number_format((float) $r['outstanding'], 2) ?></td>
-                  <td>
-                    <div class="progress" style="height: 0.45rem;" title="<?= $pct ?>% collected">
-                      <div class="progress-bar bg-success" style="width: <?= $pct ?>%"></div>
-                    </div>
-                  </td>
-                </tr>
-              <?php endforeach; endif; ?>
-            </tbody>
-          </table>
+      </div>
+    </div>
+
+    <!-- Expected vs collected by class (grouped bar) -->
+    <div class="col-12 col-lg-6 col-xl-4">
+      <div class="card bursar-chart-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="chart-head">
+            <div>
+              <h3 class="chart-head__title"><i class="bi bi-bar-chart-fill text-primary me-1"></i> By class</h3>
+              <p class="chart-head__sub">Expected vs collected · <?= View::e($term) ?></p>
+            </div>
+          </div>
+          <div class="chart-surface chart-surface--medium">
+            <?php if ($hasClassChart): ?>
+              <canvas id="bursarClassChart" role="img" aria-label="Expected versus collected by class"></canvas>
+            <?php else: ?>
+              <div class="chart-empty">No fees assigned yet.</div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Term comparison (bar) -->
+    <div class="col-12 col-lg-6 col-xl-4">
+      <div class="card bursar-chart-card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="chart-head">
+            <div>
+              <h3 class="chart-head__title"><i class="bi bi-bookmark-star-fill text-primary me-1"></i> By term</h3>
+              <p class="chart-head__sub">Expected vs collected · AY <?= View::e($year) ?></p>
+            </div>
+          </div>
+          <div class="chart-surface chart-surface--medium">
+            <?php if ($hasTermChart): ?>
+              <canvas id="bursarTermChart" role="img" aria-label="Collection by term"></canvas>
+            <?php else: ?>
+              <div class="chart-empty">No term data yet.</div>
+            <?php endif; ?>
+          </div>
         </div>
       </div>
     </div>
@@ -287,67 +352,289 @@ $greetTone = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple');
       </div>
     </div>
 
-    <!-- Term breakdown -->
-    <div class="col-12 col-xl-3">
-      <div class="card dash-card h-100 border-0 shadow-sm">
-        <div class="card-header bg-white d-flex align-items-center justify-content-between">
-          <span class="d-flex align-items-center fw-semibold">
-            <span class="card-header-icon card-header-icon--purple me-2" aria-hidden="true"><i class="bi bi-bookmark-star"></i></span>
-            Terms · <?= View::e($year) ?>
-          </span>
-        </div>
-        <?php if (empty($byTerm)): ?>
-          <div class="card-body small text-muted">
-            Term data appears here once the fees structure is set up.
-          </div>
-        <?php else: ?>
-          <div class="card-body p-0 dash-scroll">
-            <ul class="list-unstyled mb-0">
-              <?php foreach ($byTerm as $t):
-                $exp = (float) $t['expected']; $col = (float) $t['collected'];
-                $pct = $exp > 0 ? min(100, round(($col / $exp) * 100)) : 0;
-                $isActive = (string) $t['term'] === $term; ?>
-                <li class="px-3 py-2<?= $isActive ? ' bg-primary bg-opacity-10' : '' ?> border-bottom">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="badge <?= $isActive ? 'bg-primary' : 'bg-primary-subtle text-primary-emphasis' ?>">
-                      <?= View::e($t['term']) ?><?= $isActive ? ' · active' : '' ?>
-                    </span>
-                    <?php if (!$isActive): ?>
-                      <form method="post" action="<?= $base ?>/bursar/period" class="m-0">
-                        <input type="hidden" name="_csrf" value="<?= $csrf ?>">
-                        <input type="hidden" name="year" value="<?= View::e($year) ?>">
-                        <input type="hidden" name="term" value="<?= View::e($t['term']) ?>">
-                        <input type="hidden" name="return" value="/bursar">
-                        <button class="btn btn-sm btn-outline-primary py-0 px-2" type="submit"
-                                title="Switch to <?= View::e($t['term']) ?>">
-                          Switch <i class="bi bi-arrow-right-circle"></i>
-                        </button>
-                      </form>
-                    <?php endif; ?>
-                  </div>
-                  <div class="d-flex justify-content-between small mb-1">
-                    <span class="text-muted">Expected</span>
-                    <span><?= number_format($exp, 2) ?></span>
-                  </div>
-                  <div class="d-flex justify-content-between small mb-1">
-                    <span class="text-muted">Collected</span>
-                    <span class="text-success fw-semibold"><?= number_format($col, 2) ?></span>
-                  </div>
-                  <div class="d-flex justify-content-between small mb-1">
-                    <span class="text-muted">Outstanding</span>
-                    <span class="text-danger fw-semibold"><?= number_format((float) $t['outstanding'], 2) ?></span>
-                  </div>
-                  <div class="progress mt-1" style="height: 0.4rem;" title="<?= $pct ?>% collected">
-                    <div class="progress-bar bg-success" style="width: <?= $pct ?>%"></div>
-                  </div>
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          </div>
-        <?php endif; ?>
-      </div>
-    </div>
-
   </div>
+  <?php endif; ?>
 
 </div>
+
+<?php if ($hasAnyChart): ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+<script>
+  // Theme-aware Chart.js setup for the bursar dashboard. Reads CSS vars at
+  // draw time so charts follow the active light/dark theme and re-render on
+  // theme toggle (mirrors the admin overview behaviour).
+  (function () {
+    'use strict';
+
+    var data = {
+      trend: {
+        labels: <?= json_encode($trendLabels, $jsonFlags) ?>,
+        totals: <?= json_encode($trendTotals, $jsonFlags) ?>,
+        counts: <?= json_encode($trendCounts, $jsonFlags) ?>
+      },
+      cls: {
+        labels:      <?= json_encode($classLabels, $jsonFlags) ?>,
+        expected:    <?= json_encode($classExpected, $jsonFlags) ?>,
+        collected:   <?= json_encode($classCollected, $jsonFlags) ?>,
+        outstanding: <?= json_encode($classOutstanding, $jsonFlags) ?>
+      },
+      term: {
+        labels:    <?= json_encode($termLabels, $jsonFlags) ?>,
+        expected:  <?= json_encode($termExpected, $jsonFlags) ?>,
+        collected: <?= json_encode($termCollected, $jsonFlags) ?>
+      },
+      status: {
+        labels: <?= json_encode($statusLabels, $jsonFlags) ?>,
+        counts: <?= json_encode($statusCounts, $jsonFlags) ?>
+      }
+    };
+
+    var charts = {};
+
+    // Bar chart palette — blue (expected), green (collected), red (outstanding)
+    var barColors = {
+      blue:   { fill: '#1e88e5', hover: '#1565c0' },
+      green:  { fill: '#22c55e', hover: '#16a34a' },
+      red:    { fill: '#ef4444', hover: '#dc2626' }
+    };
+
+    function barDataset(label, values, colorKey) {
+      var c = barColors[colorKey];
+      return {
+        label: label,
+        data: values,
+        backgroundColor: c.fill,
+        hoverBackgroundColor: c.hover,
+        borderRadius: 8,
+        borderSkipped: false,
+        maxBarThickness: 32
+      };
+    }
+
+    function readTheme() {
+      var css = getComputedStyle(document.documentElement);
+      function v(name, fallback) {
+        var raw = css.getPropertyValue(name);
+        return (raw && raw.trim()) || fallback;
+      }
+      var accentRgb = v('--accent-rgb', '30, 136, 229');
+      return {
+        accent:       v('--accent', '#1e88e5'),
+        accentRgb:    accentRgb,
+        accentFill:   'rgba(' + accentRgb + ', 0.15)',
+        accentLine:   'rgba(' + accentRgb + ', 1)',
+        border:       v('--border', '#e2e8f0'),
+        muted:        v('--text-muted', '#64748b'),
+        text:         v('--text', '#0f172a'),
+        surface:      v('--surface', '#ffffff'),
+        chartFont:    v('--bs-body-font-family', 'system-ui, sans-serif')
+      };
+    }
+
+    function money(n) {
+      return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function baseTooltip(theme) {
+      return {
+        backgroundColor: theme.surface,
+        titleColor: theme.text,
+        bodyColor: theme.muted,
+        borderColor: theme.border,
+        borderWidth: 1,
+        padding: 10,
+        displayColors: true
+      };
+    }
+
+    function gridScales(theme, opts) {
+      opts = opts || {};
+      return {
+        x: {
+          stacked: !!opts.stacked,
+          grid: { display: false, drawBorder: false },
+          ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 } }
+        },
+        y: {
+          stacked: !!opts.stacked,
+          beginAtZero: true,
+          grid: { color: theme.border, drawBorder: false },
+          ticks: {
+            color: theme.muted,
+            font: { family: theme.chartFont, size: 11 },
+            callback: function (val) {
+              if (val >= 1000000) return (val / 1000000) + 'M';
+              if (val >= 1000) return (val / 1000) + 'k';
+              return val;
+            }
+          }
+        }
+      };
+    }
+
+    function buildTrend(theme) {
+      var el = document.getElementById('bursarTrendChart');
+      if (!el) return;
+      var ctx = el.getContext('2d');
+      var grad = ctx.createLinearGradient(0, 0, 0, el.offsetHeight || 280);
+      grad.addColorStop(0, 'rgba(' + theme.accentRgb + ', 0.28)');
+      grad.addColorStop(1, 'rgba(' + theme.accentRgb + ', 0.01)');
+
+      charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.trend.labels,
+          datasets: [{
+            label: 'Collected',
+            data: data.trend.totals,
+            borderColor: theme.accentLine,
+            backgroundColor: grad,
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: theme.accentLine,
+            pointBorderColor: theme.surface,
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: Object.assign(baseTooltip(theme), {
+              displayColors: false,
+              callbacks: {
+                label: function (c) {
+                  var i = c.dataIndex;
+                  var cnt = data.trend.counts[i] || 0;
+                  return [money(c.parsed.y) + ' collected', cnt + (cnt === 1 ? ' payment' : ' payments')];
+                }
+              }
+            })
+          },
+          scales: gridScales(theme)
+        }
+      });
+    }
+
+    function buildClass(theme) {
+      var el = document.getElementById('bursarClassChart');
+      if (!el) return;
+      charts.cls = new Chart(el.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: data.cls.labels,
+          datasets: [
+            barDataset('Expected',    data.cls.expected,    'blue'),
+            barDataset('Collected',   data.cls.collected,   'green'),
+            barDataset('Outstanding', data.cls.outstanding, 'red')
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: theme.muted, font: { family: theme.chartFont, size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 8, padding: 12 } },
+            tooltip: Object.assign(baseTooltip(theme), {
+              callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + money(c.parsed.y); } }
+            })
+          },
+          scales: gridScales(theme)
+        }
+      });
+    }
+
+    function buildTerm(theme) {
+      var el = document.getElementById('bursarTermChart');
+      if (!el) return;
+      charts.term = new Chart(el.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: data.term.labels,
+          datasets: [
+            barDataset('Expected',  data.term.expected,  'blue'),
+            barDataset('Collected', data.term.collected, 'green')
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: theme.muted, font: { family: theme.chartFont, size: 11 }, usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 8, padding: 12 } },
+            tooltip: Object.assign(baseTooltip(theme), {
+              callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + money(c.parsed.y); } }
+            })
+          },
+          scales: gridScales(theme)
+        }
+      });
+    }
+
+    function buildStatus(theme) {
+      var el = document.getElementById('bursarStatusChart');
+      if (!el) return;
+      charts.status = new Chart(el.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: data.status.labels,
+          datasets: [{
+            data: data.status.counts,
+            backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c'],
+            borderColor: theme.surface,
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '64%',
+          plugins: {
+            legend: { display: false },
+            tooltip: Object.assign(baseTooltip(theme), {
+              callbacks: {
+                label: function (c) {
+                  var total = c.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                  var pct = total ? Math.round((c.parsed / total) * 100) : 0;
+                  return ' ' + c.label + ': ' + c.parsed + ' (' + pct + '%)';
+                }
+              }
+            })
+          }
+        }
+      });
+    }
+
+    function renderAll() {
+      if (!window.Chart) return;
+      Object.keys(charts).forEach(function (k) { if (charts[k]) { charts[k].destroy(); charts[k] = null; } });
+      var theme = readTheme();
+      buildTrend(theme);
+      buildClass(theme);
+      buildTerm(theme);
+      buildStatus(theme);
+    }
+
+    function whenReady(cb) {
+      if (window.Chart) { cb(); return; }
+      var tries = 0;
+      var poll = setInterval(function () {
+        if (window.Chart || tries++ > 60) { clearInterval(poll); if (window.Chart) cb(); }
+      }, 50);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      whenReady(renderAll);
+      var obs = new MutationObserver(function (m) {
+        for (var i = 0; i < m.length; i++) {
+          if (m[i].attributeName === 'data-bs-theme') { whenReady(renderAll); break; }
+        }
+      });
+      obs.observe(document.documentElement, { attributes: true });
+    });
+  })();
+</script>
+<?php endif; ?>
