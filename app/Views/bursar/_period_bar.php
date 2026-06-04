@@ -28,7 +28,7 @@ $isBursarDashboard = ($relReq === '/bursar');
 <div class="bursar-period-bar mb-3">
   <div class="card border-0 shadow-sm">
     <div class="card-body py-2 px-3">
-      <form method="post" action="<?= $base ?>/bursar/period" class="d-flex flex-wrap align-items-center gap-2">
+      <form method="post" action="<?= $base ?>/bursar/period" class="d-flex flex-wrap align-items-center gap-2 w-100">
         <input type="hidden" name="_csrf" value="<?= $csrf ?>">
         <input type="hidden" name="return" value="<?= View::e($relReq) ?>">
 
@@ -59,30 +59,17 @@ $isBursarDashboard = ($relReq === '/bursar');
           <i class="bi bi-check2"></i> Apply
         </button>
 
-        <?php if (!$isBursarDashboard): ?>
+        <?php if ($isBursarDashboard): ?>
+          <a href="<?= $base ?>/bursar/students" class="btn btn-primary btn-sm ms-auto">
+            <i class="bi bi-receipt-cutoff"></i> Record payment
+          </a>
+        <?php else: ?>
           <span class="ms-auto small text-muted d-none d-md-inline">
             <i class="bi bi-info-circle"></i>
             All bills, payments, and reports below are scoped to this year &amp; term.
           </span>
         <?php endif; ?>
       </form>
-
-      <?php if ($isBursarDashboard): ?>
-        <div class="d-flex flex-wrap gap-2 mt-2 pt-2 border-top">
-          <a href="<?= $base ?>/bursar/students" class="btn btn-primary btn-sm">
-            <i class="bi bi-receipt-cutoff"></i> Record payment
-          </a>
-          <a href="<?= $base ?>/bursar/exam-permits" class="btn btn-outline-success btn-sm">
-            <i class="bi bi-shield-check"></i> Exam permits
-          </a>
-          <a href="<?= $base ?>/bursar/structure" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-sliders"></i> Fees setup
-          </a>
-          <a href="<?= $base ?>/bursar/reports/balances" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-graph-down-arrow"></i> Balances
-          </a>
-        </div>
-      <?php endif; ?>
     </div>
   </div>
 </div>
