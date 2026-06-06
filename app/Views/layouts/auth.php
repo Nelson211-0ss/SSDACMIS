@@ -3,18 +3,21 @@ use App\Core\View;
 use App\Core\App;
 use App\Core\Settings;
 
-$schoolName  = Settings::get('school_name') ?: App::config('app.name');
+$schoolNameSetting = trim((string) Settings::get('school_name'));
 $schoolMotto = Settings::get('school_motto') ?? '';
 $schoolLogo  = Settings::logoUrl();
 $bodyClass   = $authBodyClass ?? 'auth-page auth-page--plain';
 $isLoginPage = str_contains($bodyClass, 'auth-page--login');
+$pageBrand   = $schoolNameSetting !== ''
+    ? $schoolNameSetting
+    : ($isLoginPage ? 'SSDACMIS' : App::config('app.name'));
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= View::e($title ?? 'Sign in') ?> &middot; <?= View::e($schoolName) ?></title>
+  <title><?= View::e($title ?? 'Sign in') ?> &middot; <?= View::e($pageBrand) ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <?php if ($isLoginPage): ?>
@@ -33,7 +36,7 @@ $isLoginPage = str_contains($bodyClass, 'auth-page--login');
   <?= $content ?>
   <?php if (empty($hideAuthFooter)): ?>
   <footer class="auth-credit" role="contentinfo">
-    &copy; <?= date('Y') ?> <?= View::e($schoolName) ?> &middot;
+    &copy; <?= date('Y') ?> <?= View::e($pageBrand) ?> &middot;
     <strong>SSD-ACMIS</strong> by Nelson O. Ochan
     <span class="auth-credit__sep">|</span>
     SSD-iT Solutions
