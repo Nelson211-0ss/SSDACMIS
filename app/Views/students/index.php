@@ -21,6 +21,8 @@ ob_start();
       <a class="btn btn-outline-secondary" href="<?= $base ?>/students/print" title="Print enrolled students (whole school or by class)">
         <i class="bi bi-printer"></i> Print roster
       </a>
+    <?php endif; ?>
+    <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
       <a class="btn btn-outline-primary" href="<?= $base ?>/students/admission-letters"
          data-inline-print
          title="Print admission letters for every admitted student">

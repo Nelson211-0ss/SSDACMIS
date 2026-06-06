@@ -2197,6 +2197,21 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .app-main:has(.report-student-layout) > .alert {
   flex-shrink: 0;
 }
+/* The main portal (admin/staff/student) wraps page content in `.app-page`,
+   which sits between `.app-main` and `.report-student-layout`. Without this
+   rule that wrapper keeps its default block sizing, so the fit chain breaks:
+   the A4 sheet grows to its natural height, overflows `.app-main` (which is
+   `overflow:hidden`) and the bottom of the card gets clipped. Making the
+   wrapper a flex column that fills the available height restores the
+   "scale-to-fit the whole card in the viewport" behaviour. */
+.app-main:has(.report-student-layout) > .app-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  max-width: none;
+}
 .report-student-layout {
   display: flex;
   flex-direction: column;

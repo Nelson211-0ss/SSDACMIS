@@ -53,13 +53,15 @@ if (empty($students)): ?>
             <td class="d-none d-xl-table-cell font-monospace small"><?= View::e($s['guardian_phone'] ?: '—') ?></td>
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/students/<?= (int)$s['id'] ?>/edit" title="Edit"><i class="bi bi-pencil"></i></a>
-              <?php if (($auth['role'] ?? '') === 'admin'): ?>
+              <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
                 <a class="btn btn-sm btn-outline-secondary"
                    href="<?= $base ?>/students/<?= (int)$s['id'] ?>/admission-letter"
                    data-inline-print
                    title="Print admission letter">
                   <i class="bi bi-envelope-paper"></i>
                 </a>
+              <?php endif; ?>
+              <?php if (($auth['role'] ?? '') === 'admin'): ?>
                 <form class="d-inline" method="post" action="<?= $base ?>/students/<?= (int)$s['id'] ?>/delete" data-confirm="Delete this student?">
                   <input type="hidden" name="_csrf" value="<?= $csrf ?>">
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>

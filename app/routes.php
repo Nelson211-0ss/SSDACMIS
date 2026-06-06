@@ -43,8 +43,8 @@ $router->get('/hod/students', 'HodController@students',  [$staffAdminOrHod]);
 // Students
 $router->get('/students',              'StudentController@index',  [$staffOrAdmin]);
 $router->get('/students/print',        'StudentController@printRoster', [$adminOnly]);
-$router->get('/students/admission-letters',           'StudentController@admissionLetters', [$adminOnly]);
-$router->get('/students/{id}/admission-letter',       'StudentController@admissionLetter',  [$adminOnly]);
+$router->get('/students/admission-letters',           'StudentController@admissionLetters', [$schoolAdminOrAdmin]);
+$router->get('/students/{id}/admission-letter',       'StudentController@admissionLetter',  [$schoolAdminOrAdmin]);
 $router->get('/students/create',       'StudentController@create', [$staffOrAdmin]);
 $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrAdmin]);
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.

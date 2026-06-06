@@ -143,22 +143,30 @@ class StudentController extends Controller
     }
 
     /**
-     * Printable admission letter for ONE student (admin only). The view
-     * is the same template used for the bulk print — we just feed it a
-     * single row.
+     * Printable admission letter for ONE student. Available to the global
+     * super admin and to school administrators (scoped to their own school).
+     * The view is the same template used for the bulk print — we just feed
+     * it a single row.
      *
      * GET /students/{id}/admission-letter
      */
     public function admissionLetter(string $id): string
     {
-        $row = Database::query(
-            "SELECT s.*, c.name AS class_name, c.level
-             FROM students s
-             LEFT JOIN classes c ON c.id = s.class_id
-             WHERE s.id = ?
-             LIMIT 1",
-            [(int) $id]
-        )->fetch();
+        $schoolId = Auth::schoolId();
+        $sql = "SELECT s.*, c.name AS class_name, c.level
+                FROM students s
+                LEFT JOIN classes c ON c.id = s.class_id
+                WHERE s.id = ?";
+        $params = [(int) $id];
+        // School-scoped users can only print their own school's letters; the
+        // global super admin (schoolId === null) may print any student's.
+        if ($schoolId !== null) {
+            $sql .= ' AND s.school_id = ?';
+            $params[] = $schoolId;
+        }
+        $sql .= ' LIMIT 1';
+
+        $row = Database::query($sql, $params)->fetch();
 
         if (!$row) {
             http_response_code(404);
@@ -168,7 +176,9 @@ class StudentController extends Controller
     }
 
     /**
-     * Printable admission letters for EVERY admitted student (admin only).
+     * Printable admission letters for EVERY admitted student. The global
+     * super admin gets all schools; a school administrator is automatically
+     * scoped to their own school via Auth::schoolId().
      * Optional ?class_id= narrows the print job to a single class so a
      * head teacher can print one whole class at a time without flooding
      * the queue.
