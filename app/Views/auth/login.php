@@ -1,6 +1,5 @@
 <?php
 use App\Core\View;
-use App\Core\App;
 use App\Core\Settings;
 
 $layout = 'auth';
@@ -8,9 +7,12 @@ $title  = 'Sign in';
 $hideAuthFooter = true;
 $authBodyClass = 'auth-page auth-page--login';
 
-$schoolName  = Settings::get('school_name') ?: App::config('app.name');
+$schoolNameSetting = trim((string) Settings::get('school_name'));
 $schoolMotto = Settings::get('school_motto') ?? '';
 $schoolLogo  = Settings::logoUrl();
+// On the login page, only show a configured school name — never the global
+// APP_NAME fallback ("SSD-ACMIS — School Management System").
+$schoolName  = $schoolNameSetting;
 ?>
 <div class="auth-login">
   <div class="auth-login__bg" aria-hidden="true"></div>
@@ -33,12 +35,16 @@ $schoolLogo  = Settings::logoUrl();
         <?php endif; ?>
         <p class="auth-login__eyebrow">Academic Management Portal</p>
         <h1 class="auth-login__title" id="login-title">Sign in</h1>
-        <p class="auth-login__sub">
-          <?php if ($schoolMotto !== ''): ?>
-            <?= View::e($schoolMotto) ?> &middot;
-          <?php endif; ?>
-          <?= View::e($schoolName) ?>
-        </p>
+        <?php if ($schoolMotto !== '' || $schoolName !== ''): ?>
+          <p class="auth-login__sub">
+            <?php if ($schoolMotto !== ''): ?>
+              <?= View::e($schoolMotto) ?><?= $schoolName !== '' ? ' &middot; ' : '' ?>
+            <?php endif; ?>
+            <?php if ($schoolName !== ''): ?>
+              <?= View::e($schoolName) ?>
+            <?php endif; ?>
+          </p>
+        <?php endif; ?>
       </div>
 
       <?php if (!empty($error)): ?>
@@ -51,42 +57,54 @@ $schoolLogo  = Settings::logoUrl();
       <form class="auth-login__form" method="post" action="<?= $base ?>/login" novalidate>
         <input type="hidden" name="_csrf" value="<?= $csrf ?>">
 
-        <div class="auth-login__field">
-          <label class="auth-login__label" for="email">Email</label>
-          <div class="auth-login__input-wrap">
-            <i class="bi bi-envelope" aria-hidden="true"></i>
-            <input id="email"
-                   type="email"
-                   name="email"
-                   class="auth-login__input"
-                   placeholder="you@school.edu"
-                   required
-                   autofocus
-                   autocomplete="email"
-                   value="<?= View::e($old['email'] ?? '') ?>">
+        <div class="auth-login__fields">
+          <div class="auth-login__field">
+            <label class="auth-login__label" for="email">Email address</label>
+            <div class="auth-login__input-wrap">
+              <i class="bi bi-envelope" aria-hidden="true"></i>
+              <input id="email"
+                     type="email"
+                     name="email"
+                     class="auth-login__input"
+                     placeholder="you@school.edu"
+                     required
+                     autofocus
+                     autocomplete="email"
+                     value="<?= View::e($old['email'] ?? '') ?>">
+            </div>
           </div>
-        </div>
 
-        <div class="auth-login__field">
-          <label class="auth-login__label" for="password">Password</label>
-          <div class="auth-login__input-wrap">
-            <i class="bi bi-key" aria-hidden="true"></i>
-            <input id="password"
-                   type="password"
-                   name="password"
-                   class="auth-login__input"
-                   placeholder="Enter your password"
-                   required
-                   autocomplete="current-password">
+          <div class="auth-login__field">
+            <div class="auth-login__label-row">
+              <label class="auth-login__label" for="password">Password</label>
+              <a class="auth-login__forgot auth-login__forgot--inline" href="<?= $base ?>/forgot-password">Forgot?</a>
+            </div>
+            <div class="auth-login__input-wrap auth-login__input-wrap--password">
+              <i class="bi bi-lock-fill" aria-hidden="true"></i>
+              <input id="password"
+                     type="password"
+                     name="password"
+                     class="auth-login__input"
+                     placeholder="Enter your password"
+                     required
+                     autocomplete="current-password">
+              <button type="button"
+                      class="auth-login__toggle-pw"
+                      data-password-toggle
+                      aria-label="Show password"
+                      aria-pressed="false"
+                      title="Show password">
+                <i class="bi bi-eye" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
         </div>
 
         <div class="auth-login__row">
           <label class="auth-login__remember">
             <input type="checkbox" name="remember" value="1" id="auth-remember" <?= !empty($old['remember'] ?? null) ? 'checked' : '' ?>>
-            <span>Remember me</span>
+            <span>Remember me on this device</span>
           </label>
-          <a class="auth-login__forgot" href="<?= $base ?>/forgot-password">Forgot password?</a>
         </div>
 
         <button type="submit" class="auth-login__submit" aria-describedby="login-title">
@@ -103,7 +121,28 @@ $schoolLogo  = Settings::logoUrl();
   </main>
 
   <footer class="auth-login__footer" role="contentinfo">
-    &copy; <?= date('Y') ?> <?= View::e($schoolName) ?> &middot;
+    &copy; <?= date('Y') ?><?= $schoolName !== '' ? ' ' . View::e($schoolName) . ' &middot;' : '' ?>
     <strong>SSDACMIS</strong> by SSD IT Solutions
   </footer>
 </div>
+<script>
+(function () {
+  var btn = document.querySelector('[data-password-toggle]');
+  var input = document.getElementById('password');
+  if (!btn || !input) return;
+
+  btn.addEventListener('click', function () {
+    var show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+    btn.title = show ? 'Hide password' : 'Show password';
+    var icon = btn.querySelector('i');
+    if (icon) {
+      icon.classList.toggle('bi-eye', !show);
+      icon.classList.toggle('bi-eye-slash', show);
+    }
+    input.focus();
+  });
+})();
+</script>

@@ -4,6 +4,7 @@ use App\Core\Flash;
 use App\Core\App;
 use App\Core\Auth;
 use App\Core\Settings;
+use App\Core\SchoolIdentity;
 
 $role        = Auth::role() ?? 'guest';
 $useHodNav    = Auth::usesHodPortalNav();
@@ -15,9 +16,9 @@ $relPath  = $base !== '' && str_starts_with($pagePath, $base)
     : $pagePath;
 $relPath  = '/' . ltrim($relPath, '/');
 
-$schoolName  = Settings::get('school_name') ?: App::config('app.name');
-$schoolMotto = Settings::get('school_motto') ?? '';
-$schoolLogo  = Settings::logoUrl();
+$schoolName  = SchoolIdentity::name();
+$schoolMotto = SchoolIdentity::motto();
+$schoolLogo  = SchoolIdentity::logoUrl();
 $theme       = Settings::activeTheme();
 
 /**
