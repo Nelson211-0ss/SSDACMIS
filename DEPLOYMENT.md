@@ -251,6 +251,11 @@ find . -type f -exec chmod 644 {} \;
 chmod -R 775 storage public/uploads
 ```
 
+> `public/uploads` (including its `students/` subfolder, where every school's
+> student passport photos are saved) must stay writable by the web-server user.
+> The `-R` above covers it. If photo uploads later fail with *"Upload folder
+> could not be created"*, re-run the `chmod` line — see Troubleshooting.
+
 ### 2.9 Sign in & secure the defaults
 
 Same defaults as in §1.8. Change both passwords immediately.
@@ -566,7 +571,7 @@ gunzip < /backups/ssdacmis-2026-04-26.sql.gz | mysql -u ssdacmis -p ssdacmis
 | **"DB connection failed"** in the installer                          | Check `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` in `.env`. On cPanel hosts, the user/db names usually have a prefix like `mysite_`.                    |
 | **Every URL 404s except `/`**                                        | `mod_rewrite` is off, or `AllowOverride All` is missing. On Ubuntu: `sudo a2enmod rewrite && sudo systemctl reload apache2`. Verify `.htaccess` was uploaded too. |
 | **"Your session expired. Please try again."** on every form          | The session cookie is being dropped — usually a cookie-domain or HTTPS mix-up. Make sure `APP_URL` matches the URL you actually visit (https vs http).  |
-| **Logo upload fails / "uploads/ not writable"**                      | `sudo chown -R www-data:www-data public/uploads && sudo chmod -R 775 public/uploads`.                                                                   |
+| **Logo or student passport-photo upload fails / "Upload folder could not be created at public/uploads/students" / "uploads/ not writable"** | The web server can't write to the uploads tree (this folder is shared by *all* schools). Fix on a server: `sudo chown -R www-data:www-data public/uploads && sudo chmod -R 775 public/uploads`. On local XAMPP (Apache runs as `daemon` while the files are owned by your login user, so group/owner perms don't match): `chmod -R 777 public/uploads`. The student-photo subfolder ships with the repo (`public/uploads/students/.gitkeep`), so it only ever needs the write permission, not re-creating. The student record still saves when only the photo fails — just re-upload from the student's **Edit** page afterwards. |
 | **`migrate.php` says "Unknown database '...'"** (whatever the name is) | The DB doesn't exist yet — create it (see §1.3 / §2.1 / §3.3). The migrate script does NOT create the database itself.                                |
 | **"Cannot redeclare function env()"** when running CLI scripts       | You bootstrapped the app twice in the same process. Use `php database/migrate.php` directly — don't `require` it from another script.                   |
 | **Reports render but the logo is missing**                           | The logo path is web-relative (e.g. `uploads/logo-123.png`). If your domain serves out of `/public`, that's correct. If you're rewriting from the project root, make sure `public/uploads/` is reachable. |

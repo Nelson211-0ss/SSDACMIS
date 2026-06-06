@@ -8,6 +8,12 @@ storage/uploads/*
 public/uploads/*
 !public/uploads/.gitkeep
 !public/uploads/.htaccess
+# Keep the student-photo folder in the repo so it always exists after a
+# clone/redeploy (only its write permission then needs setting). Uploaded
+# images themselves stay ignored by the public/uploads/* rule above.
+!public/uploads/students/
+public/uploads/students/*
+!public/uploads/students/.gitkeep
 /vendor/
 /node_modules/
 *.log
