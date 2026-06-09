@@ -42,6 +42,7 @@
   --card-radius: var(--radius-xl);
 
   --sidebar-w: 260px;
+  --sidebar-w-collapsed: 72px;
   --sidebar-inset: 18px;
   --sidebar-content-gap: 28px;
   --content-inset: 18px;
@@ -106,6 +107,12 @@
     border-radius: var(--card-radius);
     background: var(--sidebar-bg);
     box-shadow: var(--shadow-md);
+    transition: width .2s ease;
+  }
+
+  html.is-sidebar-collapsed .app-shell--enterprise {
+    --sidebar-w: var(--sidebar-w-collapsed);
+    --sidebar-slot: calc(var(--sidebar-inset) + var(--sidebar-w-collapsed) + var(--sidebar-content-gap));
   }
 }
 

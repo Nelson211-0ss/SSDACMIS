@@ -104,11 +104,14 @@ $homeHref = $useBursarNav
     }
   </style>
   <script>
-    // Apply persisted theme before paint to avoid flash
+    // Apply persisted theme + sidebar state before paint to avoid flash
     (function () {
       try {
         var t = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-bs-theme', t);
+        if (localStorage.getItem('sidebarCollapsed') === '1') {
+          document.documentElement.classList.add('is-sidebar-collapsed');
+        }
       } catch (e) {}
     })();
   </script>
@@ -178,7 +181,8 @@ $homeHref = $useBursarNav
           ?>
           <li>
             <a class="app-sidebar__link <?= $active ? 'is-active' : '' ?>"
-               href="<?= $base . $href ?>">
+               href="<?= $base . $href ?>"
+               title="<?= View::e($label) ?>">
               <i class="bi <?= $icon ?>"></i>
               <span><?= View::e($label) ?></span>
             </a>
@@ -196,7 +200,8 @@ $homeHref = $useBursarNav
           ?>
           <li>
             <a class="app-sidebar__link <?= $active ? 'is-active' : '' ?>"
-               href="<?= $base . $href ?>">
+               href="<?= $base . $href ?>"
+               title="<?= View::e($label) ?>">
               <i class="bi <?= $icon ?>"></i>
               <span><?= View::e($label) ?></span>
             </a>
@@ -212,7 +217,8 @@ $homeHref = $useBursarNav
           ?>
           <li>
             <a class="app-sidebar__link <?= $active ? 'is-active' : '' ?>"
-               href="<?= $base . $href ?>">
+               href="<?= $base . $href ?>"
+               title="<?= View::e($label) ?>">
               <i class="bi <?= $icon ?>"></i>
               <span><?= View::e($label) ?></span>
             </a>
@@ -243,6 +249,14 @@ $homeHref = $useBursarNav
       <i class="bi bi-list fs-4"></i>
     </button>
 
+    <button type="button"
+            class="icon-btn d-none d-lg-inline-grid"
+            data-sidebar-collapse
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar">
+      <i class="bi bi-layout-sidebar-inset" data-sidebar-collapse-icon></i>
+    </button>
+
     <div class="app-topbar__title">
       <?= View::e($pageTitle) ?>
     </div>
@@ -258,8 +272,8 @@ $homeHref = $useBursarNav
       </button>
 
       <?php if ($auth): ?>
-        <div class="dropdown">
-          <a class="user-chip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="dropdown" data-user-menu>
+          <a class="user-chip" href="#" role="button" aria-expanded="false" data-user-menu-trigger>
             <span class="user-chip__avatar"><?= View::e($initial) ?></span>
             <span class="user-chip__meta d-none d-sm-block">
               <strong><?= View::e($auth['name']) ?></strong><br>
@@ -267,7 +281,7 @@ $homeHref = $useBursarNav
             </span>
             <i class="bi bi-chevron-down small ms-1 text-muted"></i>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm" data-user-menu-panel>
             <li class="dropdown-header">
               <div class="fw-semibold"><?= View::e($auth['name']) ?></div>
               <div class="small text-muted text-capitalize"><?= View::e($role) ?> account</div>

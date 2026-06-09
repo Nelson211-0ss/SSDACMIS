@@ -42,6 +42,7 @@
   --card-radius: var(--radius-sm);
 
   --sidebar-w: 260px;
+  --sidebar-w-collapsed: 72px;
   --topbar-h:  60px;
 
   /* Sidebar — light rail, slightly brighter than the page canvas (--bg). */
@@ -150,6 +151,7 @@ code { background: var(--surface-2); color: var(--text); padding: .15em .4em; bo
     "sidebar topbar"
     "sidebar main";
   min-height: 100vh;
+  transition: grid-template-columns .2s ease;
 }
 html:has(.report-student-layout),
 body:has(.report-student-layout) {
@@ -169,6 +171,7 @@ body:has(.report-student-layout) {
   display: flex;
   flex-direction: column;
   z-index: 1030;
+  transition: width .2s ease;
 }
 .app-sidebar__brand {
   height: var(--topbar-h);
@@ -398,6 +401,10 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
 .user-chip__meta strong { font-weight: 600; }
 .user-chip__meta small { color: var(--text-subtle); font-size: .7rem; text-transform: capitalize; display: block; }
 
+/* User menu — hover target area */
+[data-user-menu] { position: relative; }
+[data-user-menu] .dropdown-menu { margin-top: .35rem; }
+
 /* Main */
 .app-main {
   grid-area: main;
@@ -432,6 +439,38 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
   .app-sidebar.is-open ~ .app-backdrop { display: block; }
   .app-sidebar__close { display: inline-grid; }
   .app-main { padding: 1.25rem; }
+}
+
+/* Desktop sidebar collapse (icons only) */
+@media (min-width: 992px) {
+  html.is-sidebar-collapsed .app-shell {
+    --sidebar-w: var(--sidebar-w-collapsed);
+  }
+
+  html.is-sidebar-collapsed .app-sidebar__brand-text,
+  html.is-sidebar-collapsed .app-sidebar__section,
+  html.is-sidebar-collapsed .app-sidebar__link span,
+  html.is-sidebar-collapsed .app-sidebar__footer {
+    display: none;
+  }
+
+  html.is-sidebar-collapsed .app-sidebar__brand {
+    justify-content: center;
+    padding-inline: .5rem;
+  }
+
+  html.is-sidebar-collapsed .app-sidebar__close {
+    display: none;
+  }
+
+  html.is-sidebar-collapsed .app-sidebar__link {
+    justify-content: center;
+    padding-inline: .5rem;
+  }
+
+  html.is-sidebar-collapsed .app-sidebar__nav {
+    padding-inline: .5rem;
+  }
 }
 
 /* ---------- Page header ---------- */

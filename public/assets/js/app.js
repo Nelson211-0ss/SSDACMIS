@@ -27,6 +27,62 @@
     });
   }
 
+  // --- Desktop sidebar collapse (icons only) -----------------------------
+  var collapseBtn  = document.querySelector('[data-sidebar-collapse]');
+  var collapseIcon = document.querySelector('[data-sidebar-collapse-icon]');
+  var COLLAPSED_KEY = 'sidebarCollapsed';
+  var desktopMq = window.matchMedia('(min-width: 992px)');
+
+  function applySidebarCollapsed(collapsed) {
+    document.documentElement.classList.toggle('is-sidebar-collapsed', collapsed);
+    if (collapseIcon) {
+      collapseIcon.className = collapsed
+        ? 'bi bi-layout-sidebar'
+        : 'bi bi-layout-sidebar-inset';
+    }
+    if (collapseBtn) {
+      var label = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+      collapseBtn.setAttribute('aria-label', label);
+      collapseBtn.setAttribute('title', label);
+    }
+  }
+
+  if (collapseBtn) {
+    collapseBtn.addEventListener('click', function () {
+      if (!desktopMq.matches) return;
+      var next = !document.documentElement.classList.contains('is-sidebar-collapsed');
+      applySidebarCollapsed(next);
+      try { localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0'); } catch (e) {}
+    });
+    applySidebarCollapsed(document.documentElement.classList.contains('is-sidebar-collapsed'));
+  }
+
+  // --- User menu: hover on desktop, click on touch ---------------------
+  var userMenu = document.querySelector('[data-user-menu]');
+  if (userMenu && typeof bootstrap !== 'undefined') {
+    var userTrigger = userMenu.querySelector('[data-user-menu-trigger]');
+    var userDd      = bootstrap.Dropdown.getOrCreateInstance(userTrigger, { autoClose: true });
+    var hideTimer;
+
+    function openUserMenu() {
+      if (!desktopMq.matches) return;
+      clearTimeout(hideTimer);
+      userDd.show();
+    }
+    function scheduleHideUserMenu() {
+      if (!desktopMq.matches) return;
+      hideTimer = setTimeout(function () { userDd.hide(); }, 150);
+    }
+
+    userMenu.addEventListener('mouseenter', openUserMenu);
+    userMenu.addEventListener('mouseleave', scheduleHideUserMenu);
+
+    userTrigger.addEventListener('click', function (e) {
+      e.preventDefault();
+      userDd.toggle();
+    });
+  }
+
   // --- Light / dark theme toggle -----------------------------------------
   var root        = document.documentElement;
   var lightIcon   = document.querySelector('[data-theme-icon-light]');
