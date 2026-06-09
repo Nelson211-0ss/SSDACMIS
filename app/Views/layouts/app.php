@@ -76,6 +76,11 @@ $useEnterpriseUi = $useBursarNav
 $homeHref = $useBursarNav
     ? $base . '/bursar'
     : ($useHodNav ? $base . '/hod' : $base . '/dashboard');
+// Sidebar collapse is remembered per portal (main / hod / bursar) AND per
+// school, so one school's toggle never leaks onto another's dashboard in the
+// same browser. Super admin (no school_id) gets the "global" scope.
+$sidebarSchool = Auth::schoolId() ?? 'global';
+$sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
 ?>
 <!doctype html>
 <html lang="en" data-bs-theme="light">
@@ -109,7 +114,8 @@ $homeHref = $useBursarNav
       try {
         var t = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-bs-theme', t);
-        if (localStorage.getItem('sidebarCollapsed') === '1') {
+        var sidebarScope = <?= json_encode($sidebarScope, JSON_THROW_ON_ERROR) ?>;
+        if (localStorage.getItem('sidebarCollapsed:' + sidebarScope) === '1') {
           document.documentElement.classList.add('is-sidebar-collapsed');
         }
       } catch (e) {}
@@ -117,7 +123,8 @@ $homeHref = $useBursarNav
   </script>
 </head>
 <body>
-<div class="app-shell<?= $useEnterpriseUi ? ' app-shell--enterprise' : '' ?>">
+<div class="app-shell<?= $useEnterpriseUi ? ' app-shell--enterprise' : '' ?>"
+     data-sidebar-scope="<?= View::e($sidebarScope) ?>">
 
   <aside class="app-sidebar" id="appSidebar">
     <a class="app-sidebar__brand" href="<?= View::e($homeHref) ?>">

@@ -16,26 +16,18 @@ if (empty($students)): ?>
     $streamBadge = $stream === 'science'
         ? 'bg-success-subtle text-success-emphasis'
         : ($stream === 'arts' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-light text-secondary border');
-    $photo   = trim((string) ($s['photo_path'] ?? ''));
-    $initials = mb_strtoupper(mb_substr((string) ($s['first_name'] ?? ''), 0, 1, 'UTF-8') . mb_substr((string) ($s['last_name'] ?? ''), 0, 1, 'UTF-8'), 'UTF-8');
 ?>
           <tr>
             <td class="fw-semibold font-monospace small"><?= View::e($s['admission_no']) ?></td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <?php if ($photo !== ''): ?>
-                  <img src="<?= View::e($base . '/' . $photo) ?>"
-                       alt=""
-                       class="rounded-circle border flex-shrink-0"
-                       style="width: 32px; height: 32px; object-fit: cover;"
-                       loading="lazy">
-                <?php else: ?>
-                  <span class="rounded-circle border bg-body-secondary text-secondary d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                        style="width: 32px; height: 32px; font-size: 0.75rem; font-weight: 600;"
-                        aria-hidden="true">
-                    <?= View::e($initials !== '' ? $initials : '?') ?>
-                  </span>
-                <?php endif; ?>
+                <?php
+                  $av_photo = $s['photo_path'] ?? '';
+                  $av_first = $s['first_name'] ?? '';
+                  $av_last  = $s['last_name']  ?? '';
+                  $av_size  = 32;
+                  include dirname(__DIR__) . '/_partials/student_avatar.php';
+                ?>
                 <span><?= View::e($s['first_name'] . ' ' . $s['last_name']) ?></span>
               </div>
             </td>

@@ -405,6 +405,53 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
 [data-user-menu] { position: relative; }
 [data-user-menu] .dropdown-menu { margin-top: .35rem; }
 
+/* Student avatars — square, WhatsApp-style color initials */
+.stu-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .02em;
+  border: none;
+  object-fit: cover;
+  color: #ffffff;
+  user-select: none;
+}
+.stu-avatar--square { border-radius: 6px; }
+.stu-avatar--circle { border-radius: 50%; }
+.stu-avatar--c0,
+.recent-list__avatar.stu-avatar--c0  { background: #e17076; color: #ffffff; }
+.stu-avatar--c1,
+.recent-list__avatar.stu-avatar--c1  { background: #7bc862; color: #ffffff; }
+.stu-avatar--c2,
+.recent-list__avatar.stu-avatar--c2  { background: #65c9cf; color: #ffffff; }
+.stu-avatar--c3,
+.recent-list__avatar.stu-avatar--c3  { background: #a695e7; color: #ffffff; }
+.stu-avatar--c4,
+.recent-list__avatar.stu-avatar--c4  { background: #faa774; color: #ffffff; }
+.stu-avatar--c5,
+.recent-list__avatar.stu-avatar--c5  { background: #6bcbef; color: #ffffff; }
+.stu-avatar--c6,
+.recent-list__avatar.stu-avatar--c6  { background: #ff7eb3; color: #ffffff; }
+.stu-avatar--c7,
+.recent-list__avatar.stu-avatar--c7  { background: #58d3db; color: #ffffff; }
+.stu-avatar--c8,
+.recent-list__avatar.stu-avatar--c8  { background: #d4a5f9; color: #ffffff; }
+.stu-avatar--c9,
+.recent-list__avatar.stu-avatar--c9  { background: #ffbc5e; color: #ffffff; }
+.stu-avatar--c10,
+.recent-list__avatar.stu-avatar--c10 { background: #7cd45f; color: #ffffff; }
+.stu-avatar--c11,
+.recent-list__avatar.stu-avatar--c11 { background: #ff8a80; color: #ffffff; }
+.recent-list__avatar.stu-avatar.stu-avatar--square {
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Main */
 .app-main {
   grid-area: main;

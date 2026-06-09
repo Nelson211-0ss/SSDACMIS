@@ -659,7 +659,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
               $last     = (string) ($s['last_name']  ?? '');
               $initials = strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
               if ($initials === '') { $initials = '?'; }
-              $genderClass = 'recent-list__avatar--' . View::e($s['gender'] ?? 'other');
+              $avatarColor = View::studentAvatarColorClass($first, $last);
               $diffSec = max(0, time() - strtotime($s['created_at'] ?? 'now'));
               if ($diffSec < 60)            { $when = 'just now'; }
               elseif ($diffSec < 3600)      { $when = floor($diffSec / 60)    . ' min ago'; }
@@ -668,7 +668,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
               else                          { $when = date('M j', strtotime($s['created_at'])); }
             ?>
               <li class="recent-list__item">
-                <div class="recent-list__avatar <?= $genderClass ?>"><?= View::e($initials) ?></div>
+                <div class="recent-list__avatar stu-avatar stu-avatar--square <?= View::e($avatarColor) ?>"><?= View::e($initials) ?></div>
                 <div class="recent-list__body">
                   <div class="recent-list__name">
                     <?= View::e(trim($first . ' ' . $last)) ?: 'Unnamed student' ?>

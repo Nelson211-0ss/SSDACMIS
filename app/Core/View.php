@@ -77,6 +77,30 @@ class View
     }
 
     /**
+     * Deterministic WhatsApp-style avatar color index (0–11) from a name.
+     */
+    public static function studentAvatarColorIndex(string $first, string $last): int
+    {
+        $name = trim($first . ' ' . $last);
+        if ($name === '') {
+            return 0;
+        }
+        $sum = 0;
+        $len = mb_strlen($name, 'UTF-8');
+        for ($i = 0; $i < $len; $i++) {
+            $sum += mb_ord(mb_substr($name, $i, 1, 'UTF-8'), 'UTF-8');
+        }
+
+        return $sum % 12;
+    }
+
+    /** CSS class suffix for a student's avatar background color. */
+    public static function studentAvatarColorClass(string $first, string $last): string
+    {
+        return 'stu-avatar--c' . self::studentAvatarColorIndex($first, $last);
+    }
+
+    /**
      * Append a ?v=<filemtime> cache-buster to a /public-relative asset path.
      * Used in layouts so browsers fetch a fresh copy whenever the file changes,
      * even though .htaccess sets long Expires headers.

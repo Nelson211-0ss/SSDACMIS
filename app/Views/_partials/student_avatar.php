@@ -1,7 +1,7 @@
 <?php
 /**
  * Render a student avatar — passport photo when available, two-letter
- * initials badge as a fallback.
+ * initials badge as a fallback (WhatsApp-style square + color).
  *
  * Inputs (all in scope when included):
  *   $base         (string)  app base path
@@ -9,11 +9,8 @@
  *   $av_first     (string)
  *   $av_last      (string)
  *   $av_size      (int)     pixel size, default 32
- *   $av_shape     (string)  'circle' (default) or 'square'
+ *   $av_shape     (string)  'square' (default) or 'circle'
  *   $av_class     (string)  optional extra CSS classes for the wrapper
- *
- * Square mode renders a slightly rounded square frame with a stronger
- * border — ideal for ID-card style photos.
  */
 use App\Core\View;
 
@@ -22,27 +19,31 @@ $avFirst   = (string) ($av_first ?? '');
 $avLast    = (string) ($av_last ?? '');
 $avPhoto   = trim((string) ($av_photo ?? ''));
 $avExtra   = (string) ($av_class ?? '');
-$avShape   = ($av_shape ?? 'circle') === 'square' ? 'square' : 'circle';
-$avFontPx  = max(10, (int) round($avSize * 0.42));
+$avShape   = ($av_shape ?? 'square') === 'circle' ? 'circle' : 'square';
+$avFontPx  = max(10, (int) round($avSize * 0.38));
 $avInitials = mb_strtoupper(
     mb_substr($avFirst, 0, 1, 'UTF-8') . mb_substr($avLast, 0, 1, 'UTF-8'),
     'UTF-8'
 );
-if ($avInitials === '') $avInitials = '?';
+if ($avInitials === '') {
+    $avInitials = '?';
+}
 
-$shapeClass = $avShape === 'square' ? 'rounded-3' : 'rounded-circle';
-$borderClass = $avShape === 'square' ? 'border border-2' : 'border';
+$colorClass = View::studentAvatarColorClass($avFirst, $avLast);
+$shapeClass = $avShape === 'circle' ? 'stu-avatar--circle' : 'stu-avatar--square';
+$baseClass  = 'stu-avatar ' . $shapeClass . ' ' . $colorClass;
 ?>
 <?php if ($avPhoto !== ''): ?>
   <img src="<?= View::e(($base ?? '') . '/' . ltrim($avPhoto, '/')) ?>"
        alt=""
        loading="lazy"
-       class="<?= $shapeClass ?> <?= $borderClass ?> flex-shrink-0 <?= View::e($avExtra) ?>"
-       style="width: <?= $avSize ?>px; height: <?= $avSize ?>px; object-fit: cover;">
+       class="<?= $baseClass ?> <?= View::e($avExtra) ?>"
+       style="width: <?= $avSize ?>px; height: <?= $avSize ?>px;">
 <?php else: ?>
-  <span class="<?= $shapeClass ?> <?= $borderClass ?> bg-body-secondary text-secondary d-inline-flex align-items-center justify-content-center flex-shrink-0 <?= View::e($avExtra) ?>"
-        style="width: <?= $avSize ?>px; height: <?= $avSize ?>px; font-size: <?= $avFontPx ?>px; font-weight: 600;"
-        aria-hidden="true">
+  <span class="<?= $baseClass ?> <?= View::e($avExtra) ?>"
+        style="width: <?= $avSize ?>px; height: <?= $avSize ?>px; font-size: <?= $avFontPx ?>px;"
+        aria-hidden="true"
+        title="<?= View::e(trim($avFirst . ' ' . $avLast)) ?>">
     <?= View::e($avInitials) ?>
   </span>
 <?php endif; ?>

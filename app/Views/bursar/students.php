@@ -189,6 +189,7 @@ $totBal    = max(0.0, $totBilled - $totPaid);
                         data-student-admission="<?= View::e($r['admission_no']) ?>"
                         data-student-photo="<?= !empty($r['photo_path']) ? View::e($base . '/' . ltrim((string)$r['photo_path'], '/')) : '' ?>"
                         data-student-initials="<?= View::e(mb_strtoupper(mb_substr((string)$r['first_name'], 0, 1, 'UTF-8') . mb_substr((string)$r['last_name'], 0, 1, 'UTF-8'), 'UTF-8')) ?>"
+                        data-student-color="<?= View::studentAvatarColorIndex((string)$r['first_name'], (string)$r['last_name']) ?>"
                         data-balance="<?= number_format($bal, 2, '.', '') ?>"
                         <?= $bal <= 0 && (float)$r['total_amount'] > 0 ? 'disabled title="Already paid in full"' : 'title="Record payment"' ?>>
                   <i class="bi bi-cash-coin"></i>
@@ -237,11 +238,11 @@ $totBal    = max(0.0, $totBilled - $totPaid);
       <div class="modal-body">
         <div class="mb-3 p-2 rounded bg-body-secondary bg-opacity-25 border d-flex align-items-center gap-3">
           <img id="payStudentPhoto" src="" alt=""
-               class="rounded-3 border border-2 d-none flex-shrink-0"
-               style="width: 64px; height: 64px; object-fit: cover;">
+               class="stu-avatar stu-avatar--square d-none flex-shrink-0"
+               style="width: 64px; height: 64px;">
           <span id="payStudentInitials"
-                class="rounded-3 border border-2 bg-body-secondary text-secondary d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                style="width: 64px; height: 64px; font-size: 1.1rem; font-weight: 700;"
+                class="stu-avatar stu-avatar--square flex-shrink-0"
+                style="width: 64px; height: 64px; font-size: 1.1rem;"
                 aria-hidden="true">?</span>
           <div class="flex-grow-1">
             <div class="small text-muted">Student</div>
@@ -307,8 +308,11 @@ $totBal    = max(0.0, $totBilled - $totPaid);
 
     var photoUrl = btn.getAttribute('data-student-photo') || '';
     var initials = btn.getAttribute('data-student-initials') || '?';
+    var colorIdx = btn.getAttribute('data-student-color') || '0';
     var photoEl  = document.getElementById('payStudentPhoto');
     var initEl   = document.getElementById('payStudentInitials');
+    var colorCls = 'stu-avatar--c' + colorIdx;
+    initEl.className = 'stu-avatar stu-avatar--square flex-shrink-0 ' + colorCls;
     if (photoUrl) {
       photoEl.src = photoUrl;
       photoEl.classList.remove('d-none');

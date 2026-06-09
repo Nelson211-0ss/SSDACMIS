@@ -27,10 +27,12 @@
     });
   }
 
-  // --- Desktop sidebar collapse (icons only) -----------------------------
+  // --- Desktop sidebar collapse (icons only, per portal) -----------------
   var collapseBtn  = document.querySelector('[data-sidebar-collapse]');
   var collapseIcon = document.querySelector('[data-sidebar-collapse-icon]');
-  var COLLAPSED_KEY = 'sidebarCollapsed';
+  var appShell     = document.querySelector('.app-shell');
+  var sidebarScope = (appShell && appShell.getAttribute('data-sidebar-scope')) || 'main';
+  var COLLAPSED_KEY = 'sidebarCollapsed:' + sidebarScope;
   var desktopMq = window.matchMedia('(min-width: 992px)');
 
   function applySidebarCollapsed(collapsed) {
