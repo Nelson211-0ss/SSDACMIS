@@ -32,19 +32,43 @@ $total = count($students ?? []);
     </div>
     <div class="card-body pt-3 pb-4">
       <form method="get" action="<?= $base ?>/students/print" class="student-roster-filter-form">
-        <label class="form-label fw-semibold mb-2 mb-lg-3" for="roster-class-filter">
+        <label class="form-label fw-semibold mb-2 mb-lg-3">
           Who to include <span class="text-danger">*</span>
         </label>
         <div class="student-roster-filter-controls rounded-4 border shadow-sm">
-          <div class="row g-3 g-lg-4 align-items-center">
+          <div class="row g-3 g-lg-4 align-items-end">
+            <?php if (!empty($isSuperAdmin)): ?>
+              <div class="col-12 col-lg-4">
+                <label class="form-label small fw-semibold mb-1" for="roster-school-filter">School</label>
+                <select id="roster-school-filter" name="school_id" class="form-select form-select-lg student-roster-filter-select">
+                  <option value="0" <?= empty($selectedSchoolId) ? 'selected' : '' ?>>All schools</option>
+                  <?php foreach (($schools ?? []) as $sch): ?>
+                    <option value="<?= (int) $sch['id'] ?>" <?= (int) ($selectedSchoolId ?? 0) === (int) $sch['id'] ? 'selected' : '' ?>>
+                      <?= View::e($sch['name'] ?? '') ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            <?php endif; ?>
             <div class="col-12 col-lg">
+              <label class="form-label small fw-semibold mb-1" for="roster-class-filter">Class</label>
               <select id="roster-class-filter" name="class_id" class="form-select form-select-lg student-roster-filter-select">
-                <option value="0" <?= empty($classId) ? 'selected' : '' ?>>Whole school — all enrolled students</option>
+                <option value="0" <?= empty($classId) ? 'selected' : '' ?>>All classes</option>
                 <?php foreach (($classes ?? []) as $c): ?>
                   <option value="<?= (int) $c['id'] ?>" <?= (int) ($classId ?? 0) === (int) $c['id'] ? 'selected' : '' ?>>
                     <?= View::e(($c['name'] ?? '') . (!empty($c['level']) ? ' · ' . $c['level'] : '')) ?>
                   </option>
                 <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-12 col-lg-auto" style="min-width: 11rem;">
+              <label class="form-label small fw-semibold mb-1" for="roster-gender-filter">Gender</label>
+              <select id="roster-gender-filter" name="gender" class="form-select form-select-lg student-roster-filter-select">
+                <?php $g = (string) ($gender ?? ''); ?>
+                <option value="" <?= $g === '' ? 'selected' : '' ?>>All</option>
+                <option value="male" <?= $g === 'male' ? 'selected' : '' ?>>Male</option>
+                <option value="female" <?= $g === 'female' ? 'selected' : '' ?>>Female</option>
+                <option value="other" <?= $g === 'other' ? 'selected' : '' ?>>Other</option>
               </select>
             </div>
             <div class="col-12 col-lg-auto">
@@ -75,7 +99,7 @@ $total = count($students ?? []);
           <div class="fs-4 fw-semibold lh-1 mt-1"><?= (int) $total ?></div>
         </div>
       </div>
-      <div class="mt-3 pt-2 border-top border-opacity-50">
+      <div class="mt-3 pt-2 border-top border-opacity-50 d-flex flex-wrap align-items-center gap-2">
         <?php if (!empty($filterClass)): ?>
           <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill px-3 py-2">
             <i class="bi bi-mortarboard me-1"></i><?= View::e($filterClass['name'] ?? '') ?>
@@ -85,7 +109,16 @@ $total = count($students ?? []);
           </span>
         <?php else: ?>
           <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-3 py-2">
-            <i class="bi bi-globe2 me-1"></i>Whole school
+            <i class="bi bi-globe2 me-1"></i>All classes
+          </span>
+        <?php endif; ?>
+        <?php if (!empty($gender)): ?>
+          <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2">
+            <i class="bi bi-gender-ambiguous me-1"></i><?= View::studentEnumUpper('gender', $gender) ?>
+          </span>
+        <?php else: ?>
+          <span class="badge bg-light text-secondary border rounded-pill px-3 py-2">
+            <i class="bi bi-people me-1"></i>All genders
           </span>
         <?php endif; ?>
         <span class="text-muted small ms-2 d-none d-print-inline">Generated <?= View::e($printedAt ?? '') ?></span>

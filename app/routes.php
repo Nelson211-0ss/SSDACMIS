@@ -42,7 +42,7 @@ $router->get('/hod/students', 'HodController@students',  [$staffAdminOrHod]);
 
 // Students
 $router->get('/students',              'StudentController@index',  [$staffOrAdmin]);
-$router->get('/students/print',        'StudentController@printRoster', [$adminOnly]);
+$router->get('/students/print',        'StudentController@printRoster', [$schoolAdminOrAdmin]);
 $router->get('/students/admission-letters',           'StudentController@admissionLetters', [$schoolAdminOrAdmin]);
 $router->get('/students/{id}/admission-letter',       'StudentController@admissionLetter',  [$schoolAdminOrAdmin]);
 $router->get('/students/create',       'StudentController@create', [$staffOrAdmin]);

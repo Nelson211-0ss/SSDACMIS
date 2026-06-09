@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\SchoolIdentity;
 use App\Core\Settings;
 use App\Models\Student;
 
@@ -57,20 +58,63 @@ class StudentController extends Controller
     }
 
     /**
-     * Printable student roster — whole school or one class. Administrators only.
-     * GET /students/print?class_id=   (omit or 0 = whole school)
+     * Printable student roster — whole school or one class, optionally
+     * filtered by gender. School admins print their own school; the super
+     * admin can pick any school added to the system.
+     * GET /students/print?school_id=&class_id=&gender=
      */
     public function printRoster(): string
     {
-        $classId  = (int) $this->input('class_id', 0);
-        $schoolId = Auth::schoolId();
-        $ssf = $schoolId !== null ? ' AND school_id = ?' : '';
-        $ssp = $schoolId !== null ? [$schoolId] : [];
+        $ownSchoolId  = Auth::schoolId();              // null for super admin
+        $isSuperAdmin = Auth::role() === 'admin' && $ownSchoolId === null;
 
-        $classes = Database::query(
-            "SELECT id, name, level FROM classes WHERE 1=1{$ssf} ORDER BY level, name",
-            $ssp
-        )->fetchAll();
+        // Resolve which school's roster we're printing.
+        $schools          = [];
+        $selectedSchoolId = $ownSchoolId;
+        $schoolName       = '';
+
+        if ($isSuperAdmin) {
+            $schools = Database::query(
+                "SELECT id, name FROM schools ORDER BY name"
+            )->fetchAll();
+
+            $reqSchool = (int) $this->input('school_id', 0);
+            if ($reqSchool > 0) {
+                $row = Database::query(
+                    "SELECT id, name FROM schools WHERE id = ? LIMIT 1",
+                    [$reqSchool]
+                )->fetch();
+                if (!$row) {
+                    Flash::set('danger', 'That school does not exist.');
+                    $this->redirect('/students/print');
+                    return '';
+                }
+                $selectedSchoolId = (int) $row['id'];
+                $schoolName       = (string) $row['name'];
+            } else {
+                $selectedSchoolId = null;
+                $schoolName       = 'All schools';
+            }
+        } else {
+            $schoolName = SchoolIdentity::name();
+        }
+
+        $classId = (int) $this->input('class_id', 0);
+
+        $gender = strtolower(trim((string) $this->input('gender', '')));
+        if (!in_array($gender, ['male', 'female', 'other'], true)) {
+            $gender = '';
+        }
+
+        // Class dropdown — scoped to the effective school when one is set.
+        $classSql    = "SELECT id, name, level FROM classes WHERE 1=1";
+        $classParams = [];
+        if ($selectedSchoolId !== null) {
+            $classSql      .= " AND school_id = ?";
+            $classParams[]  = $selectedSchoolId;
+        }
+        $classSql .= " ORDER BY level, name";
+        $classes = Database::query($classSql, $classParams)->fetchAll();
 
         $filterClass = null;
         if ($classId > 0) {
@@ -89,25 +133,37 @@ class StudentController extends Controller
                 LEFT JOIN classes c ON c.id = s.class_id
                 WHERE 1=1';
         $params = [];
-        if ($schoolId !== null) {
+        if ($selectedSchoolId !== null) {
             $sql .= ' AND s.school_id = ?';
-            $params[] = $schoolId;
+            $params[] = $selectedSchoolId;
         }
         if ($classId > 0) {
             $sql .= ' AND s.class_id = ?';
             $params[] = $classId;
         }
+        if ($gender !== '') {
+            $sql .= ' AND s.gender = ?';
+            $params[] = $gender;
+        }
         $sql .= ' ORDER BY c.level, c.name, s.first_name, s.last_name';
 
         $students = Database::query($sql, $params)->fetchAll();
 
+        if ($schoolName === '') {
+            $schoolName = Settings::get('school_name') ?: App::config('app.name');
+        }
+
         return $this->view('students/print_roster', [
-            'students'    => $students,
-            'classes'     => $classes,
-            'classId'     => $classId,
-            'filterClass' => $filterClass,
-            'schoolName'  => Settings::get('school_name') ?: App::config('app.name'),
-            'printedAt'   => date('d M Y H:i'),
+            'students'         => $students,
+            'classes'          => $classes,
+            'classId'          => $classId,
+            'gender'           => $gender,
+            'filterClass'      => $filterClass,
+            'schools'          => $schools,
+            'selectedSchoolId' => $selectedSchoolId,
+            'isSuperAdmin'     => $isSuperAdmin,
+            'schoolName'       => $schoolName,
+            'printedAt'        => date('d M Y H:i'),
         ]);
     }
 
