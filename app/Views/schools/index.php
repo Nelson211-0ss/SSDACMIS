@@ -8,7 +8,8 @@ $title  = 'Schools';
       <h2>Schools</h2>
       <p class="page-header__sub mb-0">Manage every school in this installation — data, branding, and school admins.</p>
     </div>
-    <a class="btn btn-primary" href="<?= $base ?>/schools/create">
+    <a class="btn btn-primary" href="<?= $base ?>/schools/create"
+       data-entity-modal data-modal-title="Add school" data-modal-size="entity-modal--school">
       <i class="bi bi-plus-lg"></i> Add school
     </a>
   </div>
@@ -33,7 +34,8 @@ $title  = 'Schools';
               <td colspan="7" class="sa-empty">
                 <i class="bi bi-buildings d-block"></i>
                 <p class="mb-2">No schools yet.</p>
-                <a href="<?= $base ?>/schools/create" class="btn btn-sm btn-primary">Add the first school</a>
+                <a href="<?= $base ?>/schools/create" class="btn btn-sm btn-primary"
+                   data-entity-modal data-modal-title="Add school" data-modal-size="entity-modal--school">Add the first school</a>
               </td>
             </tr>
           <?php else: foreach ($schools as $s):

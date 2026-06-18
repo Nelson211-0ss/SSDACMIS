@@ -6,7 +6,7 @@ $title  = 'Heads of Department';
 $pageTitle = 'Heads of Department';
 $pageSubtitle = 'HOD accounts sign in at <code class="sa-code">' . View::e($base) . '/login</code> and enter marks for subjects across Form 1–4.';
 $pageIcon = 'bi-mortarboard-fill';
-$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/hods/create"><i class="bi bi-plus-lg"></i> Add HOD</a>';
+$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/hods/create" data-entity-modal data-modal-title="Add HOD" data-modal-size="entity-modal--hod"><i class="bi bi-plus-lg"></i> Add HOD</a>';
 include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 

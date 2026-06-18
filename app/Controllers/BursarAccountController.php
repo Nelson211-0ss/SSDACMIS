@@ -43,7 +43,7 @@ class BursarAccountController extends Controller
 
     public function create(): string
     {
-        return $this->view('bursars/form', ['bursar' => null]);
+        return $this->view('bursars/form', ['bursar' => null, 'partial' => $this->isAjax()]);
     }
 
     public function store(): string

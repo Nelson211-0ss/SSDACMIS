@@ -1,7 +1,8 @@
 <?php
 use App\Core\View;
 $isEdit  = isset($school) && $school !== null;
-$layout  = 'app';
+$partial = !empty($partial);
+$layout  = $partial ? null : 'app';
 $title   = $isEdit ? 'Edit School' : 'New School';
 $action  = $isEdit ? $base . '/schools/' . (int) $school['id'] : $base . '/schools';
 
@@ -23,6 +24,7 @@ if ($isEdit) {
     }
 }
 ?>
+<?php if (!$partial): ?>
 <div class="app-toolbar mb-3">
     <a href="<?= $base ?>/schools" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Schools
@@ -38,8 +40,9 @@ if ($isEdit) {
       </p>
     </div>
   </div>
+<?php endif; ?>
 
-  <div class="card sa-profile border-0" style="max-width:760px;">
+  <div class="card sa-profile border-0<?= $partial ? ' sa-profile--modal' : '' ?>"<?= $partial ? '' : ' style="max-width:760px;"' ?>>
   <div class="card-body px-4 pb-4">
     <form method="post" action="<?= $action ?>" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<?= $csrf ?>">
@@ -171,6 +174,15 @@ if ($isEdit) {
         </select>
       </div>
 
+      <?php if ($partial): ?>
+      <div class="entity-form__actions d-flex flex-wrap align-items-center gap-2">
+        <span class="entity-form__hint text-muted mb-0 me-auto"><span class="text-danger">*</span> Required fields</span>
+        <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-check2-circle me-1"></i><?= $isEdit ? 'Save Changes' : 'Create School' ?>
+        </button>
+      </div>
+      <?php else: ?>
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary">
           <i class="bi bi-check2-circle me-1"></i>
@@ -179,6 +191,7 @@ if ($isEdit) {
         <a href="<?= $base ?>/schools<?= $isEdit ? '/' . (int) $school['id'] : '' ?>"
            class="btn btn-outline-secondary">Cancel</a>
       </div>
+      <?php endif; ?>
     </form>
   </div>
 </div>

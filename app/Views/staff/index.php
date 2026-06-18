@@ -8,7 +8,7 @@ $catLabel = ['core'=>'Core','science'=>'Science','arts'=>'Arts','optional'=>'Opt
 $pageTitle = 'Staff';
 $pageSubtitle = 'Teachers, roles, subjects, and department heads.';
 $pageIcon = 'bi-person-badge';
-$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/staff/create"><i class="bi bi-plus-lg"></i> Add staff</a>';
+$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/staff/create" data-entity-modal data-modal-title="Add staff" data-modal-size="entity-modal--staff"><i class="bi bi-plus-lg"></i> Add staff</a>';
 include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 

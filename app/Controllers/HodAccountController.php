@@ -47,6 +47,7 @@ class HodAccountController extends Controller
     {
         return $this->view('hods/form', [
             'hod' => null,
+            'partial' => $this->isAjax(),
         ]);
     }
 

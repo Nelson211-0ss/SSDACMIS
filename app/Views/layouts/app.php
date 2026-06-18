@@ -373,8 +373,458 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
   </main>
 </div>
 
+<!-- Reusable shell for "Add …" forms loaded into a modal (students, staff, HODs, bursars, schools). -->
+<div class="modal fade entity-modal" id="entityFormModal" tabindex="-1" aria-labelledby="entityFormModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white border-0">
+        <h5 class="modal-title text-white d-flex align-items-center gap-2 mb-0" id="entityFormModalTitle">
+          <span class="entity-modal__title-icon"><i class="bi bi-plus-lg"></i></span>
+          <span data-entity-modal-title>Add</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" data-entity-modal-body></div>
+    </div>
+  </div>
+</div>
+<style>
+/* Shared "Add …" entity modal — matches app card radius, compact body, white header text. */
+.entity-modal .modal-content {
+  border-radius: var(--card-radius, 0.375rem);
+  border: 1px solid var(--border, #e7e9ee);
+  box-shadow: var(--shadow-md, 0 2px 8px rgba(17, 24, 39, 0.08));
+  overflow: hidden;
+}
+.entity-modal .modal-header {
+  background-color: var(--accent) !important;
+  border-bottom: 0;
+  padding: 0.7rem 1rem;
+  border-radius: var(--card-radius, 0.375rem) var(--card-radius, 0.375rem) 0 0;
+}
+.entity-modal .modal-header .modal-title,
+.entity-modal .modal-header .modal-title span,
+.entity-modal .modal-header [data-entity-modal-title],
+.entity-modal__title-icon,
+.entity-modal__title-icon i {
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.entity-modal__title-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm, 0.375rem);
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.9rem;
+}
+.entity-modal .modal-body { padding: 0; }
+
+/* Dashboard blue theme — all popup entity forms */
+.entity-modal .entity-form__col-title {
+  color: var(--accent);
+  border-bottom-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+.entity-modal .card-header-icon {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+.entity-modal .entity-form__panel {
+  background: color-mix(in srgb, var(--accent-soft) 50%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  border-radius: var(--radius-sm, 0.375rem);
+}
+.entity-modal .entity-form__preview {
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+.entity-modal .entity-form__preview-label {
+  color: var(--accent);
+}
+.entity-modal .entity-form__subject-pick {
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 35%, var(--surface));
+  border-radius: var(--radius-sm, 0.375rem);
+}
+.entity-modal .form-control:focus,
+.entity-modal .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+}
+.entity-modal .sa-profile h6 {
+  color: var(--accent);
+}
+.entity-modal .sa-profile h6 i {
+  color: var(--accent);
+}
+
+/* ── Compact form body ───────────────────────────────────────────── */
+.entity-modal .entity-form {
+  padding: 0.75rem 1rem 0;
+  max-width: none;
+  margin: 0;
+}
+.entity-modal .entity-form .row.g-3,
+.entity-modal .entity-form .row.g-2 {
+  --bs-gutter-y: 0.45rem;
+  --bs-gutter-x: 0.65rem;
+}
+.entity-modal .mb-2 { margin-bottom: 0.3rem !important; }
+.entity-modal .mb-3 { margin-bottom: 0.45rem !important; }
+.entity-modal .mb-4 { margin-bottom: 0.55rem !important; }
+.entity-modal .mt-3 { margin-top: 0.55rem !important; }
+.entity-modal .form-label { margin-bottom: 0.2rem !important; font-size: 0.78rem; }
+.entity-modal .form-control,
+.entity-modal .form-select {
+  font-size: 0.8125rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--radius-sm, 0.375rem);
+}
+.entity-modal .form-control-sm,
+.entity-modal .form-select-sm { padding: 0.25rem 0.45rem; }
+.entity-modal .entity-form__col-title {
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.2rem;
+  font-size: 0.625rem;
+}
+.entity-modal .entity-form__card {
+  border: 1px solid var(--border, #e7e9ee) !important;
+  border-inline-start: 3px solid var(--accent) !important;
+  border-radius: var(--card-radius, 0.375rem) !important;
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--surface, #fff) !important;
+  margin-bottom: 0;
+}
+.entity-modal .entity-form__card > .card-body { padding: 0.55rem 0.65rem; }
+.entity-modal .entity-form__panel { padding: 0.4rem 0.5rem; }
+.entity-modal .entity-form__preview { padding: 0.35rem 0.45rem; }
+.entity-modal .form-text { display: none; }
+.entity-modal p.small.text-muted:not(.entity-form__hint) { display: none; }
+.entity-modal textarea.form-control { min-height: 2.25rem; resize: vertical; }
+.entity-modal .entity-form__hint { font-size: 0.7rem; display: block !important; }
+
+/* Staff subject picker — scroll instead of stretching the modal */
+.entity-modal .entity-form__subject-pick {
+  max-height: 7.5rem;
+  overflow-y: auto;
+  padding: 0.35rem 0.45rem;
+}
+.entity-modal .entity-form__subject-pick .form-check { margin-bottom: 0.15rem; }
+
+/* HOD / Bursar — hide the portal info column in the popup */
+.entity-modal .entity-form__split > .col-xl-5:last-child { display: none; }
+.entity-modal .entity-form__split > .col-xl-7 {
+  flex: 0 0 100%;
+  max-width: 100%;
+  border-inline-end: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Student passport photo — single compact row */
+.entity-modal #studentPhotoCard {
+  margin-top: 0.5rem !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+.entity-modal #studentPhotoCard > .card-body { padding: 0.45rem 0.65rem !important; }
+.entity-modal #studentPhotoCard .entity-form__col-title { margin-bottom: 0.25rem; }
+.entity-modal #studentPhotoCard .row { --bs-gutter-y: 0.35rem; --bs-gutter-x: 0.5rem; align-items: center; }
+.entity-modal #studentPhotoCard .col-md-4 { flex: 0 0 auto; width: auto; max-width: 5.5rem; }
+.entity-modal #studentPhotoCard .col-md-8 { flex: 1 1 auto; width: auto; }
+.entity-modal #studentPhotoFrame { max-width: 5rem !important; }
+.entity-modal #studentPhotoPlaceholder i { font-size: 1.35rem !important; }
+.entity-modal #studentPhotoCard .small.text-muted.mt-2 { font-size: 0.6rem; margin-top: 0.15rem !important; }
+.entity-modal #photoUploadPane .form-label { margin-bottom: 0.15rem !important; }
+
+/* Schools form inside modal */
+.entity-modal .sa-profile {
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border)) !important;
+  border-inline-start: 3px solid var(--accent) !important;
+  border-radius: var(--card-radius, 0.375rem) !important;
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--surface, #fff) !important;
+  margin: 0.75rem 1rem 0;
+}
+.entity-modal .sa-profile > .card-body {
+  padding: 0.65rem 0.75rem 0 !important;
+}
+.entity-modal .sa-profile h6 {
+  font-size: 0.625rem;
+  margin-bottom: 0.4rem !important;
+  margin-top: 0.35rem !important;
+  padding-top: 0.35rem !important;
+}
+.entity-modal .sa-profile h6.border-top { margin-top: 0.5rem !important; }
+
+/* Bottom action bar — flush with card corners */
+.entity-modal .entity-form__actions {
+  margin: 0.65rem 0 0;
+  padding: 0.6rem 1rem;
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+  border-top: 1px solid color-mix(in srgb, var(--accent) 16%, var(--border));
+  border-radius: 0 0 var(--card-radius, 0.375rem) var(--card-radius, 0.375rem);
+}
+.entity-modal .entity-form__actions .btn {
+  min-width: 6.5rem;
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.85rem;
+}
+.entity-modal .entity-form__actions .btn-primary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+.entity-modal .entity-form__actions .btn-primary:hover,
+.entity-modal .entity-form__actions .btn-primary:focus {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.entity-modal .sa-profile .entity-form__actions {
+  margin: 0.65rem -0.75rem 0;
+  padding: 0.6rem 0.75rem;
+}
+
+/* Student popup — narrower, fits viewport without inner scroll */
+.entity-modal .modal-dialog.entity-modal--student {
+  max-width: 48rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.75rem auto;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form {
+  padding: 0.55rem 0.75rem 0;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form__card > .card-body {
+  padding: 0.4rem 0.5rem;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form__split {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  --bs-gutter-x: 0;
+  --bs-gutter-y: 0;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form__split > [class*="col-xl-4"] {
+  flex: none;
+  width: auto;
+  max-width: none;
+  border-inline-end: 0 !important;
+  padding-inline-end: 0 !important;
+  margin-bottom: 0 !important;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form__col-title {
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.15rem;
+  font-size: 0.58rem;
+}
+.entity-modal .modal-dialog.entity-modal--student .mb-2 {
+  margin-bottom: 0.2rem !important;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form__preview {
+  padding: 0.25rem 0.35rem;
+  margin-bottom: 0.2rem !important;
+}
+.entity-modal .modal-dialog.entity-modal--student .btn-group .btn {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  font-size: 0.68rem;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard {
+  margin-top: 0.4rem !important;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard > .card-body {
+  padding: 0.35rem 0.5rem !important;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard .entity-form__col-title {
+  margin-bottom: 0.15rem;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard .row {
+  flex-direction: row;
+  align-items: center;
+  --bs-gutter-y: 0;
+  --bs-gutter-x: 0.45rem;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard .col-md-4 {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 4.25rem;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard .col-md-8 {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: none;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoFrame {
+  max-width: 4rem !important;
+}
+.entity-modal .modal-dialog.entity-modal--student #studentPhotoCard .small.text-muted.mt-2 {
+  display: none;
+}
+.entity-modal .modal-dialog.entity-modal--student #photoUploadPane .form-label {
+  font-size: 0.68rem;
+  margin-bottom: 0.1rem !important;
+}
+.entity-modal .modal-dialog.entity-modal--student textarea[name="address"] {
+  min-height: 1.75rem;
+  height: 1.75rem;
+  resize: none;
+}
+.entity-modal .modal-dialog.entity-modal--student .entity-form__actions {
+  margin-top: 0.45rem;
+  padding: 0.45rem 0.75rem;
+}
+@media (max-width: 767.98px) {
+  .entity-modal .modal-dialog.entity-modal--student {
+    max-width: calc(100% - 1rem);
+  }
+  .entity-modal .modal-dialog.entity-modal--student .entity-form__split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Staff popup — narrower width, taller stacked layout */
+.entity-modal .modal-dialog.entity-modal--staff {
+  max-width: 36rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.75rem auto;
+}
+.entity-modal .modal-dialog.entity-modal--staff .modal-content {
+  min-height: 30rem;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form {
+  padding: 0.65rem 0.85rem 0;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__card > .card-body {
+  padding: 0.5rem 0.55rem;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  --bs-gutter-x: 0;
+  --bs-gutter-y: 0;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__split > .col-xl-6 {
+  flex: 0 0 100%;
+  max-width: 100%;
+  width: 100%;
+  border-inline-end: 0 !important;
+  padding-inline-end: 0 !important;
+  margin-bottom: 0 !important;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__col-title {
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.2rem;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__subject-pick {
+  max-height: 13rem;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__split > .col-xl-6:last-child .row.g-2 {
+  --bs-gutter-y: 0.35rem;
+  --bs-gutter-x: 0.5rem;
+}
+.entity-modal .modal-dialog.entity-modal--staff .entity-form__actions {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.85rem;
+}
+@media (max-width: 575.98px) {
+  .entity-modal .modal-dialog.entity-modal--staff {
+    max-width: calc(100% - 1rem);
+  }
+  .entity-modal .modal-dialog.entity-modal--staff .modal-content {
+    min-height: auto;
+  }
+}
+
+/* HOD popup — narrower, slightly taller (same family as staff) */
+.entity-modal .modal-dialog.entity-modal--hod {
+  max-width: 34rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.75rem auto;
+}
+.entity-modal .modal-dialog.entity-modal--hod .modal-content {
+  min-height: 22rem;
+}
+.entity-modal .modal-dialog.entity-modal--hod .entity-form {
+  padding: 0.65rem 0.85rem 0;
+}
+.entity-modal .modal-dialog.entity-modal--hod .entity-form__card > .card-body {
+  padding: 0.55rem 0.6rem;
+}
+.entity-modal .modal-dialog.entity-modal--hod .entity-form__actions {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.85rem;
+}
+
+/* Bursar popup — same proportions as HOD */
+.entity-modal .modal-dialog.entity-modal--bursar {
+  max-width: 34rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.75rem auto;
+}
+.entity-modal .modal-dialog.entity-modal--bursar .modal-content {
+  min-height: 22rem;
+}
+.entity-modal .modal-dialog.entity-modal--bursar .entity-form {
+  padding: 0.65rem 0.85rem 0;
+}
+.entity-modal .modal-dialog.entity-modal--bursar .entity-form__card > .card-body {
+  padding: 0.55rem 0.6rem;
+}
+.entity-modal .modal-dialog.entity-modal--bursar .entity-form__actions {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.85rem;
+}
+
+/* School popup — narrower, taller scroll-friendly body */
+.entity-modal .modal-dialog.entity-modal--school {
+  max-width: 36rem;
+  width: calc(100% - 1.5rem);
+  margin: 0.75rem auto;
+}
+.entity-modal .modal-dialog.entity-modal--school .modal-content {
+  min-height: 28rem;
+}
+.entity-modal .modal-dialog.entity-modal--school .sa-profile {
+  margin: 0.65rem 0.85rem 0;
+}
+.entity-modal .modal-dialog.entity-modal--school .sa-profile > .card-body {
+  padding: 0.55rem 0.65rem 0 !important;
+}
+.entity-modal .modal-dialog.entity-modal--school .sa-profile .entity-form__actions {
+  margin: 0.55rem -0.65rem 0;
+  padding: 0.55rem 0.65rem;
+}
+
+/* Full-page entity forms on the dashboard — same blue theme as popups */
+.app-page .entity-form__col-title {
+  color: var(--accent);
+  border-bottom-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+.app-page .entity-form .card-header-icon {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+.app-page .entity-form__panel {
+  background: color-mix(in srgb, var(--accent-soft) 50%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+}
+.app-page .entity-form__preview {
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+.app-page .entity-form__preview-label {
+  color: var(--accent);
+}
+.app-page .entity-form__subject-pick {
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 35%, var(--surface));
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= View::asset($base, 'assets/js/app.js') ?>"></script>
+<script src="<?= View::asset($base, 'assets/js/entity-modal.js') ?>"></script>
 <script>
   // Inline print: load any URL inside a hidden iframe and trigger the print
   // dialog from there, so receipts/reports never spawn a new tab or window

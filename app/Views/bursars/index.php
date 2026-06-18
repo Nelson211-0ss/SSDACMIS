@@ -6,7 +6,7 @@ $title  = 'Bursars';
 $pageTitle = 'Bursars';
 $pageSubtitle = 'Bursar accounts use <code class="sa-code">' . View::e($base) . '/login</code> and manage the Fees module after sign-in.';
 $pageIcon = 'bi-cash-coin';
-$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/bursars/create"><i class="bi bi-plus-lg"></i> Add bursar</a>';
+$pageActionsHtml = '<a class="btn btn-primary" href="' . View::e($base) . '/bursars/create" data-entity-modal data-modal-title="Add bursar" data-modal-size="entity-modal--bursar"><i class="bi bi-plus-lg"></i> Add bursar</a>';
 include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 

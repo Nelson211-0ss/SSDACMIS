@@ -48,7 +48,7 @@ class SchoolController extends Controller
         $pdo = Database::connection();
         $next = (int) $pdo->query("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schools'")->fetchColumn();
         $suggestedCode = 'SCH' . str_pad($next ?: time(), 4, '0', STR_PAD_LEFT);
-        return $this->view('schools/form', ['school' => null, 'suggestedCode' => $suggestedCode]);
+        return $this->view('schools/form', ['school' => null, 'suggestedCode' => $suggestedCode, 'partial' => $this->isAjax()]);
     }
 
     public function store(): string

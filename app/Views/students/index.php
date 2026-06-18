@@ -29,7 +29,8 @@ ob_start();
         <i class="bi bi-envelope-paper"></i> Admission letters
       </a>
     <?php endif; ?>
-    <a class="btn btn-primary" href="<?= $base ?>/students/create"><i class="bi bi-plus-lg"></i> Add student</a>
+    <a class="btn btn-primary" href="<?= $base ?>/students/create"
+       data-entity-modal data-modal-title="Add student" data-modal-size="entity-modal--student"><i class="bi bi-plus-lg"></i> Add student</a>
 <?php
 $pageActionsHtml = ob_get_clean();
 include dirname(__DIR__) . '/_partials/app_page_header.php';

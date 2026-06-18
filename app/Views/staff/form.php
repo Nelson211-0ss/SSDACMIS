@@ -1,6 +1,7 @@
 <?php
 use App\Core\View;
-$layout = 'app';
+$partial = !empty($partial);
+$layout  = $partial ? null : 'app';
 $editing = (bool) ($staff ?? null);
 $title = $editing ? 'Edit Staff' : 'New Staff';
 $action = $editing ? ($base . '/staff/' . (int) $staff['id']) : ($base . '/staff');
@@ -10,7 +11,8 @@ $selected = array_flip($staffSubjectIds ?? []);
 $grouped = [];
 foreach (($subjects ?? []) as $sub) { $grouped[$sub['category']][] = $sub; }
 ?>
-<div class="entity-form">
+<div class="entity-form<?= $partial ? ' entity-form--modal' : '' ?>">
+  <?php if (!$partial): ?>
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <?php if (!$editing): ?>
@@ -23,6 +25,7 @@ foreach (($subjects ?? []) as $sub) { $grouped[$sub['category']][] = $sub; }
     </div>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/staff"><i class="bi bi-arrow-left"></i> Back</a>
   </div>
+  <?php endif; ?>
 
   <form method="post" action="<?= $action ?>">
     <input type="hidden" name="_csrf" value="<?= $csrf ?>">
@@ -150,6 +153,7 @@ foreach (($subjects ?? []) as $sub) { $grouped[$sub['category']][] = $sub; }
         </div>
       </div>
 
+      <?php if (!$partial): ?>
       <div class="card-footer py-2 px-3 bg-body-secondary bg-opacity-25 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span class="small text-muted mb-0"><span class="text-danger">*</span> Required fields</span>
         <div class="d-flex flex-wrap gap-2 ms-auto">
@@ -157,7 +161,16 @@ foreach (($subjects ?? []) as $sub) { $grouped[$sub['category']][] = $sub; }
           <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save' : 'Save staff' ?></button>
         </div>
       </div>
+      <?php endif; ?>
     </div>
+
+    <?php if ($partial): ?>
+    <div class="entity-form__actions d-flex flex-wrap align-items-center gap-2">
+      <span class="entity-form__hint text-muted mb-0 me-auto"><span class="text-danger">*</span> Required fields</span>
+      <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save' : 'Save staff' ?></button>
+    </div>
+    <?php endif; ?>
   </form>
 </div>
 

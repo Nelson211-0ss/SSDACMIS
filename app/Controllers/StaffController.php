@@ -39,6 +39,7 @@ class StaffController extends Controller
             'staff'    => null,
             'subjects' => $this->allSubjects(),
             'staffSubjectIds' => [],
+            'partial'  => $this->isAjax(),
         ]);
     }
 

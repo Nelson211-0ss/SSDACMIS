@@ -48,6 +48,15 @@ abstract class Controller
         return $_POST[$key] ?? $_GET[$key] ?? $default;
     }
 
+    /**
+     * True when the request was made via fetch/XMLHttpRequest. Used to render
+     * a bare form fragment (no app layout) so it can be dropped into a modal.
+     */
+    protected function isAjax(): bool
+    {
+        return strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+    }
+
     protected function validateCsrf(): void
     {
         $token = $_POST['_csrf'] ?? '';

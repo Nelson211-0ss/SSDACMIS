@@ -1,13 +1,15 @@
 <?php
 use App\Core\View;
-$layout  = 'app';
+$partial = !empty($partial);
+$layout  = $partial ? null : 'app';
 $editing = (bool) ($bursar ?? null);
 $title   = $editing ? 'Edit Bursar' : 'New Bursar';
 $action  = $editing
     ? ($base . '/bursars/' . (int) $bursar['id'])
     : ($base . '/bursars');
 ?>
-<div class="entity-form">
+<div class="entity-form<?= $partial ? ' entity-form--modal' : '' ?>">
+  <?php if (!$partial): ?>
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <?php if (!$editing): ?>
@@ -20,6 +22,7 @@ $action  = $editing
     </div>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/bursars"><i class="bi bi-arrow-left"></i> Back</a>
   </div>
+  <?php endif; ?>
 
   <form method="post" action="<?= $action ?>">
     <input type="hidden" name="_csrf" value="<?= $csrf ?>">
@@ -96,6 +99,7 @@ $action  = $editing
         </div>
       </div>
 
+      <?php if (!$partial): ?>
       <div class="card-footer py-2 px-3 bg-body-secondary bg-opacity-25 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span class="small text-muted mb-0"><span class="text-danger">*</span> Required<?= $editing ? ' · leave password blank to keep current' : '' ?></span>
         <div class="d-flex flex-wrap gap-2 ms-auto">
@@ -103,6 +107,15 @@ $action  = $editing
           <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save changes' : 'Create Bursar' ?></button>
         </div>
       </div>
+      <?php endif; ?>
     </div>
+
+    <?php if ($partial): ?>
+    <div class="entity-form__actions d-flex flex-wrap align-items-center gap-2">
+      <span class="entity-form__hint text-muted mb-0 me-auto"><span class="text-danger">*</span> Required<?= $editing ? ' · blank password keeps current' : '' ?></span>
+      <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+      <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save changes' : 'Create Bursar' ?></button>
+    </div>
+    <?php endif; ?>
   </form>
 </div>

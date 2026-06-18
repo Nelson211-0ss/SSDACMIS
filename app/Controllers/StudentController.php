@@ -195,6 +195,7 @@ class StudentController extends Controller
             'classes'  => $classes,
             'schools'  => $schools,
             'isAdmin'  => $isAdmin,
+            'partial'  => $this->isAjax(),
         ]);
     }
 
