@@ -131,27 +131,48 @@ class Student
      * fees, term results CASCADE in schema). Removes all user accounts with
      * role student. Returns passport paths for the caller to unlink on disk.
      *
+     * When $schoolId is given the purge is scoped to that single school so a
+     * school administrator can only ever clear their own learners — never
+     * another school's. Pass null (super admin) to wipe every school.
+     *
      * @return array{student_rows: int, user_rows_deleted: int, photo_paths: list<string>}
      */
-    public static function purgeAll(): array
+    public static function purgeAll(?int $schoolId = null): array
     {
         $pdo = Database::connection();
-        $photoStmt = $pdo->query(
-            "SELECT photo_path FROM students WHERE photo_path IS NOT NULL AND TRIM(photo_path) <> ''"
+
+        $scopeSql    = $schoolId !== null ? ' WHERE school_id = ?' : '';
+        $scopeParams = $schoolId !== null ? [$schoolId] : [];
+
+        $photoStmt = Database::query(
+            "SELECT photo_path FROM students
+             WHERE photo_path IS NOT NULL AND TRIM(photo_path) <> ''"
+            . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $scopeParams
         );
         $photos = array_values(array_unique(array_filter(
             array_map('strval', $photoStmt ? $photoStmt->fetchAll(\PDO::FETCH_COLUMN) : [])
         )));
 
-        $countStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn();
+        $countStudents = (int) (Database::query(
+            "SELECT COUNT(*) AS n FROM students{$scopeSql}",
+            $scopeParams
+        )->fetch()['n'] ?? 0);
+
         $countUsersRow = Database::query(
             "SELECT COUNT(*) AS n FROM users WHERE role = 'student'"
+            . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $scopeParams
         )->fetch();
 
         $pdo->beginTransaction();
         try {
-            $pdo->exec('DELETE FROM students');
-            Database::query("DELETE FROM users WHERE role = 'student'");
+            Database::query("DELETE FROM students{$scopeSql}", $scopeParams);
+            Database::query(
+                "DELETE FROM users WHERE role = 'student'"
+                . ($schoolId !== null ? ' AND school_id = ?' : ''),
+                $scopeParams
+            );
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();

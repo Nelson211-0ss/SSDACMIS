@@ -4,6 +4,8 @@ use App\Core\View;
 $layout = 'app';
 $title = 'Clear all students';
 $studentCount = (int) ($studentCount ?? 0);
+$isSuperAdmin = !empty($isSuperAdmin);
+$scopeNoun = $isSuperAdmin ? 'the database' : 'your school';
 ?>
 
 <div class="page-header mb-4">
@@ -15,7 +17,7 @@ $studentCount = (int) ($studentCount ?? 0);
       </ol>
     </nav>
     <h2 class="h4 mb-1 text-danger-emphasis"><i class="bi bi-exclamation-triangle-fill"></i> Clear all students</h2>
-    <p class="page-header__sub mb-0">This action permanently deletes every learner profile and linked school data.</p>
+    <p class="page-header__sub mb-0">This action permanently deletes every learner profile and linked data in <?= View::e($scopeNoun) ?>.</p>
   </div>
 </div>
 
@@ -24,7 +26,7 @@ $studentCount = (int) ($studentCount ?? 0);
     <div class="card border-danger border shadow-sm mb-4">
       <div class="card-body">
         <p class="mb-3">
-          You are about to remove <strong><?= (int) $studentCount ?></strong> student record<?= $studentCount === 1 ? '' : 's' ?> from the database.
+          You are about to remove <strong><?= (int) $studentCount ?></strong> student record<?= $studentCount === 1 ? '' : 's' ?> from <?= View::e($scopeNoun) ?>.
         </p>
         <ul class="small mb-4 text-secondary">
           <li>Attendance, grades/marks, term results, and legacy fees rows for students are deleted (database cascades).</li>
@@ -42,7 +44,7 @@ $studentCount = (int) ($studentCount ?? 0);
         <?php else: ?>
           <form method="post"
                 action="<?= $base ?>/students/clear-all"
-                data-confirm="This permanently erases EVERY student and their school data from the database. Are you absolutely sure?"
+                data-confirm="This permanently erases EVERY student and their data from <?= View::e($scopeNoun) ?>. Are you absolutely sure?"
                 class="mt-2">
             <input type="hidden" name="_csrf" value="<?= $csrf ?>">
             <div class="mb-3">

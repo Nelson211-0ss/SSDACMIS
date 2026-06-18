@@ -53,8 +53,8 @@ if (empty($students)): ?>
                   <i class="bi bi-envelope-paper"></i>
                 </a>
               <?php endif; ?>
-              <?php if (($auth['role'] ?? '') === 'admin'): ?>
-                <form class="d-inline" method="post" action="<?= $base ?>/students/<?= (int)$s['id'] ?>/delete" data-confirm="Delete this student?">
+              <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
+                <form class="d-inline" method="post" action="<?= $base ?>/students/<?= (int)$s['id'] ?>/delete" data-confirm="Delete <?= View::e($s['first_name'] . ' ' . $s['last_name']) ?>? This also removes their marks, attendance, and fees.">
                   <input type="hidden" name="_csrf" value="<?= $csrf ?>">
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                 </form>

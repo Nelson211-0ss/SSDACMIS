@@ -13,7 +13,7 @@ $pageSubtitle = 'Search, edit, or register learners. Admission numbers follow ea
 $pageIcon = 'bi-people';
 ob_start();
 ?>
-    <?php if (($auth['role'] ?? '') === 'admin'): ?>
+    <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
       <a class="btn btn-outline-danger" href="<?= $base ?>/students/clear-all"
          title="Remove every learner, marks, attendance, fees, and student login accounts">
         <i class="bi bi-slash-circle"></i> Clear all students

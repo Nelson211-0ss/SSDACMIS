@@ -480,7 +480,18 @@ class StudentController extends Controller
     {
         $this->validateCsrf();
         $existing = Student::find((int) $id);
-        if ($existing && !empty($existing['photo_path'])) {
+
+        // School admins (and staff) are scoped to their own school: refuse to
+        // delete a learner that belongs to another school even if the id is
+        // guessed. The super admin (schoolId === null) may delete anywhere.
+        $schoolId = Auth::schoolId();
+        if (!$existing || ($schoolId !== null && (int) ($existing['school_id'] ?? 0) !== $schoolId)) {
+            Flash::set('danger', 'That student does not exist or is not in your school.');
+            $this->redirect('/students');
+            return '';
+        }
+
+        if (!empty($existing['photo_path'])) {
             $this->deletePhotoFile((string) $existing['photo_path']);
         }
         Student::delete((int) $id);
@@ -489,11 +500,14 @@ class StudentController extends Controller
         return '';
     }
 
-    /** GET /students/clear-all — confirmation page (admin only). */
+    /** GET /students/clear-all — confirmation page (super admin or school admin). */
     public function clearAllForm(): string
     {
         $studentCount = Student::countAll('', Auth::schoolId());
-        return $this->view('students/clear_all', ['studentCount' => $studentCount]);
+        return $this->view('students/clear_all', [
+            'studentCount'  => $studentCount,
+            'isSuperAdmin'  => Auth::schoolId() === null,
+        ]);
     }
 
     /**
@@ -516,14 +530,19 @@ class StudentController extends Controller
             return '';
         }
 
-        $studentCountBefore = Student::countAll('');
+        // Scope every count and the purge itself to the acting user's school.
+        // School admins clear only their own learners; the super admin
+        // (schoolId === null) clears every school.
+        $schoolId = Auth::schoolId();
+
+        $studentCountBefore = Student::countAll('', $schoolId);
         if ($studentCountBefore === 0) {
             Flash::set('warning', 'There are no students to remove.');
             $this->redirect('/students/clear-all');
             return '';
         }
 
-        $result = Student::purgeAll();
+        $result = Student::purgeAll($schoolId);
         foreach ($result['photo_paths'] as $rel) {
             $this->deletePhotoFile((string) $rel);
         }
@@ -677,41 +696,52 @@ class StudentController extends Controller
         $ext = self::PHOTO_MIMES[$mime];
         $dir = dirname(__DIR__, 2) . '/public/uploads/students';
 
-        // 0777 so that PHP under any of XAMPP/Apache/CLI users can write here
-        // (on macOS XAMPP runs as `daemon` while CLI runs as the logged-in
-        // user — both must be able to drop a file in this folder).
+        // Make sure the folder exists. PHP becomes the owner of any directory
+        // it creates, so a freshly-created folder is always writable by us.
         if (!is_dir($dir)) {
-            if (!@mkdir($dir, 0777, true) && !is_dir($dir)) {
-                @unlink($sourcePath);
-                return 'Upload folder could not be created at public/uploads/students.';
-            }
-            @chmod($dir, 0777);
+            @mkdir($dir, 0775, true);
         }
+        if (!is_dir($dir)) {
+            @unlink($sourcePath);
+            return 'Upload folder could not be created at public/uploads/students. '
+                 . 'Create the folder on the server and make it writable by the web server.';
+        }
+
+        // Best-effort widen of permissions. chmod only succeeds when PHP owns
+        // the folder; on shared/VPS hosts where PHP runs as a different user it
+        // quietly fails — that's fine, we still try the write below because
+        // is_writable() can give false negatives under group/ACL setups.
         if (!is_writable($dir)) {
-            @chmod($dir, 0777);
+            @chmod($dir, 0775);
             if (!is_writable($dir)) {
-                @unlink($sourcePath);
-                return 'Upload folder is not writable. Run: chmod 777 public/uploads/students';
+                @chmod($dir, 0777);
             }
         }
 
         $name = $studentId . '-' . time() . '-' . bin2hex(random_bytes(3)) . '.' . $ext;
         $dest = $dir . '/' . $name;
 
+        // Attempt the write directly rather than gating on is_writable(): if the
+        // folder is genuinely writable (even when is_writable() reports false)
+        // this succeeds; if it truly is not, the move fails and we report it.
         $ok = $moveUploaded
-            ? move_uploaded_file($sourcePath, $dest)
+            ? @move_uploaded_file($sourcePath, $dest)
             : @rename($sourcePath, $dest);
 
         if (!$ok) {
-            // rename() can fail across filesystem boundaries; copy + unlink fallback.
-            if (!$moveUploaded && @copy($sourcePath, $dest)) {
+            // rename()/move can fail across filesystem boundaries; copy fallback.
+            if (@copy($sourcePath, $dest)) {
                 @unlink($sourcePath);
                 $ok = true;
             }
         }
         if (!$ok) {
             @unlink($sourcePath);
-            return 'Could not save the passport photo.';
+            return 'The upload folder is not writable by the web server. On the '
+                 . 'server, make public/uploads/students writable — e.g. run '
+                 . '"chmod -R 775 public/uploads/students" and, if it persists, set '
+                 . 'its owner to the web-server user (e.g. '
+                 . '"chown -R www-data:www-data public/uploads/students").';
         }
         @chmod($dest, 0644);
 

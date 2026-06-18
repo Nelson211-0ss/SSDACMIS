@@ -48,12 +48,12 @@ $router->get('/students/{id}/admission-letter',       'StudentController@admissi
 $router->get('/students/create',       'StudentController@create', [$staffOrAdmin]);
 $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrAdmin]);
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.
-$router->get('/students/clear-all',    'StudentController@clearAllForm',    [$adminOnly]);
-$router->post('/students/clear-all',  'StudentController@clearAllExecute', [$adminOnly]);
+$router->get('/students/clear-all',    'StudentController@clearAllForm',    [$schoolAdminOrAdmin]);
+$router->post('/students/clear-all',  'StudentController@clearAllExecute', [$schoolAdminOrAdmin]);
 $router->post('/students',             'StudentController@store',  [$staffOrAdmin]);
 $router->get('/students/{id}/edit',    'StudentController@edit',   [$staffOrAdmin]);
 $router->post('/students/{id}',        'StudentController@update', [$staffOrAdmin]);
-$router->post('/students/{id}/delete', 'StudentController@destroy',[$adminOnly]);
+$router->post('/students/{id}/delete', 'StudentController@destroy',[$schoolAdminOrAdmin]);
 $router->post('/students/{id}/photo/delete', 'StudentController@deletePhoto', [$staffOrAdmin]);
 
 // Staff
