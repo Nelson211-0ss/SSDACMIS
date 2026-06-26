@@ -79,12 +79,12 @@
 }
 
 html[data-bs-theme="dark"] {
-  --bg:            #0f1115;
-  --surface:       #171a21;
-  --surface-2:     #1d2129;
-  --hover:         #20242d;
-  --border:        #262a33;
-  --border-strong: #323742;
+  --bg:            #000000;
+  --surface:       #0a0a0a;
+  --surface-2:     #111111;
+  --hover:         #161616;
+  --border:        #1a1a1a;
+  --border-strong: #262626;
 
   --text:          #e5e7eb;
   --text-muted:    #9ca3af;
@@ -92,9 +92,9 @@ html[data-bs-theme="dark"] {
 
   --accent-soft:   rgba(37, 99, 235, .12);
 
-  --shadow-xs: 0 1px 0 rgba(0, 0, 0, .3);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, .35);
+  --shadow-xs: 0 1px 0 rgba(0, 0, 0, .5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .45);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, .5);
 
   --bs-body-color: var(--text);
   --bs-body-bg: var(--bg);
@@ -102,9 +102,9 @@ html[data-bs-theme="dark"] {
   --bs-secondary-bg: var(--surface-2);
   --bs-tertiary-bg: var(--hover);
 
-  /* Dark sidebar — slightly lifted from page canvas for separation. */
-  --sidebar-bg:              #13161d;
-  --sidebar-border:          var(--border);
+  /* Dark sidebar — slightly lifted from the black page canvas. */
+  --sidebar-bg:              #0d0d0d;
+  --sidebar-border:          #1a1a1a;
   --sidebar-text:            var(--text-muted);
   --sidebar-text-strong:     var(--text);
   --sidebar-text-subtle:     var(--text-subtle);
@@ -118,7 +118,13 @@ html[data-bs-theme="dark"] {
 }
 
 html[data-bs-theme="dark"] .app-sidebar {
-  box-shadow: 1px 0 0 rgba(0, 0, 0, .22);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, .04);
+}
+
+/* Dark mode — strip colored accent stripes from cards */
+html[data-bs-theme="dark"] .period-card::before,
+html[data-bs-theme="dark"] .period-bar::before {
+  display: none;
 }
 
 /* ---------- Base ---------- */

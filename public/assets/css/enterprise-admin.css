@@ -911,19 +911,19 @@ html[data-bs-theme="dark"] .app-shell--enterprise .app-sidebar__footer {
 
 /* ---------- Dark mode ---------- */
 html[data-bs-theme="dark"] .app-shell--enterprise {
-  --bg:            #0c1018;
-  --surface:       #151b26;
-  --surface-2:     #1c2433;
-  --hover:         #222c3d;
-  --border:        #2a3548;
-  --border-strong: #3d4d66;
+  --bg:            #000000;
+  --surface:       #0a0a0a;
+  --surface-2:     #111111;
+  --hover:         #161616;
+  --border:        #1a1a1a;
+  --border-strong: #262626;
   --text:          #f1f5f9;
   --text-muted:    #94a3b8;
   --text-subtle:   #64748b;
   --accent-soft:   rgba(30, 136, 229, 0.14);
 
-  --sidebar-bg: rgba(21, 27, 38, 0.95);
-  --sidebar-border: var(--border);
+  --sidebar-bg: #0d0d0d;
+  --sidebar-border: #1a1a1a;
   --sidebar-hover-bg: rgba(30, 136, 229, 0.1);
   --sidebar-active-bg: #1e88e5;
   --sidebar-active-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
@@ -943,11 +943,18 @@ html[data-bs-theme="dark"] .app-shell--enterprise .app-sidebar__link i {
 }
 
 html[data-bs-theme="dark"] .app-shell--enterprise .portal-dash {
-  --pd-bg: #0c1018;
+  --pd-bg: #000000;
   --pd-glass: var(--surface);
   --pd-navy: #f1f5f9;
-  --pd-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  --pd-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.28);
+  --pd-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  --pd-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-kpi--purple,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-kpi--blue,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-kpi--green,
+html[data-bs-theme="dark"] .app-shell--enterprise .hod-overview-kpi--orange {
+  border-left: 1px solid var(--border) !important;
 }
 
 html[data-bs-theme="dark"] .app-shell--enterprise .portal-dash .dash-hero {
