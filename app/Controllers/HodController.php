@@ -254,10 +254,10 @@ class HodController extends Controller
         $place = implode(',', array_fill(0, count($categories), '?'));
         $schoolId = Auth::schoolId();
         $sp = $schoolId !== null ? [$schoolId] : [];
-        $bindPeriod = static fn (array $extra = []) use ($categories) { return array_merge($categories, $extra); };
-        $bindPeriodWithSchool = static fn (array $extra = []) use ($categories, $schoolId) {
-            return $schoolId !== null ? array_merge($categories, $extra, [$schoolId]) : array_merge($categories, $extra);
-        };
+        $bindPeriod = static fn (array $extra = []) => array_merge($categories, $extra);
+        $bindPeriodWithSchool = static fn (array $extra = []) => $schoolId !== null
+            ? array_merge($categories, $extra, [$schoolId])
+            : array_merge($categories, $extra);
 
         // Default academic year / term (same rules as HOD dashboard).
         $defaultYear = (date('n') >= 9)
