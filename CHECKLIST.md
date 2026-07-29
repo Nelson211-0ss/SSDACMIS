@@ -47,7 +47,7 @@ Legend: `[x]` done in this scaffold · `[ ]` to do · `[~]` partial / starter on
 - [ ] Bulk actions (e.g. promote class, archive students)
 - [ ] CSV import for students/staff
 - [ ] CSV export of any list
-- [ ] Profile photos (file upload to `storage/uploads/`)
+- [x] Profile photos (student passport photo upload or webcam capture, saved to `public/uploads/students/`)
 - [ ] Activity log / audit trail (who did what, when)
 - [ ] Soft-deletes + restore for students/staff
 

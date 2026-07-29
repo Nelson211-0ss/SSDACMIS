@@ -19,7 +19,7 @@ End-to-end, copy-pasteable steps for getting **SSD-ACMIS — School Management S
 
 | Component   | Minimum     | Recommended | Notes                                                |
 |-------------|-------------|-------------|------------------------------------------------------|
-| PHP         | **8.1**     | 8.2 / 8.3   | Extensions: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd` (logo upload) |
+| PHP         | **8.1**     | 8.2 / 8.3   | Extensions: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` (required — validates uploaded image MIME types) |
 | MySQL       | 5.7         | 8.0         | MariaDB 10.4+ also works                              |
 | Web server  | Apache 2.4  | Apache 2.4  | nginx works too — see VPS section                     |
 | Disk        | ~50 MB code + uploads | 1 GB free | Logos, future media                              |
@@ -326,12 +326,23 @@ Set production values (same shape as in §2.4): `APP_ENV=production`, `APP_DEBUG
 ### 3.6 Set ownership + permissions
 
 ```bash
+sudo bash /var/www/SSDACMIS/scripts/fix-permissions.sh
+```
+
+This auto-detects the web server user (`www-data`/`apache`/`nginx`) and does
+the equivalent of:
+
+```bash
 sudo chown -R www-data:www-data /var/www/SSDACMIS
 sudo find /var/www/SSDACMIS -type d -exec chmod 755 {} \;
 sudo find /var/www/SSDACMIS -type f -exec chmod 644 {} \;
 sudo chmod -R 775 /var/www/SSDACMIS/storage /var/www/SSDACMIS/public/uploads
 sudo chmod 640 /var/www/SSDACMIS/.env
 ```
+
+Re-run this script after every redeploy that re-clones or re-extracts the
+project (a plain `git pull` in place doesn't disturb ownership, but running
+it again is always harmless) — see §6 and `VPS_PULL_GUIDE.md`.
 
 ### 3.7 Configure the Apache vhost
 
@@ -523,11 +534,20 @@ sudo -u www-data php database/migrate.php
 # Or visit https://yourdomain.com/database/migrate.php in a browser if /database/
 # is inside the web root.
 
-# 4. Clear stale opcache (only if APC/opcache is enabled and you don't see the new code):
+# 4. Re-fix ownership/permissions — cheap, and prevents uploads from
+#    silently breaking again if a git pull/rsync reset ownership.
+sudo bash scripts/fix-permissions.sh
+
+# 5. Clear stale opcache (only if APC/opcache is enabled and you don't see the new code):
 sudo systemctl reload apache2
 ```
 
 That's it — there is no compile step, no `composer install`, no `npm build`. The framework has zero external dependencies.
+
+> **Do not use `pm2`** to "restart" this app — that's a Node.js process
+> manager and doesn't apply here. PHP files are read fresh on every request
+> by Apache/php-fpm, so a reload (not a restart) is only needed after
+> touching `.htaccess`, `.user.ini`, or the vhost itself.
 
 ---
 

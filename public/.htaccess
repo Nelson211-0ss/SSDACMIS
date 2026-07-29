@@ -13,6 +13,16 @@
 # Disable directory listing
 Options -Indexes
 
+# Raise upload limits for mod_php setups so real phone-camera photos and
+# school logos aren't rejected by a distro's stock php.ini (e.g. Ubuntu
+# ships 2M/8M by default). php-fpm/CGI setups use public/.user.ini instead,
+# since php_value here has no effect under those SAPIs.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 15M
+    php_value max_execution_time 60
+</IfModule>
+
 # Basic caching for static assets
 <IfModule mod_expires.c>
     ExpiresActive On

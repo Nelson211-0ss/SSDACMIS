@@ -55,8 +55,9 @@ SSDACMIS/
 │   ├── index.php           Front controller
 │   ├── install.php         One-shot installer (delete after use)
 │   ├── .htaccess           Pretty URLs
+│   ├── uploads/            Logos, signatures, student passport photos (writable by web server)
 │   └── assets/             css / js / img
-├── storage/                Logs + uploads (web-blocked)
+├── storage/                Logs (web-blocked)
 ├── .env.example            Copy to .env for your environment
 └── README.md / CHECKLIST.md
 ```

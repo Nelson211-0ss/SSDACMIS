@@ -19,7 +19,7 @@ A focused, copy-pasteable guide for running **SSD-ACMIS — School Management Sy
 
 - **Docker Engine** 24+ and the **Compose plugin** (`docker compose version` should work). Docker Desktop on macOS/Windows/Linux bundles both.
 - The project has **zero Composer/npm dependencies**, so no build step beyond PHP extensions.
-- Required PHP extensions: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `gd` (for logo/photo uploads). These are added in the container, not on your host.
+- Required PHP extensions: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` (validates uploaded image MIME types for logo/photo uploads). `gd` is installed below too but isn't currently called by the app — harmless to keep, safe to drop if you're trimming the image. These are added in the container, not on your host.
 
 ---
 
