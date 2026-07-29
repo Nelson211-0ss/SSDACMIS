@@ -362,7 +362,7 @@ body.auth-page--login .auth-credit {
   flex-direction: column;
   gap: 0.65rem;
   width: 100%;
-  max-width: 100%;
+  max-width: 300px;
   margin-inline: auto;
 }
 
@@ -494,7 +494,7 @@ body.auth-page--login .auth-credit {
   gap: 0.5rem;
   margin-top: -0.1rem;
   width: 100%;
-  max-width: 100%;
+  max-width: 300px;
   margin-inline: auto;
 }
 
@@ -534,12 +534,12 @@ body.auth-page--login .auth-credit {
   justify-content: center;
   gap: 0.4rem;
   width: 100%;
-  max-width: 100%;
+  max-width: 300px;
   margin-inline: auto;
   margin-top: 0.1rem;
   padding: 0.6rem 1rem;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--lp-radius-sm);
   font-size: 0.8125rem;
   font-weight: 600;
   color: #fff;
