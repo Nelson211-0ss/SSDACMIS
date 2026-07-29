@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -45,6 +46,7 @@ class BursarController extends Controller
         $year = trim((string) $this->input('year', ''));
         $term = trim((string) $this->input('term', ''));
         FeesService::setActivePeriod($year, $term);
+        ActivityLog::record('update', 'fee_period', null, "Set active fee period to {$year} {$term}");
 
         $back = $this->safeReturn((string) $this->input('return', '/bursar'));
         $this->redirect($back);
@@ -219,6 +221,7 @@ class BursarController extends Controller
             return '';
         }
 
+        ActivityLog::record('update', 'fee_structure', null, "Updated fee structure for {$year} (auto-assigned to $touched student bill" . ($touched === 1 ? '' : 's') . ')');
         Flash::set('success', "Fees structure saved. Auto-assigned to $touched student bill" . ($touched === 1 ? '' : 's') . ' across all 3 terms.');
         $this->redirect('/bursar/structure');
         return '';
@@ -381,6 +384,7 @@ class BursarController extends Controller
             $paymentId = FeesService::recordPayment(
                 $studentId, $year, $term, $amount, $paymentDate, $receiptNo, $bursarId, $notes
             );
+            ActivityLog::record('create', 'payment', $paymentId, "Recorded payment of {$amount} for student #{$studentId} (receipt {$receiptNo})");
 
             // Build a structured "success popup" payload that the next page
             // render will consume to show a celebratory modal with all the

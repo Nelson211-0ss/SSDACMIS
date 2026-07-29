@@ -51,6 +51,9 @@ $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrA
 $router->get('/students/clear-all',    'StudentController@clearAllForm',    [$schoolAdminOrAdmin]);
 $router->post('/students/clear-all',  'StudentController@clearAllExecute', [$schoolAdminOrAdmin]);
 $router->post('/students',             'StudentController@store',  [$staffOrAdmin]);
+// Registered after all the static /students/... GET routes above so it
+// doesn't swallow them (Router matches GET routes in insertion order).
+$router->get('/students/{id}',         'StudentController@show',   [$staffOrAdmin]);
 $router->get('/students/{id}/edit',    'StudentController@edit',   [$staffOrAdmin]);
 $router->post('/students/{id}',        'StudentController@update', [$staffOrAdmin]);
 $router->post('/students/{id}/delete', 'StudentController@destroy',[$schoolAdminOrAdmin]);
@@ -181,6 +184,8 @@ $router->post('/hod/announcements', 'AnnouncementController@store', [$staffAdmin
 // Settings (school identity + theme customization)
 $router->get('/settings',  'SettingsController@index',  [$adminOnly]);
 $router->post('/settings', 'SettingsController@update', [$adminOnly]);
+
+$router->get('/activity-log', 'ActivityLogController@index', [$schoolAdminOrAdmin]);
 
 // Schools (super-admin: multi-tenant school management)
 $router->get('/schools',                     'SchoolController@index',         [$adminOnly]);

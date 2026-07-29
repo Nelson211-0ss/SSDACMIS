@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -67,6 +68,7 @@ class GradeController extends Controller
             [$studentId, $subjectId, $term, $score]
         );
 
+        ActivityLog::record('create', 'grade', null, "Recorded grade for student #{$studentId}, subject #{$subjectId}, {$term} (score {$score})");
         Flash::set('success', 'Grade recorded.');
         $this->redirect('/grades?student_id=' . $studentId);
         return '';

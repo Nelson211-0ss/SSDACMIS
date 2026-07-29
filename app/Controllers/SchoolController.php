@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -96,6 +97,8 @@ class SchoolController extends Controller
             }
 
         $newId = (int) Database::connection()->lastInsertId();
+
+        ActivityLog::record('create', 'school', $newId, "Created school {$d['name']}");
 
         // Handle logo upload after we have an ID.
         if (!empty($_FILES['logo']['name'])) {
@@ -206,6 +209,8 @@ class SchoolController extends Controller
                 $logo, $sig, $d['status'], (int) $id,
             ]
         );
+
+        ActivityLog::record('update', 'school', (int) $id, "Updated school {$d['name']}");
 
         Flash::set('success', 'School updated.');
         $this->redirect('/schools/' . (int) $id);

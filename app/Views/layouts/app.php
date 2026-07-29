@@ -65,6 +65,7 @@ $mainNav = [
     ['My Fees',       'bi-cash-coin',         '/fees',          ['student'],                                '/fees'],
     ['Announcements', 'bi-megaphone',         '/announcements', ['admin','school_admin','staff','student'], '/announcements'],
     ['Settings',      'bi-gear',              '/settings',      ['admin'],                                  '/settings'],
+    ['Activity Log',  'bi-clock-history',     '/activity-log',  ['admin','school_admin'],                   '/activity-log'],
 ];
 
 $initial = strtoupper(mb_substr($auth['name'] ?? '?', 0, 1));

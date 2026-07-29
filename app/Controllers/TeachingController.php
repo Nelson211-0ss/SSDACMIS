@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -78,6 +79,7 @@ class TeachingController extends Controller
             "INSERT IGNORE INTO department_heads (school_id, staff_id, category) VALUES (?, ?, ?)",
             [$schoolId, $staffId, $category]
         );
+        ActivityLog::record('create', 'department_head', null, "Assigned department head (staff #{$staffId}) for {$category} department");
         Flash::set('success', 'Department head appointed.');
         $this->redirect('/teaching'); return '';
     }
@@ -91,6 +93,7 @@ class TeachingController extends Controller
             "DELETE FROM department_heads WHERE staff_id = ? AND category = ?",
             [$staffId, $category]
         );
+        ActivityLog::record('delete', 'department_head', $staffId, "Removed department head (staff #{$staffId}) for {$category} department");
         Flash::set('success', 'Department head removed.');
         $this->redirect('/teaching'); return '';
     }
@@ -114,6 +117,7 @@ class TeachingController extends Controller
                  VALUES (?, ?, ?, ?)",
                 [$schoolId, $staffId, $classId, $subjectId]
             );
+            ActivityLog::record('create', 'teaching_assignment', null, "Assigned teaching: staff #{$staffId} to class #{$classId}, subject #{$subjectId}");
             Flash::set('success', 'Teaching assignment saved.');
         } catch (\Throwable $e) {
             Flash::set('danger', 'Could not save assignment: ' . $e->getMessage());
@@ -125,6 +129,7 @@ class TeachingController extends Controller
     {
         $this->validateCsrf();
         Database::query("DELETE FROM teaching_assignments WHERE id = ?", [(int) $id]);
+        ActivityLog::record('delete', 'teaching_assignment', (int) $id, "Removed teaching assignment #{$id}");
         Flash::set('success', 'Assignment removed.');
         $this->redirect('/teaching'); return '';
     }

@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -82,6 +83,7 @@ class StaffController extends Controller
             $pdo->commit();
 
             $fullName = $d['first_name'] . ' ' . $d['last_name'];
+            ActivityLog::record('create', 'staff', $staffId, "Added staff member {$fullName}");
             $appUrl   = rtrim($_ENV['APP_URL'] ?? '', '/');
             $appName  = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
             $html     = self::welcomeEmail($fullName, $appName, $d['email'], $plain, $appUrl, 'Staff');
@@ -141,6 +143,8 @@ class StaffController extends Controller
 
         $this->syncSubjects((int) $id, $d['subject_ids']);
 
+        ActivityLog::record('update', 'staff', (int) $id, "Updated staff member {$d['first_name']} {$d['last_name']}");
+
         Flash::set('success', 'Staff member updated.');
         $this->redirect('/staff'); return '';
     }
@@ -148,10 +152,12 @@ class StaffController extends Controller
     public function destroy(string $id): string
     {
         $this->validateCsrf();
-        $row = Database::query("SELECT user_id FROM staff WHERE id = ?", [(int)$id])->fetch();
+        $row = Database::query("SELECT user_id, first_name, last_name FROM staff WHERE id = ?", [(int)$id])->fetch();
         if ($row) {
+            $name = trim($row['first_name'] . ' ' . $row['last_name']);
             Database::query("DELETE FROM staff WHERE id = ?", [(int)$id]);
             if ($row['user_id']) Database::query("DELETE FROM users WHERE id = ?", [$row['user_id']]);
+            ActivityLog::record('delete', 'staff', (int) $id, "Deleted staff member {$name}");
         }
         Flash::set('success', 'Staff removed.');
         $this->redirect('/staff'); return '';

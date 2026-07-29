@@ -629,6 +629,33 @@ foreach ($schoolBrandingCols as $col => $sql) {
     }
 }
 
+/* -- Activity log (audit trail) ---------------------------------------- */
+if (!$tableExists('activity_log')) {
+    $run(
+        "CREATE TABLE activity_log (
+            id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            school_id    INT UNSIGNED NULL,
+            user_id      INT UNSIGNED NULL,
+            user_name    VARCHAR(150) NULL,
+            role         VARCHAR(30) NULL,
+            action       VARCHAR(20) NOT NULL,
+            entity_type  VARCHAR(40) NULL,
+            entity_id    INT UNSIGNED NULL,
+            description  VARCHAR(255) NOT NULL,
+            ip_address   VARCHAR(45) NULL,
+            created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_activity_school_created (school_id, created_at),
+            KEY idx_activity_user (user_id),
+            CONSTRAINT fk_activity_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL,
+            CONSTRAINT fk_activity_user   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE SET NULL
+        ) ENGINE=InnoDB",
+        "activity_log table created"
+    );
+} else {
+    $out[] = "  --  activity_log already exists";
+}
+
 $out[] = "Done.";
 
 /* Output -------------------------------------------------------------- */

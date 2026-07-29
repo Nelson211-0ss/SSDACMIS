@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -89,6 +90,8 @@ class HodAccountController extends Controller
                 $d['status'],
             ]
         );
+        $newId = (int) Database::connection()->lastInsertId();
+        ActivityLog::record('create', 'hod_account', $newId, "Created HOD account for {$d['name']}");
 
         $appUrl  = rtrim($_ENV['APP_URL'] ?? '', '/');
         $appName = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
@@ -185,6 +188,7 @@ class HodAccountController extends Controller
             );
         }
 
+        ActivityLog::record('update', 'hod_account', (int) $id, "Updated HOD account for {$d['name']}");
         Flash::set('success', 'HOD account updated.');
         $this->redirect('/hods');
         return '';
@@ -194,7 +198,7 @@ class HodAccountController extends Controller
     {
         $this->validateCsrf();
         $hod = Database::query(
-            "SELECT id FROM users WHERE id = ? AND role = 'hod' LIMIT 1",
+            "SELECT id, name FROM users WHERE id = ? AND role = 'hod' LIMIT 1",
             [(int) $id]
         )->fetch();
         if (!$hod) {
@@ -202,6 +206,7 @@ class HodAccountController extends Controller
             return $this->view('errors/404');
         }
         Database::query("DELETE FROM users WHERE id = ?", [(int) $id]);
+        ActivityLog::record('delete', 'hod_account', (int) $id, "Deleted HOD account {$hod['name']}");
         Flash::set('success', 'HOD account removed.');
         $this->redirect('/hods');
         return '';

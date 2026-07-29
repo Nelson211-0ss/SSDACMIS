@@ -91,6 +91,7 @@ class Auth
         }
 
         $_SESSION['users'][self::portal()] = $user;
+        ActivityLog::record('login', 'user', (int) $user['id'], "Logged in ({$user['role']})");
         return true;
     }
 
@@ -129,6 +130,7 @@ class Auth
         }
 
         $_SESSION['users'][$slot] = $user;
+        ActivityLog::record('login', 'user', (int) $user['id'], "Logged in ({$user['role']})");
 
         return $slot;
     }
@@ -209,6 +211,11 @@ class Auth
 
     public static function logout(): void
     {
+        $u = self::user();
+        if ($u) {
+            ActivityLog::record('logout', 'user', (int) $u['id'], "Logged out ({$u['role']})");
+        }
+
         unset($_SESSION['users'][self::portal()]);
         // Drop the legacy slot too if it's still around from an old session.
         unset($_SESSION['user']);

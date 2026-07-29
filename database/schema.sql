@@ -345,6 +345,30 @@ CREATE TABLE IF NOT EXISTS settings (
     PRIMARY KEY (`key`)
 ) ENGINE=InnoDB;
 
+-- ---------- Activity log (audit trail: who did what, when) ----------
+-- user_name/role are snapshotted at write time so the log stays readable
+-- even after a user is renamed or deleted. school_id/user_id are kept
+-- nullable and SET NULL on delete rather than cascaded, so the audit trail
+-- survives the deletion of the school or user it refers to.
+CREATE TABLE IF NOT EXISTS activity_log (
+    id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id    INT UNSIGNED NULL,
+    user_id      INT UNSIGNED NULL,
+    user_name    VARCHAR(150) NULL,
+    role         VARCHAR(30) NULL,
+    action       VARCHAR(20) NOT NULL,
+    entity_type  VARCHAR(40) NULL,
+    entity_id    INT UNSIGNED NULL,
+    description  VARCHAR(255) NOT NULL,
+    ip_address   VARCHAR(45) NULL,
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_activity_school_created (school_id, created_at),
+    KEY idx_activity_user (user_id),
+    CONSTRAINT fk_activity_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL,
+    CONSTRAINT fk_activity_user   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 -- ---------- Term results (computed when marks are saved; Mid ×/30 + End ×/70) ----------
 CREATE TABLE IF NOT EXISTS term_subject_results (
     id             INT UNSIGNED NOT NULL AUTO_INCREMENT,

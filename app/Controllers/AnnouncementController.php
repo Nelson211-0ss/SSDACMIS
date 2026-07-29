@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -38,6 +39,8 @@ class AnnouncementController extends Controller
             "INSERT INTO announcements (school_id, user_id, title, body) VALUES (?, ?, ?, ?)",
             [$schoolId, Auth::user()['id'], $title, $body]
         );
+        $newId = (int) Database::connection()->lastInsertId();
+        ActivityLog::record('create', 'announcement', $newId, "Posted announcement: {$title}");
         Flash::set('success', 'Announcement posted.');
         $this->redirect('/announcements'); return '';
     }

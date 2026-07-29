@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -603,6 +604,7 @@ class MarksController extends Controller
                 return '';
             }
 
+            ActivityLog::record('create', 'mark', null, "Entered marks for class #{$classId}, subject #{$subjectId}, {$year} {$term} (dual entry, saved $saved" . ($skipped ? ", $skipped skipped" : '') . ')');
             Flash::set('success', "Saved $saved mark" . ($saved === 1 ? '' : 's')
                 . ($skipped ? " ($skipped blank cells skipped)" : '') . '.');
             $this->redirect('/marks/entry?' . $entryRedirQ);
@@ -715,6 +717,7 @@ class MarksController extends Controller
             return '';
         }
 
+        ActivityLog::record('create', 'mark', null, "Entered marks for class #{$classId}, subject #{$subjectId}, {$year} {$term} ({$examType}, saved $saved" . ($skipped ? ", $skipped skipped" : '') . ')');
         Flash::set('success', "Saved $saved mark" . ($saved === 1 ? '' : 's')
             . ($skipped ? " ($skipped skipped)" : '') . '.');
         $this->redirect("/marks/entry?class_id=$classId&subject_id=$subjectId&year="
@@ -1004,6 +1007,7 @@ class MarksController extends Controller
             return '';
         }
 
+        ActivityLog::record('create', 'mark', null, "Entered marks for class #{$classId}, category {$category}, {$year} {$term} (saved $saved" . ($skipped ? ", $skipped skipped" : '') . ')');
         Flash::set('success', "Saved $saved mark" . ($saved === 1 ? '' : 's')
             . ($skipped ? " ($skipped blank cells skipped)" : '') . '.');
         $this->redirect("/marks/department?$redirQ");

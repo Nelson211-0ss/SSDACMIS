@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -106,6 +107,8 @@ class SubjectController extends Controller
             "INSERT INTO subjects (school_id, name, code, category, is_offered) VALUES (?, ?, ?, ?, ?)",
             [$schoolId, $name, $code, $cat, $offered]
         );
+        $newId = (int) Database::connection()->lastInsertId();
+        ActivityLog::record('create', 'subject', $newId, "Created subject {$name}");
         Flash::set('success', 'Subject added.');
         $this->redirect('/subjects');
         return '';
@@ -141,6 +144,7 @@ class SubjectController extends Controller
             return '';
         }
 
+        ActivityLog::record('update', 'subject', null, "Updated offered-subjects list (" . count($on) . " offered)");
         Flash::set('success', count($on) . ' subject' . (count($on) === 1 ? '' : 's') . ' offered. The rest are hidden from mark entry and report cards.');
         $this->redirect('/subjects');
         return '';
@@ -150,11 +154,14 @@ class SubjectController extends Controller
     {
         $this->validateCsrf();
         $schoolId = Auth::schoolId();
+        $subject = Database::query("SELECT name FROM subjects WHERE id = ?", [(int) $id])->fetch();
+        $name = $subject['name'] ?? "#{$id}";
         if ($schoolId !== null) {
             Database::query("DELETE FROM subjects WHERE id = ? AND school_id = ?", [(int) $id, $schoolId]);
         } else {
             Database::query("DELETE FROM subjects WHERE id = ?", [(int) $id]);
         }
+        ActivityLog::record('delete', 'subject', (int) $id, "Deleted subject {$name}");
         Flash::set('success', 'Subject removed.');
         $this->redirect('/subjects');
         return '';

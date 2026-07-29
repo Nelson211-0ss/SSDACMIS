@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -77,6 +78,8 @@ class BursarAccountController extends Controller
              VALUES (?, ?, ?, ?, 'bursar', ?)",
             [$schoolId, $d['name'], $d['email'], password_hash($plain, PASSWORD_DEFAULT), $d['status']]
         );
+        $newId = (int) Database::connection()->lastInsertId();
+        ActivityLog::record('create', 'bursar_account', $newId, "Created bursar account for {$d['name']}");
 
         $appUrl  = rtrim($_ENV['APP_URL'] ?? '', '/');
         $appName = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
@@ -163,6 +166,7 @@ class BursarAccountController extends Controller
             );
         }
 
+        ActivityLog::record('update', 'bursar_account', (int) $id, "Updated bursar account for {$d['name']}");
         Flash::set('success', 'Bursar account updated.');
         $this->redirect('/bursars');
         return '';
@@ -172,7 +176,7 @@ class BursarAccountController extends Controller
     {
         $this->validateCsrf();
         $bursar = Database::query(
-            "SELECT id FROM users WHERE id = ? AND role = 'bursar' LIMIT 1",
+            "SELECT id, name FROM users WHERE id = ? AND role = 'bursar' LIMIT 1",
             [(int) $id]
         )->fetch();
         if (!$bursar) {
@@ -183,6 +187,7 @@ class BursarAccountController extends Controller
         // SET NULL so deleting a bursar simply orphans the "entered by"
         // column on past payments — receipts remain intact.
         Database::query("DELETE FROM users WHERE id = ?", [(int) $id]);
+        ActivityLog::record('delete', 'bursar_account', (int) $id, "Deleted bursar account {$bursar['name']}");
         Flash::set('success', 'Bursar account removed.');
         $this->redirect('/bursars');
         return '';

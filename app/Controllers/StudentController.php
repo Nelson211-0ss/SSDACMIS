@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\App;
 use App\Core\Auth;
 use App\Core\Controller;
@@ -9,6 +10,8 @@ use App\Core\Flash;
 use App\Core\SchoolIdentity;
 use App\Core\Settings;
 use App\Models\Student;
+use App\Services\AcademicMarking;
+use App\Services\FeesService;
 
 class StudentController extends Controller
 {
@@ -265,6 +268,119 @@ class StudentController extends Controller
         return $this->view('students/admission_letter', ['students' => $students]);
     }
 
+    /**
+     * Full student profile: identity + finance + academic results +
+     * attendance in one tabbed page.
+     * GET /students/{id}
+     */
+    public function show(string $id): string
+    {
+        $studentId = (int) $id;
+        $schoolId  = Auth::schoolId();
+
+        $sql = "SELECT s.*, c.name AS class_name, c.level,
+                       t.first_name AS teacher_first, t.last_name AS teacher_last
+                FROM students s
+                LEFT JOIN classes c ON c.id = s.class_id
+                LEFT JOIN staff t   ON t.id = c.class_teacher_id
+                WHERE s.id = ?";
+        $params = [$studentId];
+        // Same scoping as admissionLetter(): school-scoped users can only
+        // view their own school's students; the super admin can view any.
+        if ($schoolId !== null) {
+            $sql .= ' AND s.school_id = ?';
+            $params[] = $schoolId;
+        }
+        $sql .= ' LIMIT 1';
+
+        $student = Database::query($sql, $params)->fetch();
+        if (!$student) {
+            http_response_code(404);
+            return $this->view('errors/404');
+        }
+        $classId = (int) ($student['class_id'] ?? 0);
+
+        /* ---------------------------- Finance ---------------------------- */
+        ['year' => $feeYear, 'term' => $feeTerm] = FeesService::activePeriod();
+        FeesService::syncAllStudents($feeYear);
+        FeesService::ensureStudentFee($studentId, $feeYear, $feeTerm);
+
+        $termBills = Database::query(
+            "SELECT id, term, total_amount, paid_amount, status
+             FROM student_fees
+             WHERE student_id = ? AND academic_year = ?
+             ORDER BY term",
+            [$studentId, $feeYear]
+        )->fetchAll();
+
+        $activeBill = ['total_amount' => 0, 'paid_amount' => 0, 'status' => 'not_paid'];
+        foreach ($termBills as $tb) {
+            if ((string) $tb['term'] === $feeTerm) { $activeBill = $tb; break; }
+        }
+
+        $payments = Database::query(
+            "SELECT p.id, p.amount, p.payment_date, p.receipt_no, p.notes,
+                    sf.term, sf.academic_year, u.name AS bursar_name
+             FROM payments p
+             LEFT JOIN student_fees sf ON sf.id = p.student_fee_id
+             LEFT JOIN users u ON u.id = p.recorded_by
+             WHERE p.student_id = ?
+             ORDER BY p.payment_date DESC, p.id DESC",
+            [$studentId]
+        )->fetchAll();
+
+        /* ---------------------------- Results ---------------------------- */
+        $resultsYear = (string) ($this->input('year') ?: self::defaultAcademicYear());
+        $resultsTerm = (string) ($this->input('term') ?: 'Term 1');
+        if (!in_array($resultsTerm, ['Term 1', 'Term 2', 'Term 3'], true)) {
+            $resultsTerm = 'Term 1';
+        }
+        $sheet    = AcademicMarking::buildScoreSheet($studentId, $resultsYear, $resultsTerm);
+        $position = $classId > 0
+            ? AcademicMarking::classPositionRow($studentId, $classId, $resultsYear, $resultsTerm)
+            : ['position' => null, 'cohort' => 0];
+
+        /* --------------------------- Attendance --------------------------- */
+        $attRows = Database::query(
+            "SELECT status, COUNT(*) AS n FROM attendance WHERE student_id = ? GROUP BY status",
+            [$studentId]
+        )->fetchAll();
+        $attCounts = ['present' => 0, 'absent' => 0, 'late' => 0];
+        foreach ($attRows as $row) {
+            $status = (string) $row['status'];
+            if (isset($attCounts[$status])) {
+                $attCounts[$status] = (int) $row['n'];
+            }
+        }
+        $attTotal = array_sum($attCounts);
+        $attRate  = $attTotal > 0 ? (int) round($attCounts['present'] / $attTotal * 100) : null;
+
+        return $this->view('students/show', [
+            'student'     => $student,
+            'classId'     => $classId,
+            'feeYear'     => $feeYear,
+            'feeTerm'     => $feeTerm,
+            'termBills'   => $termBills,
+            'activeBill'  => $activeBill,
+            'payments'    => $payments,
+            'resultsYear' => $resultsYear,
+            'resultsTerm' => $resultsTerm,
+            'sheet'       => $sheet,
+            'position'    => $position,
+            'attCounts'   => $attCounts,
+            'attTotal'    => $attTotal,
+            'attRate'     => $attRate,
+        ]);
+    }
+
+    /** Same "academic year rolls over in September" rule ReportController uses. */
+    private static function defaultAcademicYear(): string
+    {
+        return (date('n') >= 9)
+            ? date('Y') . '/' . (date('Y') + 1)
+            : (date('Y') - 1) . '/' . date('Y');
+    }
+
     public function store(): string
     {
         $this->validateCsrf();
@@ -296,6 +412,7 @@ class StudentController extends Controller
         }
 
         $studentId = Student::create($data);
+        ActivityLog::record('create', 'student', $studentId, "Admitted student {$generated}");
 
         // Optional passport photo. Failing the photo step does NOT roll back
         // the student — admission must still succeed. Show the bursar/admin
@@ -374,6 +491,7 @@ class StudentController extends Controller
         $data['stream'] = $stream;
 
         Student::update((int) $id, $data);
+        ActivityLog::record('update', 'student', (int) $id, "Updated student {$data['admission_no']} ({$data['first_name']} {$data['last_name']})");
 
         $photoErr = $this->savePassportPhoto((int) $id);
         if ($photoErr !== null) {
@@ -407,6 +525,7 @@ class StudentController extends Controller
         if (!empty($existing['photo_path'])) {
             $this->deletePhotoFile((string) $existing['photo_path']);
             Student::clearPhoto((int) $id);
+            ActivityLog::record('update', 'student', (int) $id, "Removed passport photo for student #{$id}");
             Flash::set('success', 'Passport photo removed.');
         }
 
@@ -494,6 +613,7 @@ class StudentController extends Controller
         if (!empty($existing['photo_path'])) {
             $this->deletePhotoFile((string) $existing['photo_path']);
         }
+        ActivityLog::record('delete', 'student', (int) $id, "Deleted student {$existing['admission_no']} ({$existing['first_name']} {$existing['last_name']})");
         Student::delete((int) $id);
         Flash::set('success', 'Student removed.');
         $this->redirect('/students');
@@ -549,6 +669,8 @@ class StudentController extends Controller
 
         $nStudents = $result['student_rows'];
         $nUsers    = $result['user_rows_deleted'];
+
+        ActivityLog::record('delete', 'student', null, "Cleared all students ({$nStudents} removed, {$nUsers} logins removed)");
 
         Flash::set(
             'success',

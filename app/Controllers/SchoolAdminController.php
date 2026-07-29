@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
@@ -50,6 +51,9 @@ class SchoolAdminController extends Controller
             [(int) $schoolId, $name, $email, password_hash($plain, PASSWORD_DEFAULT)]
         );
 
+        $newId = (int) Database::connection()->lastInsertId();
+        ActivityLog::record('create', 'school_admin', $newId, "Created school admin account for {$name}");
+
         $appUrl  = rtrim($_ENV['APP_URL'] ?? '', '/');
         $appName = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
         $html    = self::welcomeEmail($name, $school['name'], $email, $plain, $appUrl, $appName);
@@ -85,6 +89,8 @@ class SchoolAdminController extends Controller
             [password_hash($plain, PASSWORD_DEFAULT), (int) $id]
         );
 
+        ActivityLog::record('update', 'school_admin', (int) $id, "Resent invite/setup for school admin {$user['name']} ({$user['email']})");
+
         $appUrl  = rtrim($_ENV['APP_URL'] ?? '', '/');
         $appName = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
         $html    = self::welcomeEmail($user['name'], $user['school_name'], $user['email'], $plain, $appUrl, $appName);
@@ -104,13 +110,14 @@ class SchoolAdminController extends Controller
     {
         $this->validateCsrf();
         $user = Database::query(
-            "SELECT id, school_id FROM users WHERE id = ? AND role = 'school_admin' LIMIT 1",
+            "SELECT id, school_id, name, email FROM users WHERE id = ? AND role = 'school_admin' LIMIT 1",
             [(int) $id]
         )->fetch();
         if (!$user) { http_response_code(404); return $this->view('errors/404'); }
 
         $schoolId = $user['school_id'];
         Database::query("DELETE FROM users WHERE id = ?", [(int) $id]);
+        ActivityLog::record('delete', 'school_admin', (int) $id, "Deleted school admin account {$user['name']} ({$user['email']})");
         Flash::set('success', 'School admin account removed.');
         $this->redirect('/schools/' . (int) $schoolId);
         return '';

@@ -98,8 +98,30 @@ $classLabel = function (array $s): string {
       content: "";
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 4px;
+      height: 5px;
       background: var(--accent);
+    }
+
+    /* Subtle centered logo watermark — only rendered when a school logo is
+       configured. Sits behind everything (z-index 0); .letter-content
+       (z-index 1) carries the rest of the letter above it unchanged. */
+    .letter-watermark {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 260px; height: 260px;
+      object-fit: contain;
+      transform: translate(-50%, -50%) rotate(-8deg);
+      opacity: .05;
+      filter: grayscale(1);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .letter-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
     /* ----- Letterhead ----- */
@@ -108,24 +130,24 @@ $classLabel = function (array $s): string {
       align-items: flex-start;
       justify-content: space-between;
       gap: 22px;
-      padding-bottom: 10px;
+      padding-bottom: 14px;
       border-bottom: 1px solid var(--hair);
     }
     .head__brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       flex: 1;
       min-width: 0;
     }
     .head__logo {
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       object-fit: contain;
       flex-shrink: 0;
     }
     .head__logo--ph {
-      width: 56px; height: 56px;
+      width: 64px; height: 64px;
       border: 1px solid var(--hair);
       display: inline-flex;
       align-items: center;
@@ -163,7 +185,7 @@ $classLabel = function (array $s): string {
 
     /* ----- Reference / date strip ----- */
     .meta {
-      margin-top: 14px;
+      margin-top: 18px;
       display: flex;
       justify-content: space-between;
       gap: 24px;
@@ -197,7 +219,7 @@ $classLabel = function (array $s): string {
 
     /* ----- Subject ----- */
     .subject {
-      margin: 8px 0 14px;
+      margin: 12px 0 16px;
       font-size: 11pt;
       font-weight: 600;
       color: var(--accent);
@@ -225,7 +247,7 @@ $classLabel = function (array $s): string {
     .particulars {
       width: 100%;
       border-collapse: collapse;
-      margin: 4px 0 12px;
+      margin: 6px 0 16px;
       font-size: 9.5pt;
     }
     .particulars td {
@@ -249,7 +271,7 @@ $classLabel = function (array $s): string {
 
     /* ----- Sign-off ----- */
     .signoff {
-      margin-top: 14px;
+      margin-top: 20px;
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
@@ -369,6 +391,10 @@ $classLabel = function (array $s): string {
   $admittedDate = !empty($s['created_at']) ? date('F j, Y', strtotime((string) $s['created_at'])) : $today;
 ?>
   <div class="letter-page">
+    <?php if ($schoolLogo): ?>
+      <img class="letter-watermark" src="<?= $base ?>/<?= View::e($schoolLogo) ?>" alt="">
+    <?php endif; ?>
+    <div class="letter-content">
 
     <!-- Letterhead -->
     <header class="head">
@@ -488,6 +514,7 @@ $classLabel = function (array $s): string {
       <span>Issued <?= View::e($today) ?> · Ref <?= View::e($s['admission_no']) ?></span>
       <span>This letter is valid only with the school stamp and signature of the <?= View::e(strtolower($htTitle)) ?>.</span>
     </footer>
+    </div>
   </div>
 <?php endforeach; endif; ?>
 

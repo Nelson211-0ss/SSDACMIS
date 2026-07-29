@@ -24,6 +24,7 @@ if ($isEdit) {
     }
 }
 ?>
+<div class="entity-form<?= $partial ? ' entity-form--modal' : '' ?>">
 <?php if (!$partial): ?>
 <div class="app-toolbar mb-3">
     <a href="<?= $base ?>/schools" class="btn btn-sm btn-outline-secondary">
@@ -31,7 +32,7 @@ if ($isEdit) {
     </a>
 </div>
 
-<div class="page-header" style="max-width:760px;">
+<div class="page-header" style="max-width:760px;margin-inline:auto;">
     <div>
       <h2><?= $isEdit ? 'Edit school' : 'New school' ?></h2>
       <p class="page-header__sub mb-0">
@@ -42,7 +43,7 @@ if ($isEdit) {
   </div>
 <?php endif; ?>
 
-  <div class="card sa-profile border-0<?= $partial ? ' sa-profile--modal' : '' ?>"<?= $partial ? '' : ' style="max-width:760px;"' ?>>
+  <div class="card sa-profile border-0<?= $partial ? ' sa-profile--modal' : '' ?>"<?= $partial ? '' : ' style="max-width:760px;margin-inline:auto;"' ?>>
   <div class="card-body px-4 pb-4">
     <form method="post" action="<?= $action ?>" enctype="multipart/form-data">
       <input type="hidden" name="_csrf" value="<?= $csrf ?>">
@@ -194,4 +195,5 @@ if ($isEdit) {
       <?php endif; ?>
     </form>
   </div>
+</div>
 </div>

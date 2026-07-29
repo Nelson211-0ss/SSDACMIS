@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -60,6 +61,7 @@ class AttendanceController extends Controller
                 $stmt->execute([$classId, (int)$studentId, $date, $status]);
             }
             $pdo->commit();
+            ActivityLog::record('create', 'attendance', null, "Recorded attendance for class #{$classId} on {$date}");
             Flash::set('success', 'Attendance saved.');
         } catch (\Throwable $e) {
             $pdo->rollBack();

@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -59,6 +60,8 @@ class ClassController extends Controller
             "INSERT INTO classes (school_id, name, level, admission_prefix) VALUES (?, ?, ?, ?)",
             [$schoolId, $name, $level, $prefix]
         );
+        $newId = (int) Database::connection()->lastInsertId();
+        ActivityLog::record('create', 'class', $newId, "Created class {$name}");
         Flash::set('success', "Class added (admission prefix: {$prefix}).");
         $this->redirect('/classes'); return '';
     }
@@ -77,6 +80,7 @@ class ClassController extends Controller
         $params = [$prefix, (int) $id];
         if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
         Database::query($sql, $params);
+        ActivityLog::record('update', 'class', (int) $id, "Set admission prefix for class #{$id} to '{$prefix}'");
         Flash::set('success', 'Admission prefix updated.');
         $this->redirect('/classes'); return '';
     }
@@ -102,6 +106,9 @@ class ClassController extends Controller
         $params = [$teacherId ?: null, (int) $id];
         if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
         Database::query($sql, $params);
+        ActivityLog::record('update', 'class', (int) $id, $teacherId
+            ? "Set class teacher for class #{$id} to staff #{$teacherId}"
+            : "Cleared class teacher for class #{$id}");
         Flash::set('success', 'Class teacher updated.');
         $this->redirect('/classes'); return '';
     }
@@ -110,10 +117,18 @@ class ClassController extends Controller
     {
         $this->validateCsrf();
         $schoolId = Auth::schoolId();
+
+        $findSql = "SELECT name FROM classes WHERE id = ?";
+        $findParams = [(int) $id];
+        if ($schoolId !== null) { $findSql .= ' AND school_id = ?'; $findParams[] = $schoolId; }
+        $row = Database::query($findSql, $findParams)->fetch();
+        $name = $row['name'] ?? null;
+
         $sql = "DELETE FROM classes WHERE id = ?";
         $params = [(int)$id];
         if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
         Database::query($sql, $params);
+        ActivityLog::record('delete', 'class', (int) $id, $name !== null ? "Deleted class {$name}" : "Deleted class #{$id}");
         Flash::set('success', 'Class removed.');
         $this->redirect('/classes'); return '';
     }

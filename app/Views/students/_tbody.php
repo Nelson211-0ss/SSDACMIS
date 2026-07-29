@@ -20,7 +20,7 @@ if (empty($students)): ?>
           <tr>
             <td class="fw-semibold font-monospace small"><?= View::e($s['admission_no']) ?></td>
             <td>
-              <div class="d-flex align-items-center gap-2">
+              <a class="d-flex align-items-center gap-2 text-decoration-none text-reset" href="<?= $base ?>/students/<?= (int) $s['id'] ?>">
                 <?php
                   $av_photo = $s['photo_path'] ?? '';
                   $av_first = $s['first_name'] ?? '';
@@ -29,7 +29,7 @@ if (empty($students)): ?>
                   include dirname(__DIR__) . '/_partials/student_avatar.php';
                 ?>
                 <span><?= View::e($s['first_name'] . ' ' . $s['last_name']) ?></span>
-              </div>
+              </a>
             </td>
             <td class="d-none d-md-table-cell"><span class="badge bg-secondary-subtle text-secondary-emphasis"><?= View::studentEnumUpper('gender', $s['gender'] ?? '') ?></span></td>
             <td class="small"><?= View::upper($s['class_name'] ?? '') ?: '—' ?></td>
@@ -44,6 +44,7 @@ if (empty($students)): ?>
             <td class="d-none d-xl-table-cell small"><?= View::e($s['guardian_name'] ?: '—') ?></td>
             <td class="d-none d-xl-table-cell font-monospace small"><?= View::e($s['guardian_phone'] ?: '—') ?></td>
             <td class="text-end text-nowrap">
+              <a class="btn btn-sm btn-outline-secondary" href="<?= $base ?>/students/<?= (int)$s['id'] ?>" title="View profile"><i class="bi bi-eye"></i></a>
               <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/students/<?= (int)$s['id'] ?>/edit" title="Edit"><i class="bi bi-pencil"></i></a>
               <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
                 <a class="btn btn-sm btn-outline-secondary"

@@ -6,13 +6,13 @@
 
 .app-shell--enterprise {
   /* Academic SaaS palette */
-  /* Uniform brand blue (matches sidebar active state) */
-  --accent:        #1e88e5;
-  --accent-hover:  #1976d2;
-  --accent-soft:   #e3f2fd;
-  --accent-rgb:    30, 136, 229;
-  --secondary:     #1e88e5;
-  --secondary-rgb: 30, 136, 229;
+  /* Accent tokens are intentionally NOT redeclared here — they inherit from
+     :root, which app/Views/layouts/app.php sets per-request from the
+     school's chosen theme (Settings::activeTheme()). Redeclaring them on
+     this more specific selector would silently override the school's
+     theme for every enterprise-shell view (admin/school_admin/HOD/bursar). */
+  --secondary:     var(--accent);
+  --secondary-rgb: var(--accent-rgb);
 
   --bg:            #f5f8fc;
   --surface:       #ffffff;
@@ -64,12 +64,12 @@
   --sidebar-text-strong: #0f172a;
   --sidebar-text-subtle: #94a3b8;
   --sidebar-hover-bg: #f0f4fa;
-  --sidebar-active-bg: #1e88e5;
+  --sidebar-active-bg: var(--accent);
   --sidebar-active-text: #ffffff;
-  --sidebar-active-shadow: 0 4px 14px rgba(30, 136, 229, 0.22);
+  --sidebar-active-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.22);
   --sidebar-icon: #94a3b8;
   --sidebar-active-icon: #ffffff;
-  --sidebar-brand-icon: #1e88e5;
+  --sidebar-brand-icon: var(--accent);
 
   --bs-primary: var(--accent);
   --bs-primary-rgb: var(--accent-rgb);
@@ -193,7 +193,7 @@
 }
 
 .app-shell--enterprise .app-sidebar__link:hover i {
-  background: rgba(30, 136, 229, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
 }
 
@@ -559,7 +559,7 @@ html[data-bs-theme="dark"] .app-shell--enterprise .app-sidebar__footer {
 .app-shell--enterprise .form-control:focus,
 .app-shell--enterprise .form-select:focus {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.12);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
 }
 
 .app-shell--enterprise .form-label {
@@ -579,7 +579,7 @@ html[data-bs-theme="dark"] .app-shell--enterprise .app-sidebar__footer {
 
 .app-shell--enterprise .compact-search .input-group:focus-within {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
-  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1), var(--shadow-sm);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1), var(--shadow-sm);
 }
 
 .app-shell--enterprise .compact-search .input-group-text {
@@ -920,12 +920,12 @@ html[data-bs-theme="dark"] .app-shell--enterprise {
   --text:          #f1f5f9;
   --text-muted:    #94a3b8;
   --text-subtle:   #64748b;
-  --accent-soft:   rgba(30, 136, 229, 0.14);
+  --accent-soft:   rgba(var(--accent-rgb), 0.14);
 
   --sidebar-bg: #0d0d0d;
   --sidebar-border: #1a1a1a;
-  --sidebar-hover-bg: rgba(30, 136, 229, 0.1);
-  --sidebar-active-bg: #1e88e5;
+  --sidebar-hover-bg: rgba(var(--accent-rgb), 0.1);
+  --sidebar-active-bg: var(--accent);
   --sidebar-active-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);

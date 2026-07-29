@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Controller;
 use App\Core\Flash;
 use App\Core\Settings;
@@ -107,6 +108,8 @@ class SettingsController extends Controller
                 return '';
             }
         }
+
+        ActivityLog::record('update', 'settings', null, 'Updated system settings');
 
         Flash::set('success', 'Settings saved.');
         $this->redirect('/settings');
