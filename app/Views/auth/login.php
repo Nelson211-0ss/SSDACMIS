@@ -27,6 +27,12 @@ $schoolName  = $schoolNameSetting;
 
   <div class="auth-login__grid">
     <aside class="auth-login__aside" aria-hidden="true">
+      <div class="auth-login__slides" data-slideshow>
+        <?php foreach ([1, 2, 3, 4] as $i): ?>
+        <div class="auth-login__slide<?= $i === 1 ? ' is-active' : '' ?>" style="background-image:url('<?= $base ?>/assets/img/login-slide-<?= $i ?>.jpg')"></div>
+        <?php endforeach; ?>
+      </div>
+      <div class="auth-login__aside-overlay"></div>
       <div class="auth-login__aside-glow"></div>
       <a class="auth-login__aside-logo" href="<?= $base ?>/">
         <span class="auth-login__logo-mark"><i class="bi bi-mortarboard-fill"></i></span>
@@ -170,5 +176,20 @@ $schoolName  = $schoolNameSetting;
     }
     input.focus();
   });
+})();
+</script>
+<script>
+(function () {
+  var track = document.querySelector('[data-slideshow]');
+  if (!track) return;
+  var slides = track.querySelectorAll('.auth-login__slide');
+  if (slides.length < 2) return;
+
+  var current = 0;
+  setInterval(function () {
+    slides[current].classList.remove('is-active');
+    current = (current + 1) % slides.length;
+    slides[current].classList.add('is-active');
+  }, 5000);
 })();
 </script>

@@ -43,21 +43,46 @@ body.auth-page--login .auth-credit {
   z-index: 1;
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(360px, 34%) 1fr;
+  grid-template-columns: 1fr 1fr;
   min-height: 0;
 }
 
 .auth-login__aside {
+  --aside-pad: clamp(1.5rem, 3vw, 2.75rem);
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 2rem;
-  padding: clamp(1.5rem, 3vw, 2.75rem);
+  justify-content: center;
+  padding: var(--aside-pad);
   overflow: hidden;
-  background: radial-gradient(ellipse 90% 70% at 20% 0%, rgba(56, 189, 248, 0.35), transparent 60%),
-    linear-gradient(160deg, #0b1224 0%, var(--lp-navy) 45%, #13224a 100%);
+  background: var(--lp-navy);
   color: #fff;
+}
+
+.auth-login__slides {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-login__slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+
+.auth-login__slide.is-active {
+  opacity: 1;
+}
+
+.auth-login__aside-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 20% 0%, rgba(56, 189, 248, 0.35), transparent 60%),
+    linear-gradient(160deg, rgba(11, 18, 36, 0.92) 0%, rgba(15, 23, 42, 0.82) 45%, rgba(19, 34, 74, 0.88) 100%);
 }
 
 .auth-login__aside-glow {
@@ -71,8 +96,10 @@ body.auth-page--login .auth-credit {
 }
 
 .auth-login__aside-logo {
-  position: relative;
+  position: absolute;
   z-index: 1;
+  top: var(--aside-pad);
+  left: var(--aside-pad);
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -135,11 +162,10 @@ body.auth-page--login .auth-credit {
 
 .auth-login__aside-quote {
   margin: 0;
-  padding: 1rem 1.15rem;
-  border-radius: var(--lp-radius);
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(6px);
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
 }
 
 .auth-login__aside-quote i {
@@ -162,8 +188,10 @@ body.auth-page--login .auth-credit {
 }
 
 .auth-login__aside-back {
-  position: relative;
+  position: absolute;
   z-index: 1;
+  bottom: var(--aside-pad);
+  left: var(--aside-pad);
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
