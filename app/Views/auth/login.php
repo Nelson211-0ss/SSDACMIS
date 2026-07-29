@@ -25,7 +25,32 @@ $schoolName  = $schoolNameSetting;
     <a class="auth-login__nav-link" href="<?= $base ?>/"><i class="bi bi-arrow-left"></i> Back to website</a>
   </header>
 
-  <main class="auth-login__main">
+  <div class="auth-login__grid">
+    <aside class="auth-login__aside" aria-hidden="true">
+      <div class="auth-login__aside-glow"></div>
+      <a class="auth-login__aside-logo" href="<?= $base ?>/">
+        <span class="auth-login__logo-mark"><i class="bi bi-mortarboard-fill"></i></span>
+        <span class="auth-login__logo-text">SSDA<span class="auth-login__logo-accent">CMIS</span></span>
+      </a>
+      <div class="auth-login__aside-body">
+        <p class="auth-login__aside-eyebrow">Academic Management Portal</p>
+        <h2 class="auth-login__aside-title">Run your entire institution from one dashboard.</h2>
+        <ul class="auth-login__aside-checks">
+          <li><i class="bi bi-check2-circle"></i> Student &amp; staff records</li>
+          <li><i class="bi bi-check2-circle"></i> Attendance, marks &amp; report cards</li>
+          <li><i class="bi bi-check2-circle"></i> Fees, payments &amp; balances</li>
+          <li><i class="bi bi-check2-circle"></i> Role-based secure access</li>
+        </ul>
+        <blockquote class="auth-login__aside-quote">
+          <i class="bi bi-quote"></i>
+          <p>SSDACMIS has completely transformed our academic administration.</p>
+          <footer>&mdash; School Administrator</footer>
+        </blockquote>
+      </div>
+      <a class="auth-login__aside-back" href="<?= $base ?>/"><i class="bi bi-arrow-left"></i> Back to website</a>
+    </aside>
+
+    <main class="auth-login__main">
     <div class="auth-login__card">
       <div class="auth-login__card-head">
         <?php if ($schoolLogo): ?>
@@ -118,12 +143,13 @@ $schoolName  = $schoolNameSetting;
         Need help? <a href="mailto:support@ssd-acmis.local">Contact your administrator</a>
       </p>
     </div>
-  </main>
 
-  <footer class="auth-login__footer" role="contentinfo">
-    &copy; <?= date('Y') ?><?= $schoolName !== '' ? ' ' . View::e($schoolName) . ' &middot;' : '' ?>
-    <strong>SSDACMIS</strong> by SSD IT Solutions
-  </footer>
+      <footer class="auth-login__footer" role="contentinfo">
+        &copy; <?= date('Y') ?><?= $schoolName !== '' ? ' ' . View::e($schoolName) . ' &middot;' : '' ?>
+        <strong>SSDACMIS</strong> by SSD IT Solutions
+      </footer>
+    </main>
+  </div>
 </div>
 <script>
 (function () {
