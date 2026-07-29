@@ -177,6 +177,51 @@ class DashboardController extends Controller
             }
         }
 
+        // ---------- Student's own summary (attendance, grades, fees) ----------
+        $studentSummary = null;
+        if ($role === 'student') {
+            $studentRow = Database::query(
+                "SELECT s.id, c.name AS class_name
+                 FROM students s
+                 LEFT JOIN classes c ON c.id = s.class_id
+                 WHERE s.user_id = ? LIMIT 1",
+                [(int) (Auth::user()['id'] ?? 0)]
+            )->fetch();
+
+            if ($studentRow) {
+                $studentId = (int) $studentRow['id'];
+
+                $attRow = Database::query(
+                    "SELECT SUM(status = 'present') AS present, COUNT(*) AS total
+                     FROM attendance WHERE student_id = ?",
+                    [$studentId]
+                )->fetch();
+                $attTotal   = (int) ($attRow['total'] ?? 0);
+                $attRatePct = $attTotal > 0 ? (int) round(((int) $attRow['present']) / $attTotal * 100) : null;
+
+                $gradeRow = Database::query(
+                    "SELECT AVG(score) AS avg_score, COUNT(*) AS c FROM grades WHERE student_id = ?",
+                    [$studentId]
+                )->fetch();
+                $avgScore = ((int) ($gradeRow['c'] ?? 0)) > 0 ? round((float) $gradeRow['avg_score'], 1) : null;
+
+                $feeRow = Database::query(
+                    "SELECT COALESCE(SUM(total_amount), 0) AS total, COALESCE(SUM(paid_amount), 0) AS paid
+                     FROM student_fees WHERE student_id = ?",
+                    [$studentId]
+                )->fetch();
+
+                $studentSummary = [
+                    'class_name'      => $studentRow['class_name'] ?? null,
+                    'attendance_rate' => $attRatePct,
+                    'attendance_total' => $attTotal,
+                    'avg_score'       => $avgScore,
+                    'grades_count'    => (int) ($gradeRow['c'] ?? 0),
+                    'fee_balance'     => (float) $feeRow['total'] - (float) $feeRow['paid'],
+                ];
+            }
+        }
+
         $schoolProfile = null;
         if ($schoolId !== null) {
             $schoolProfile = Database::query(
@@ -256,7 +301,8 @@ class DashboardController extends Controller
             'adminOps',
             'schoolProfile',
             'schoolsOverview',
-            'platformTotals'
+            'platformTotals',
+            'studentSummary'
         ));
     }
 }

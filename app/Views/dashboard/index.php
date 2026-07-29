@@ -97,6 +97,15 @@ $sectionBoarding = (int) ($sectionBreakdown['boarding'] ?? 0);
 $streamScience   = (int) ($streamBreakdown['science']   ?? 0);
 $streamArts      = (int) ($streamBreakdown['arts']      ?? 0);
 $sectionTotal    = $sectionDay + $sectionBoarding;
+
+// ---- My summary (student role only) ----
+$studentSummary    = $studentSummary ?? null;
+$myAttendanceRate  = $studentSummary['attendance_rate']  ?? null;
+$myAttendanceTotal = $studentSummary['attendance_total'] ?? 0;
+$myAvgScore        = $studentSummary['avg_score']        ?? null;
+$myGradesCount     = $studentSummary['grades_count']     ?? 0;
+$myFeeBalance      = $studentSummary['fee_balance']       ?? null;
+$myClassName       = $studentSummary['class_name']       ?? null;
 ?>
 
 <?php
@@ -736,7 +745,57 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   </div>
 
 <?php else: ?>
-  <!-- Simple dashboard for students (no analytics) -->
+  <!-- Simple dashboard for students -->
+  <?php if ($studentSummary): ?>
+  <div class="dash-kpi-grid dash-kpi-grid--4 mb-3">
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/reports" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--<?= $myAttendanceRate !== null && $myAttendanceRate >= 80 ? 'success' : ($myAttendanceRate !== null && $myAttendanceRate >= 60 ? 'warning' : 'danger') ?>">
+          <i class="bi bi-calendar-check"></i>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">My attendance</div>
+          <div class="kpi-card__value"><?= $myAttendanceRate !== null ? $myAttendanceRate . '%' : '—' ?></div>
+          <?php if ($myAttendanceTotal > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($myAttendanceTotal) ?> days recorded</div>
+          <?php endif; ?>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/reports" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--indigo"><i class="bi bi-graph-up"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Average score</div>
+          <div class="kpi-card__value"><?= $myAvgScore !== null ? $myAvgScore : '—' ?></div>
+          <?php if ($myGradesCount > 0): ?>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= number_format($myGradesCount) ?> marks recorded</div>
+          <?php endif; ?>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <a href="<?= $base ?>/fees" class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--<?= $myFeeBalance !== null && $myFeeBalance <= 0 ? 'success' : 'warning' ?>">
+          <i class="bi bi-cash-coin"></i>
+        </div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Fees balance</div>
+          <div class="kpi-card__value"><?= $myFeeBalance !== null ? number_format($myFeeBalance, 2) : '—' ?></div>
+        </div>
+      </a>
+    </div>
+    <div class="dash-kpi-grid__item">
+      <div class="kpi-card kpi-card--dash">
+        <div class="kpi-card__icon kpi-card__icon--purple"><i class="bi bi-grid"></i></div>
+        <div class="kpi-card__body">
+          <div class="kpi-card__label">Class</div>
+          <div class="kpi-card__value fs-5"><?= View::e($myClassName ?? '—') ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
   <div class="row g-3">
     <div class="col-lg-8">
       <div class="card h-100">
