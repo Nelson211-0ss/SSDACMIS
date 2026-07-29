@@ -53,6 +53,7 @@ body.auth-page--login .auth-credit {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   padding: var(--aside-pad);
   overflow: hidden;
   background: var(--lp-navy);
