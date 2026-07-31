@@ -27,6 +27,14 @@ $htName   = trim((string)($school['headteacher_name'] ?? ''));
     <a href="<?= $base ?>/schools/<?= (int) $school['id'] ?>/edit" class="btn btn-sm btn-primary">
       <i class="bi bi-pencil"></i> Edit school
     </a>
+    <form class="d-inline ms-auto" method="post"
+          action="<?= $base ?>/schools/<?= (int) $school['id'] ?>/delete"
+          data-confirm="Permanently delete &quot;<?= View::e($school['name']) ?>&quot;? This removes ALL of its data — classes, students, staff, grades, fees and admin accounts — and cannot be undone.">
+      <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+      <button type="submit" class="btn btn-sm btn-outline-danger">
+        <i class="bi bi-trash"></i> Delete school
+      </button>
+    </form>
   </div>
 
   <div class="sa-profile card border-0">
@@ -99,20 +107,25 @@ $htName   = trim((string)($school['headteacher_name'] ?? ''));
         <form method="post" action="<?= $base ?>/schools/<?= (int) $school['id'] ?>/admins">
           <input type="hidden" name="_csrf" value="<?= $csrf ?>">
           <div class="row g-3 align-items-end">
-            <div class="col-md-5">
+            <div class="col-md-4">
               <label class="form-label fw-semibold">Full name <span class="text-danger">*</span></label>
               <input type="text" name="name" class="form-control" required>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-4">
               <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
               <input type="email" name="email" class="form-control" required>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Password <span class="text-muted fw-normal">(optional)</span></label>
+              <input type="text" name="password" class="form-control" minlength="8"
+                     placeholder="Leave blank to auto-generate" autocomplete="new-password">
+            </div>
+            <div class="col-md-1">
               <button type="submit" class="btn btn-primary w-100">Create</button>
             </div>
           </div>
           <p class="form-text small mb-0 mt-2">
-            <i class="bi bi-info-circle"></i> A random password is generated and sent by email.
+            <i class="bi bi-info-circle"></i> Set a specific password above (min. 8 characters), or leave it blank to auto-generate one. Either way it's emailed to the new admin.
           </p>
         </form>
       </div>
@@ -155,12 +168,17 @@ $htName   = trim((string)($school['headteacher_name'] ?? ''));
               <td class="text-end text-nowrap">
                 <form class="d-inline" method="post"
                       action="<?= $base ?>/school-admins/<?= (int) $a['id'] ?>/resend"
-                      title="Reset password and resend login">
+                      title="Auto-generate a new password and email it">
                   <input type="hidden" name="_csrf" value="<?= $csrf ?>">
                   <button type="submit" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-envelope-arrow-up"></i><span class="d-none d-lg-inline"> Resend</span>
                   </button>
                 </form>
+                <button class="btn btn-sm btn-outline-secondary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#setPw<?= (int) $a['id'] ?>"
+                        title="Manually set a specific password">
+                  <i class="bi bi-key"></i><span class="d-none d-lg-inline"> Set password</span>
+                </button>
                 <form class="d-inline" method="post"
                       action="<?= $base ?>/school-admins/<?= (int) $a['id'] ?>/delete"
                       data-confirm="Remove this school admin? They will no longer be able to sign in.">
@@ -168,6 +186,22 @@ $htName   = trim((string)($school['headteacher_name'] ?? ''));
                   <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove">
                     <i class="bi bi-trash"></i>
                   </button>
+                </form>
+              </td>
+            </tr>
+            <tr class="collapse" id="setPw<?= (int) $a['id'] ?>">
+              <td colspan="5" class="bg-body-secondary">
+                <form class="row g-2 align-items-end py-1" method="post"
+                      action="<?= $base ?>/school-admins/<?= (int) $a['id'] ?>/set-password">
+                  <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+                  <div class="col-sm-5 col-md-4">
+                    <label class="form-label small fw-semibold mb-1">New password for <?= View::e($a['name']) ?></label>
+                    <input type="text" name="password" class="form-control form-control-sm" minlength="8" required
+                           placeholder="Min. 8 characters" autocomplete="new-password">
+                  </div>
+                  <div class="col-sm-auto">
+                    <button type="submit" class="btn btn-sm btn-primary">Save &amp; email</button>
+                  </div>
                 </form>
               </td>
             </tr>

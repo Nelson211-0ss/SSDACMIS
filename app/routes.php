@@ -194,9 +194,11 @@ $router->post('/schools',                    'SchoolController@store',         [
 $router->get('/schools/{id}',                'SchoolController@show',          [$adminOnly]);
 $router->get('/schools/{id}/edit',           'SchoolController@edit',          [$adminOnly]);
 $router->post('/schools/{id}',               'SchoolController@update',        [$adminOnly]);
-$router->post('/schools/{id}/admins',        'SchoolAdminController@store',    [$adminOnly]);
-$router->post('/school-admins/{id}/resend',  'SchoolAdminController@resend',   [$adminOnly]);
-$router->post('/school-admins/{id}/delete',  'SchoolAdminController@destroy',  [$adminOnly]);
+$router->post('/schools/{id}/admins',            'SchoolAdminController@store',       [$adminOnly]);
+$router->post('/school-admins/{id}/resend',      'SchoolAdminController@resend',      [$adminOnly]);
+$router->post('/school-admins/{id}/set-password','SchoolAdminController@setPassword', [$adminOnly]);
+$router->post('/school-admins/{id}/delete',      'SchoolAdminController@destroy',     [$adminOnly]);
+$router->post('/schools/{id}/delete',            'SchoolController@destroy',          [$adminOnly]);
 
 // Password management
 $router->get('/forgot-password',   'PasswordController@forgotForm',    []);

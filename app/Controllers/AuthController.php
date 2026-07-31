@@ -137,7 +137,11 @@ class AuthController extends Controller
     {
         $this->validateCsrf();
         $email    = trim((string) $this->input('email'));
-        $password = (string) $this->input('password');
+        // Trim stray whitespace/newlines that mail clients or copy-paste can
+        // append to a password (e.g. selecting across a table cell in the
+        // welcome email). Generated temp passwords are pure hex, so this is
+        // always safe and never strips an intentional character.
+        $password = trim((string) $this->input('password'));
 
         if ($lock = $this->checkThrottle()) {
             return $this->view('auth/login', ['error' => $lock, 'old' => compact('email')]);

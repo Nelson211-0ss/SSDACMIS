@@ -10,8 +10,10 @@ use App\Services\MailService;
 /**
  * Super-admin creates and removes school_admin accounts for a specific school.
  *
- *   POST /schools/{id}/admins           -> create school_admin (auto-generates password, sends email)
- *   POST /school-admins/{id}/delete     -> remove school_admin
+ *   POST /schools/{id}/admins              -> create school_admin (manual or auto-generated password, sends email)
+ *   POST /school-admins/{id}/resend        -> regenerate a random password and resend it
+ *   POST /school-admins/{id}/set-password  -> manually set a specific password and email it
+ *   POST /school-admins/{id}/delete        -> remove school_admin
  */
 class SchoolAdminController extends Controller
 {
@@ -43,7 +45,14 @@ class SchoolAdminController extends Controller
             return '';
         }
 
-        $plain = bin2hex(random_bytes(8)); // 16-character hex password
+        // A super admin may type a specific password; otherwise one is generated.
+        $manual = trim((string) $this->input('password', ''));
+        if ($manual !== '' && strlen($manual) < 8) {
+            Flash::set('danger', 'Password must be at least 8 characters.');
+            $this->redirect('/schools/' . (int) $schoolId);
+            return '';
+        }
+        $plain = $manual !== '' ? $manual : bin2hex(random_bytes(8)); // 16-character hex password when auto-generated
 
         Database::query(
             "INSERT INTO users (school_id, name, email, password, role, status)
@@ -98,6 +107,50 @@ class SchoolAdminController extends Controller
         $sent = MailService::send($user['email'], $user['name'], "Your School Admin Account — {$appName}", $html);
 
         $msg = "Credentials resent to {$user['name']}.";
+        if (!$sent) {
+            $msg = "Email delivery failed — new password for {$user['name']}: {$plain} (share this manually)";
+        }
+        Flash::set($sent ? 'success' : 'warning', $msg);
+        $this->redirect('/schools/' . (int) $user['school_id']);
+        return '';
+    }
+
+    /** Super admin manually sets a specific password for an existing school admin. */
+    public function setPassword(string $id): string
+    {
+        $this->validateCsrf();
+
+        $user = Database::query(
+            "SELECT u.id, u.name, u.email, u.school_id, s.name AS school_name
+             FROM users u
+             JOIN schools s ON s.id = u.school_id
+             WHERE u.id = ? AND u.role = 'school_admin' LIMIT 1",
+            [(int) $id]
+        )->fetch();
+
+        if (!$user) { http_response_code(404); return $this->view('errors/404'); }
+
+        $plain = trim((string) $this->input('password', ''));
+        if (strlen($plain) < 8) {
+            Flash::set('danger', 'Password must be at least 8 characters.');
+            $this->redirect('/schools/' . (int) $user['school_id']);
+            return '';
+        }
+
+        Database::query(
+            "UPDATE users SET password = ? WHERE id = ?",
+            [password_hash($plain, PASSWORD_DEFAULT), (int) $id]
+        );
+
+        ActivityLog::record('update', 'school_admin', (int) $id, "Manually set a new password for school admin {$user['name']} ({$user['email']})");
+
+        $appUrl  = rtrim($_ENV['APP_URL'] ?? '', '/');
+        $appName = $_ENV['APP_NAME'] ?? 'SSD-ACMIS';
+        $html    = self::welcomeEmail($user['name'], $user['school_name'], $user['email'], $plain, $appUrl, $appName);
+
+        $sent = MailService::send($user['email'], $user['name'], "Your {$appName} Password Was Updated", $html);
+
+        $msg = "Password updated for {$user['name']}.";
         if (!$sent) {
             $msg = "Email delivery failed — new password for {$user['name']}: {$plain} (share this manually)";
         }

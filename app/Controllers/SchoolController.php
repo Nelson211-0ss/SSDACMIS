@@ -15,6 +15,7 @@ use App\Core\Flash;
  *   GET  /schools/{id}         -> school detail + school_admin list
  *   GET  /schools/{id}/edit    -> edit school form
  *   POST /schools/{id}         -> update school
+ *   POST /schools/{id}/delete  -> permanently delete school + all its data
  */
 class SchoolController extends Controller
 {
@@ -214,6 +215,46 @@ class SchoolController extends Controller
 
         Flash::set('success', 'School updated.');
         $this->redirect('/schools/' . (int) $id);
+        return '';
+    }
+
+    /**
+     * Permanently delete a school and everything scoped to it.
+     *
+     * Most tables (classes, subjects, students, staff, attendance, grades,
+     * teaching_assignments, department_heads, fees_structure, student_fees,
+     * payments, announcements) have `school_id` as ON DELETE CASCADE, so the
+     * DELETE FROM schools below wipes them automatically. `users.school_id`
+     * is ON DELETE SET NULL though — left alone, every school_admin/staff/
+     * hod/bursar/student login for this school would survive as an orphaned,
+     * schoolless account. We delete those accounts explicitly first.
+     */
+    public function destroy(string $id): string
+    {
+        $this->validateCsrf();
+        $school = Database::query("SELECT * FROM schools WHERE id = ? LIMIT 1", [(int) $id])->fetch();
+        if (!$school) { http_response_code(404); return $this->view('errors/404'); }
+
+        $pdo = Database::connection();
+        $pdo->beginTransaction();
+        try {
+            Database::query("DELETE FROM users WHERE school_id = ?", [(int) $id]);
+            Database::query("DELETE FROM schools WHERE id = ?", [(int) $id]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            Flash::set('danger', 'Could not delete this school. Please try again.');
+            $this->redirect('/schools/' . (int) $id);
+            return '';
+        }
+
+        $this->deleteUpload((string) ($school['logo'] ?? ''));
+        $this->deleteUpload((string) ($school['headteacher_signature'] ?? ''));
+
+        ActivityLog::record('delete', 'school', (int) $id, "Deleted school {$school['name']} and all its data");
+
+        Flash::set('success', "School \"{$school['name']}\" and all its data have been deleted.");
+        $this->redirect('/schools');
         return '';
     }
 

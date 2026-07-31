@@ -66,6 +66,14 @@ $title  = 'Schools';
                 <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/schools/<?= (int) $s['id'] ?>/edit" title="Edit">
                   <i class="bi bi-pencil"></i>
                 </a>
+                <form class="d-inline" method="post"
+                      action="<?= $base ?>/schools/<?= (int) $s['id'] ?>/delete"
+                      data-confirm="Permanently delete &quot;<?= View::e($s['name']) ?>&quot;? This removes ALL of its data — classes, students, staff, grades, fees and admin accounts — and cannot be undone.">
+                  <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
               </td>
             </tr>
           <?php endforeach; endif; ?>

@@ -131,7 +131,17 @@ class MailService
         string $htmlBody
     ): string {
         $boundary = '----=_Part_' . md5(uniqid((string) mt_rand(), true));
-        $plain    = strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $htmlBody) ?? $htmlBody);
+        // Insert line breaks at block-element boundaries before stripping tags,
+        // otherwise adjacent <td>/<tr>/<p> text (e.g. a label and the value
+        // next to it, like "Temporary Password" + the password itself) gets
+        // concatenated with no separator in the plain-text fallback — which
+        // some mail clients show/copy instead of the HTML part.
+        $withBreaks = preg_replace(
+            '/<\s*(br|\/tr|\/td|\/p|\/div|\/h[1-6])\s*\/?>/i',
+            "\n",
+            $htmlBody
+        ) ?? $htmlBody;
+        $plain = trim(preg_replace('/[ \t]*\n[ \t]*/', "\n", strip_tags($withBreaks)) ?? strip_tags($withBreaks));
 
         $lines   = [];
         $lines[] = 'MIME-Version: 1.0';
