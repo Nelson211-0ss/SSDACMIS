@@ -66,7 +66,8 @@ $subLabel = static function (array $sub): string {
   <?php if (empty($rows)): ?>
     <div class="alert alert-warning border-0 shadow-sm d-print-none">
       No computed results for this class and period yet. Enter <strong>Mid-term</strong> (max <?= (int) $midMax ?>)
-      and <strong>End-of-term</strong> (max <?= (int) $endMax ?>) marks — totals and positions update automatically when marks are saved.
+      and/or <strong>End-of-term</strong> (max <?= (int) $endMax ?>) marks — averages and positions update automatically
+      as soon as marks are saved, even before both are entered.
     </div>
   <?php else: ?>
     <?php if (!empty($subjectCols)): ?>

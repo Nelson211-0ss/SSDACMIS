@@ -122,14 +122,27 @@ final class AcademicMarking
     }
 
     /**
-     * Subject total only when BOTH components exist (South Sudan composite).
+     * Subject total (South Sudan composite: Mid ×/30 + End ×/70 = /100).
+     *
+     * When only one component has been entered so far (e.g. mid-term marks
+     * are in but end-term hasn't happened yet), the entered component is
+     * scaled up to a /100 interim figure instead of returning null. This lets
+     * averages, letter grades and class rankings be produced from mid-term
+     * results alone rather than sitting blank until end-term is complete —
+     * once both components exist, the real Mid + End sum is used instead.
      */
     public static function subjectTotal(?float $mid, ?float $end): ?float
     {
-        if ($mid === null || $end === null) {
-            return null;
+        if ($mid !== null && $end !== null) {
+            return round(min(self::TOTAL_MAX, $mid + $end), 2);
         }
-        return round(min(self::TOTAL_MAX, $mid + $end), 2);
+        if ($mid !== null) {
+            return round(min(self::TOTAL_MAX, ($mid / self::MID_MAX) * self::TOTAL_MAX), 2);
+        }
+        if ($end !== null) {
+            return round(min(self::TOTAL_MAX, ($end / self::END_MAX) * self::TOTAL_MAX), 2);
+        }
+        return null;
     }
 
     /**
