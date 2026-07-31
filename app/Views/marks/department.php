@@ -8,6 +8,7 @@ $catName  = $catLabel[$category] ?? ucfirst($category);
 $badge    = $catBadge[$category]  ?? 'bg-secondary';
 $existingMid = $existingMid ?? [];
 $existingEnd = $existingEnd ?? [];
+$tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
   <div>
@@ -36,15 +37,13 @@ $existingEnd = $existingEnd ?? [];
 ?>
 
 <?php if ($streamScoped): ?>
-  <div class="alert alert-warning py-2 small d-flex align-items-center gap-2 mb-3">
+  <div class="msheet-stream-note">
     <i class="bi bi-funnel-fill"></i>
-    <div>
-      Form 3/4 <strong class="text-capitalize"><?= View::e($category) ?></strong> department: only <strong class="text-capitalize"><?= View::e($category) ?></strong> stream students appear in this matrix.
-    </div>
+    <span>Form 3/4 <strong class="text-capitalize"><?= View::e($category) ?></strong> department: only <strong class="text-capitalize"><?= View::e($category) ?></strong> stream students appear in this matrix.</span>
   </div>
 <?php endif; ?>
 
-<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/department" class="card border-0 shadow-sm mb-3">
+<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/department" class="card border-0 shadow-sm mb-3" data-sheet-reload>
   <input type="hidden" name="class_id" value="<?= (int) $class['id'] ?>">
   <input type="hidden" name="category" value="<?= View::e($category) ?>">
   <div class="card-body row g-3 align-items-end">
@@ -84,27 +83,49 @@ $existingEnd = $existingEnd ?? [];
     <input type="hidden" name="year"      value="<?= View::e($year) ?>">
     <input type="hidden" name="term"      value="<?= View::e($term) ?>">
 
-    <div class="card border-0 shadow-sm dept-marks-card">
-      <div class="table-responsive">
-        <table class="table table-sm mb-0 align-middle dept-marks-table">
-          <thead class="table-light">
+    <?php if (count($subjects) > 3): ?>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2 d-print-none">
+        <span class="small text-muted">Jump to:</span>
+        <?php foreach ($subjects as $sub): ?>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" data-jump-subject="<?= (int) $sub['id'] ?>">
+            <?= View::e($sub['name']) ?>
+          </button>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    <div class="card border-0 shadow-sm marks-sheet-card">
+      <div class="marks-sheet-toolbar">
+        <div class="marks-sheet-toolbar__left">
+          <span class="marks-sheet-progress" data-sheet-progress>
+            <i class="bi bi-list-check"></i>
+            <span data-progress-count>0 / 0 entered</span>
+            <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
+          </span>
+          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill" style="font-size:.5rem"></i> Unsaved changes</span>
+        </div>
+        <div class="small text-muted">Mid ≤ 30 · End ≤ 70 per subject · ↑↓ or Enter moves rows</div>
+      </div>
+      <div class="marks-sheet-scroll">
+        <table class="marks-sheet">
+          <thead>
             <tr>
-              <th class="dept-marks-sticky-num">#</th>
-              <th class="dept-marks-sticky-adm">Admission</th>
-              <th class="dept-marks-sticky-name">Student</th>
+              <th class="msheet-sticky-1">#</th>
+              <th class="msheet-sticky-2">Admission</th>
+              <th class="msheet-sticky-3">Student</th>
               <?php foreach ($subjects as $sub): ?>
-                <th class="text-center dept-marks-subj-head" colspan="2">
-                  <div class="fw-semibold small"><?= View::e($sub['name']) ?></div>
+                <th class="text-center" colspan="2" id="subj-head-<?= (int) $sub['id'] ?>">
+                  <div class="fw-semibold" style="font-size:.72rem; text-transform:none; letter-spacing:0;"><?= View::e($sub['name']) ?></div>
                   <?php if (!empty($sub['code'])): ?>
-                    <div class="text-muted extra-small"><?= View::e($sub['code']) ?></div>
+                    <div class="text-muted" style="font-size:.62rem; text-transform:none;"><?= View::e($sub['code']) ?></div>
                   <?php endif; ?>
                   <div class="d-flex border-top mt-1 pt-1">
-                    <span class="flex-fill text-primary small" title="Max 30">Mid</span>
-                    <span class="flex-fill text-indigo small" title="Max 70">End</span>
+                    <span class="flex-fill text-primary" style="font-size:.65rem; text-transform:none;" title="Max 30">Mid</span>
+                    <span class="flex-fill" style="font-size:.65rem; text-transform:none; color:#4f46e5;" title="Max 70">End</span>
                   </div>
                 </th>
               <?php endforeach; ?>
-              <th class="text-center small" style="width:5rem" title="Mean of subject totals (Mid+End where both entered)">Avg %</th>
+              <th class="text-center" title="Average % across subjects entered so far">Avg %</th>
             </tr>
           </thead>
           <tbody>
@@ -113,10 +134,10 @@ $existingEnd = $existingEnd ?? [];
               $rowMid = $existingMid[$sid] ?? [];
               $rowEnd = $existingEnd[$sid] ?? [];
             ?>
-              <tr data-row>
-                <td class="text-muted small dept-marks-sticky-num"><?= $i + 1 ?></td>
-                <td class="font-monospace small dept-marks-sticky-adm"><?= View::e($st['admission_no']) ?></td>
-                <td class="dept-marks-sticky-name"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
+              <tr data-row="<?= $i ?>">
+                <td class="msheet-sticky-1 msheet-row-num"><?= $i + 1 ?></td>
+                <td class="msheet-sticky-2 font-monospace small"><?= View::e($st['admission_no']) ?></td>
+                <td class="msheet-sticky-3"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
                 <?php foreach ($subjects as $sub):
                   $subId = (int) $sub['id'];
                   $m = $rowMid[$subId] ?? '';
@@ -124,16 +145,18 @@ $existingEnd = $existingEnd ?? [];
                   $md = $m !== '' ? rtrim(rtrim(number_format((float) $m, 2, '.', ''), '0'), '.') : '';
                   $ed = $e !== '' ? rtrim(rtrim(number_format((float) $e, 2, '.', ''), '0'), '.') : '';
                 ?>
-                  <td class="p-1 text-center" style="min-width:4.5rem">
-                    <input type="number" min="0" max="30" step="0.01"
-                           class="form-control form-control-sm score-mid text-end"
+                  <td>
+                    <input type="text" inputmode="decimal" autocomplete="off"
+                           class="msheet-input score-mid"
+                           data-row="<?= $i ?>" data-col="mid-<?= $subId ?>"
                            name="scores_mid[<?= $sid ?>][<?= $subId ?>]"
                            value="<?= View::e($md) ?>"
                            placeholder="—" aria-label="Mid <?= View::e($sub['name']) ?>">
                   </td>
-                  <td class="p-1 text-center" style="min-width:4.5rem">
-                    <input type="number" min="0" max="70" step="0.01"
-                           class="form-control form-control-sm score-end text-end"
+                  <td>
+                    <input type="text" inputmode="decimal" autocomplete="off"
+                           class="msheet-input score-end"
+                           data-row="<?= $i ?>" data-col="end-<?= $subId ?>"
                            name="scores_end[<?= $sid ?>][<?= $subId ?>]"
                            value="<?= View::e($ed) ?>"
                            placeholder="—" aria-label="End <?= View::e($sub['name']) ?>">
@@ -145,73 +168,23 @@ $existingEnd = $existingEnd ?? [];
           </tbody>
         </table>
       </div>
-      <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="small text-muted">
-          Mid-term ≤ 30 · End-of-term ≤ 70 per subject. Leave blank to skip. Results overview updates after save.
+          Leave blank to skip. Results overview updates after save — averages/positions compute from mid-term alone if end-term isn't in yet.
         </div>
         <div class="d-flex gap-2">
           <a class="btn btn-outline-primary btn-sm"
              href="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $class['id'] ?>/booklet?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
             <i class="bi bi-printer"></i> Print class reports
           </a>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save all marks</button>
+          <button type="submit" class="btn btn-primary" data-sheet-submit><i class="bi bi-save"></i> Save all marks</button>
         </div>
       </div>
     </div>
   </form>
 <?php endif; ?>
 
-<style>
-  .dept-marks-table thead th { white-space: nowrap; vertical-align: bottom; }
-  .dept-marks-sticky-num  { position: sticky; left: 0;  z-index: 2; background: var(--bs-body-bg); box-shadow: 1px 0 0 var(--bs-border-color); }
-  .dept-marks-sticky-adm  { position: sticky; left: 2.25rem; z-index: 2; background: var(--bs-body-bg); box-shadow: 1px 0 0 var(--bs-border-color); }
-  .dept-marks-sticky-name { position: sticky; left: 9.5rem; z-index: 2; min-width: 7rem; background: var(--bs-body-bg); box-shadow: 1px 0 0 var(--bs-border-color); }
-  .dept-marks-subj-head { min-width: 7rem; }
-  .text-indigo { color: #4f46e5 !important; }
-  .dept-marks-card .form-control-sm { min-height: 2rem; padding: 0.2rem 0.35rem; font-size: 0.8125rem; }
-  .extra-small { font-size: 0.65rem; }
-</style>
-
 <script src="<?= View::asset($base, 'assets/js/academic-marks.js') ?>"></script>
 <script>
-(function () {
-  function pv(inp) {
-    var v = String(inp.value || '').trim();
-    if (v === '') return null;
-    var n = parseFloat(v.replace(',', '.'));
-    return Number.isFinite(n) ? n : NaN;
-  }
-  document.querySelectorAll('tr[data-row]').forEach(function (tr) {
-    var mids = tr.querySelectorAll('.score-mid');
-    var ends = tr.querySelectorAll('.score-end');
-    var avgEl = tr.querySelector('.row-avg');
-    if (!mids.length || !ends.length || !avgEl) return;
-
-    function recalc() {
-      var sum = 0, n = 0;
-      for (var i = 0; i < mids.length; i++) {
-        var m = pv(mids[i]);
-        var e = pv(ends[i]);
-        if (m === null || e === null) continue;
-        if (!SSDACMIS.academicMarks.validateMid(m).ok || !SSDACMIS.academicMarks.validateEnd(e).ok) continue;
-        sum += Math.min(100, m + e);
-        n++;
-      }
-      if (!n) {
-        avgEl.textContent = '—';
-        avgEl.className = 'badge bg-secondary row-avg';
-        return;
-      }
-      var avg = sum / n;
-      avgEl.textContent = avg.toFixed(2);
-      var lg = SSDACMIS.academicMarks.letterFromTotal(avg);
-      avgEl.className = 'badge row-avg bg-' + lg[1];
-    }
-    [].forEach.call(mids, function (inp) { inp.addEventListener('input', recalc); });
-    [].forEach.call(ends, function (inp) { inp.addEventListener('input', recalc); });
-    recalc();
-  });
-  SSDACMIS.academicMarks.attachFormGuard('marks-dept-form', true);
-  SSDACMIS.academicMarks.attachFieldBlurValidation(document.getElementById('marks-dept-form'));
-})();
+SSDACMIS.academicMarks.initDepartmentSheet(document.getElementById('marks-dept-form'), { tiers: <?= $tiersJson ?> });
 </script>

@@ -139,7 +139,11 @@ final class TermResultsService
                     $midSql = $mid !== null ? round($mid, 2) : null;
                     $endSql = $end !== null ? round($end, 2) : null;
                     $total = AcademicMarking::subjectTotal($mid, $end);
-                    $letter = $total !== null ? AcademicMarking::letterGrade($total) : null;
+                    // Grade off the percentage (not the raw total) so a mid-only
+                    // subject — stored and shown out of 30 — is graded exactly as
+                    // if it were graded out of 30, not misread against a /100 scale.
+                    $pct = AcademicMarking::subjectPercentage($mid, $end);
+                    $letter = $pct !== null ? AcademicMarking::letterGrade($pct) : null;
 
                     $stmtInsSub->execute([
                         $studentId,
@@ -165,8 +169,21 @@ final class TermResultsService
                 $averages = [];
                 foreach ($memberRows as $meta) {
                     $sid = (int) $meta['student_id'];
+                    // Average the PERCENTAGE of each subject (not the raw
+                    // total_marks) — a mid-only subject is stored out of 30, a
+                    // complete one out of 100, so summing raw totals directly
+                    // would silently corrupt the average the moment a student
+                    // has a mix of the two. mid_marks/end_marks (already
+                    // stored per row) tell us which denominator applied.
                     $sumRow = Database::query(
-                        'SELECT COUNT(*) AS n, COALESCE(SUM(total_marks), 0) AS s
+                        'SELECT COUNT(*) AS n, COALESCE(SUM(
+                            CASE
+                                WHEN mid_marks IS NOT NULL AND end_marks IS NOT NULL THEN total_marks
+                                WHEN mid_marks IS NOT NULL THEN mid_marks / ' . AcademicMarking::MID_MAX . ' * 100
+                                WHEN end_marks IS NOT NULL THEN end_marks / ' . AcademicMarking::END_MAX . ' * 100
+                                ELSE NULL
+                            END
+                         ), 0) AS s
                          FROM term_subject_results
                          WHERE student_id = ? AND academic_year = ? AND term = ?
                            AND total_marks IS NOT NULL',

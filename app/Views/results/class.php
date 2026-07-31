@@ -99,7 +99,7 @@ $subLabel = static function (array $sub): string {
                 ?>
                   <td class="text-center small rd-subj-cell px-1">
                     <?php if ($cell !== null && $cell['total'] !== null): ?>
-                      <span class="font-monospace"><?= View::e(rtrim(rtrim(number_format((float) $cell['total'], 1, '.', ''), '0'), '.')) ?></span><?php if (!empty($cell['grade'])): ?><span class="text-muted ms-1"><?= View::e((string) $cell['grade']) ?></span><?php endif; ?>
+                      <span class="font-monospace"><?= View::e(rtrim(rtrim(number_format((float) $cell['total'], 1, '.', ''), '0'), '.')) ?><?php if (!empty($cell['max'])): ?><span class="text-muted">/<?= (int) $cell['max'] ?></span><?php endif; ?></span><?php if (!empty($cell['grade'])): ?><span class="text-muted ms-1"><?= View::e((string) $cell['grade']) ?></span><?php endif; ?>
                     <?php else: ?>
                       —
                     <?php endif; ?>

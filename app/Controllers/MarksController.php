@@ -466,6 +466,7 @@ class MarksController extends Controller
             'terms'        => self::TERMS,
             'exams'        => self::EXAMS,
             'years'        => self::selectableYears(),
+            'gradingTiers' => AcademicMarking::gradingTiers(),
         ]);
     }
 
@@ -815,17 +816,18 @@ class MarksController extends Controller
         }
 
         return $this->view('marks/department', [
-            'class'       => $class,
-            'category'    => $category,
-            'subjects'    => $subjects,
-            'students'    => $students,
-            'existingMid' => $existingMid,
-            'existingEnd' => $existingEnd,
-            'year'        => $year,
-            'term'        => $term,
-            'terms'       => self::TERMS,
-            'exams'       => self::EXAMS,
-            'years'       => self::selectableYears(),
+            'class'        => $class,
+            'category'     => $category,
+            'subjects'     => $subjects,
+            'students'     => $students,
+            'existingMid'  => $existingMid,
+            'existingEnd'  => $existingEnd,
+            'year'         => $year,
+            'term'         => $term,
+            'terms'        => self::TERMS,
+            'exams'        => self::EXAMS,
+            'years'        => self::selectableYears(),
+            'gradingTiers' => AcademicMarking::gradingTiers(),
         ]);
     }
 

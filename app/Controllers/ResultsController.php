@@ -202,7 +202,8 @@ class ResultsController extends Controller
         $cells = [];
         if ($subjectCols !== []) {
             $schoolId = Auth::schoolId();
-            $srSql = 'SELECT tsr.student_id, tsr.subject_id, tsr.total_marks, tsr.letter_grade
+            $srSql = 'SELECT tsr.student_id, tsr.subject_id, tsr.total_marks, tsr.letter_grade,
+                             tsr.mid_marks, tsr.end_marks
                  FROM term_subject_results tsr
                  INNER JOIN subjects sub ON sub.id = tsr.subject_id AND sub.is_offered = 1'
                  . ($schoolId !== null ? ' AND sub.school_id = ?' : '')
@@ -212,8 +213,11 @@ class ResultsController extends Controller
             foreach ($sr as $r) {
                 $sid = (int) $r['student_id'];
                 $bid = (int) $r['subject_id'];
+                $mid = $r['mid_marks'] !== null ? (float) $r['mid_marks'] : null;
+                $end = $r['end_marks'] !== null ? (float) $r['end_marks'] : null;
                 $cells[$sid][$bid] = [
                     'total' => $r['total_marks'],
+                    'max'   => AcademicMarking::subjectMax($mid, $end),
                     'grade' => $r['letter_grade'],
                 ];
             }

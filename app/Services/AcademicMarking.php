@@ -122,14 +122,12 @@ final class AcademicMarking
     }
 
     /**
-     * Subject total (South Sudan composite: Mid ×/30 + End ×/70 = /100).
-     *
-     * When only one component has been entered so far (e.g. mid-term marks
-     * are in but end-term hasn't happened yet), the entered component is
-     * scaled up to a /100 interim figure instead of returning null. This lets
-     * averages, letter grades and class rankings be produced from mid-term
-     * results alone rather than sitting blank until end-term is complete —
-     * once both components exist, the real Mid + End sum is used instead.
+     * Raw subject total: Mid + End once both exist (max 100); otherwise the
+     * single entered component, taken at face value against ITS OWN max —
+     * i.e. out of 30 when only mid-term is in, out of 70 when only end-term
+     * is in. Nothing is scaled up here; use subjectMax() to know the
+     * denominator and subjectPercentage() for anything that needs a
+     * comparable 0–100 figure (grading, remarks, averages, ranking).
      */
     public static function subjectTotal(?float $mid, ?float $end): ?float
     {
@@ -137,12 +135,44 @@ final class AcademicMarking
             return round(min(self::TOTAL_MAX, $mid + $end), 2);
         }
         if ($mid !== null) {
-            return round(min(self::TOTAL_MAX, ($mid / self::MID_MAX) * self::TOTAL_MAX), 2);
+            return round($mid, 2);
         }
         if ($end !== null) {
-            return round(min(self::TOTAL_MAX, ($end / self::END_MAX) * self::TOTAL_MAX), 2);
+            return round($end, 2);
         }
         return null;
+    }
+
+    /** The denominator subjectTotal() is out of, given which components exist. */
+    public static function subjectMax(?float $mid, ?float $end): ?int
+    {
+        if ($mid !== null && $end !== null) {
+            return (int) self::TOTAL_MAX;
+        }
+        if ($mid !== null) {
+            return (int) self::MID_MAX;
+        }
+        if ($end !== null) {
+            return (int) self::END_MAX;
+        }
+        return null;
+    }
+
+    /**
+     * subjectTotal() expressed as a 0–100 percentage of subjectMax() — the
+     * only figure that's valid to average or rank across subjects that may
+     * currently be on different denominators (some /30 mid-only, some /100
+     * complete). Grading tiers, remarks, and cross-subject averages must
+     * always be computed from THIS, never from the raw total directly.
+     */
+    public static function subjectPercentage(?float $mid, ?float $end): ?float
+    {
+        $total = self::subjectTotal($mid, $end);
+        $max   = self::subjectMax($mid, $end);
+        if ($total === null || $max === null || $max <= 0) {
+            return null;
+        }
+        return round(min(100.0, ($total / $max) * 100), 2);
     }
 
     /**
@@ -262,6 +292,8 @@ final class AcademicMarking
 
         $grouped = [];
         $totalSum = 0.0;
+        $maxSum   = 0;
+        $pctSum   = 0.0;
         $subjectCount = 0;
 
         foreach ($subjects as $sub) {
@@ -269,9 +301,13 @@ final class AcademicMarking
             $mid = $byId[$sid]['midterm'] ?? null;
             $end = $byId[$sid]['endterm'] ?? null;
             $total = self::subjectTotal($mid, $end);
+            $max   = self::subjectMax($mid, $end);
+            $pct   = self::subjectPercentage($mid, $end);
 
-            if ($total !== null) {
+            if ($total !== null && $pct !== null) {
                 $totalSum += $total;
+                $maxSum   += $max;
+                $pctSum   += $pct;
                 $subjectCount++;
             }
 
@@ -282,10 +318,11 @@ final class AcademicMarking
                 'midterm' => $mid,
                 'endterm' => $end,
                 'total'   => $total,
-                // Legacy column name used by older templates — equals subject total (mid+end).
+                'max'     => $max,
+                // Legacy column name used by older templates — equals subject total (raw, out of `max`).
                 'average' => $total,
-                'grade'   => $total !== null ? self::letterGrade($total) : '—',
-                'remark'  => $total !== null ? self::remarkForAverage($total) : '',
+                'grade'   => $pct !== null ? self::letterGrade($pct) : '—',
+                'remark'  => $pct !== null ? self::remarkForAverage($pct) : '',
             ];
         }
 
@@ -302,14 +339,19 @@ final class AcademicMarking
             }
         }
 
-        $average = $subjectCount > 0 ? round($totalSum / $subjectCount, 2) : null;
+        // `average` is always a genuine 0–100 percentage — the mean of each
+        // subject's own percentage, never the raw totals — so it stays valid
+        // and comparable for ranking even when subjects are on different
+        // denominators (some /30 mid-only, some /100 complete).
+        $average = $subjectCount > 0 ? round($pctSum / $subjectCount, 2) : null;
 
         return [
-            'groups'  => $sorted,
-            'total'   => $totalSum,
-            'count'   => $subjectCount,
-            'average' => $average,
-            'grade'   => $average !== null ? self::letterGrade((float) $average) : '—',
+            'groups'   => $sorted,
+            'total'    => $totalSum,
+            'maxTotal' => $maxSum,
+            'count'    => $subjectCount,
+            'average'  => $average,
+            'grade'    => $average !== null ? self::letterGrade((float) $average) : '—',
         ];
     }
 

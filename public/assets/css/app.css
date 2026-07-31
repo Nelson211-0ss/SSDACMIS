@@ -5781,6 +5781,190 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   }
 }
 
+/* ---------- Marks entry sheet: sticky, comfortable, at-a-glance ---------- */
+.marks-sheet-card {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+}
+.marks-sheet-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.marks-sheet-toolbar__left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  min-width: 0;
+}
+.marks-sheet-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .3rem .7rem;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), .1);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: .78rem;
+  white-space: nowrap;
+}
+.marks-sheet-progress__bar {
+  width: 4rem;
+  height: .3rem;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), .18);
+  overflow: hidden;
+}
+.marks-sheet-progress__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width .2s ease;
+}
+.marks-sheet-progress--done {
+  background: rgba(22, 163, 74, .14);
+  color: var(--success);
+}
+.marks-sheet-progress--done .marks-sheet-progress__fill { background: var(--success); }
+
+.marks-sheet-unsaved {
+  display: none;
+  align-items: center;
+  gap: .35rem;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--warning);
+  white-space: nowrap;
+}
+.marks-sheet-unsaved.is-active { display: inline-flex; }
+
+.marks-sheet-fill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+}
+.marks-sheet-fill__label { font-size: .78rem; color: var(--text-muted); white-space: nowrap; }
+.marks-sheet-fill input.form-control {
+  width: 5rem;
+  padding-top: .25rem;
+  padding-bottom: .25rem;
+}
+
+.marks-sheet-scroll { overflow-x: auto; }
+.marks-sheet {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  margin-bottom: 0;
+}
+.marks-sheet thead th {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 3;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  padding: .55rem .5rem;
+}
+.marks-sheet tbody td {
+  padding: .3rem .45rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.marks-sheet tbody tr:last-child td { border-bottom: none; }
+.marks-sheet tbody tr:hover td { background: rgba(var(--accent-rgb), .045); }
+
+.marks-sheet .msheet-sticky-1,
+.marks-sheet .msheet-sticky-2,
+.marks-sheet .msheet-sticky-3 {
+  position: sticky;
+  background: var(--surface);
+  box-shadow: 1px 0 0 var(--border);
+}
+.marks-sheet tbody tr:hover .msheet-sticky-1,
+.marks-sheet tbody tr:hover .msheet-sticky-2,
+.marks-sheet tbody tr:hover .msheet-sticky-3 {
+  background: #f8fafc;
+}
+[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-1,
+[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-2,
+[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-3 {
+  background: var(--surface-2);
+}
+.marks-sheet thead .msheet-sticky-1,
+.marks-sheet thead .msheet-sticky-2,
+.marks-sheet thead .msheet-sticky-3 {
+  z-index: 5;
+  background: var(--surface-2);
+}
+.marks-sheet .msheet-sticky-1 { left: 0;      width: 2.4rem; min-width: 2.4rem; }
+.marks-sheet .msheet-sticky-2 { left: 2.4rem; width: 7.5rem; min-width: 7.5rem; }
+.marks-sheet .msheet-sticky-3 { left: 9.9rem; min-width: 8.5rem; }
+
+.msheet-input {
+  width: 100%;
+  min-width: 4rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-height: 2.3rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: .9rem;
+  transition: box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
+}
+.msheet-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .18);
+  position: relative;
+  z-index: 4;
+}
+.msheet-input.is-filled:not(.is-invalid) { background: rgba(var(--accent-rgb), .05); }
+.msheet-input.is-invalid {
+  border-color: var(--danger);
+  background: rgba(220, 38, 38, .06);
+}
+.msheet-cell-err {
+  display: block;
+  font-size: .66rem;
+  line-height: 1.25;
+  color: var(--danger);
+  margin-top: .15rem;
+  white-space: normal;
+}
+.msheet-row-num { color: var(--text-subtle); font-size: .82rem; }
+.msheet-stream-note {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .82rem;
+  color: var(--warning);
+  background: rgba(217, 119, 6, .1);
+  border-radius: var(--radius-sm);
+  padding: .5rem .75rem;
+  margin-bottom: .75rem;
+}
+
+@media (max-width: 575.98px) {
+  .marks-sheet-toolbar { flex-direction: column; align-items: stretch; }
+  .marks-sheet-fill { justify-content: space-between; }
+}
+
 /* ---------- Auth pages: keep card shadow neutral ---------- */
 .auth-card {
   box-shadow:

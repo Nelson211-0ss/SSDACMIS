@@ -377,17 +377,17 @@ class ReportController extends Controller
                     }
                     $mid = $c['mid'] ?? null;
                     $end = $c['end'] ?? null;
-                    $totalCell = AcademicMarking::subjectTotal(
-                        $mid !== null ? (float) $mid : null,
-                        $end !== null ? (float) $end : null
-                    );
-                    $c['total'] = $totalCell;
-                    $c['avg'] = $totalCell;
+                    $mid = $mid !== null ? (float) $mid : null;
+                    $end = $end !== null ? (float) $end : null;
+                    $c['total'] = AcademicMarking::subjectTotal($mid, $end);
+                    $c['max']   = AcademicMarking::subjectMax($mid, $end);
+                    $c['avg']   = $c['total'];
                 }
                 unset($c);
 
                 $sheet = AcademicMarking::buildScoreSheet((int) $sid, $year, $term);
                 $cells['_total'] = $sheet['total'];
+                $cells['_maxTotal'] = $sheet['maxTotal'];
                 $cells['_count'] = $sheet['count'];
                 $cells['_average'] = $sheet['average'];
             }

@@ -7,6 +7,7 @@ $classLevel = trim((string) ($class['level'] ?? ''));
 $isUpperForm = ($classLevel === 'Form 3' || $classLevel === 'Form 4');
 $subjectCat = (string) ($subject['category'] ?? '');
 $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true);
+$tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
   <div>
@@ -30,24 +31,14 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
   </a>
 </div>
 
-<?php
-  // Compact header info: stream note (if any) + current period/exam.
-  $streamNote = $streamScoped ? ('Showing only ' . View::e($subjectCat) . ' stream students.') : '';
-  $examLabelShort = $dual ? 'MT & EOT' : View::e($exams[$examType]);
-?>
-<div class="mb-3">
-  <div class="d-flex justify-content-between align-items-center small text-muted">
-    <div>
-      <?= $streamNote ? '<i class="bi bi-funnel-fill me-1"></i>' . $streamNote : '' ?>
-    </div>
-    <div>
-      <i class="bi bi-calendar2-check me-1"></i>
-      <strong><?= View::e($year) ?></strong> · <?= View::e($term) ?> · <?= $examLabelShort ?>
-    </div>
+<?php if ($streamScoped): ?>
+  <div class="msheet-stream-note">
+    <i class="bi bi-funnel-fill"></i>
+    <span>Showing only <strong class="text-capitalize"><?= View::e($subjectCat) ?></strong> stream students for this Form 3/4 subject.</span>
   </div>
-</div>
+<?php endif; ?>
 
-<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/entry" class="card border-0 shadow-sm mb-3">
+<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/entry" class="card border-0 shadow-sm mb-3" data-sheet-reload>
   <input type="hidden" name="class_id"   value="<?= (int) $class['id'] ?>">
   <input type="hidden" name="subject_id" value="<?= (int) $subject['id'] ?>">
   <div class="card-body row g-3 align-items-end">
@@ -94,24 +85,40 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
     <input type="hidden" name="term"          value="<?= View::e($term) ?>">
     <input type="hidden" name="dual_exam"     value="1">
 
-    <div class="card border-0 shadow-sm">
-      <div class="table-responsive">
-        <table class="table mb-0 align-middle">
-          <thead class="table-light">
+    <div class="card border-0 shadow-sm marks-sheet-card">
+      <div class="marks-sheet-toolbar">
+        <div class="marks-sheet-toolbar__left">
+          <span class="marks-sheet-progress" data-sheet-progress>
+            <i class="bi bi-list-check"></i>
+            <span data-progress-count>0 / 0 entered</span>
+            <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
+          </span>
+          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill" style="font-size:.5rem"></i> Unsaved changes</span>
+        </div>
+        <div class="marks-sheet-fill">
+          <span class="marks-sheet-fill__label">Fill blank</span>
+          <select class="form-select form-select-sm" style="width:6rem" data-sheet-fill-col>
+            <option value="mid">Mid</option>
+            <option value="end">End</option>
+          </select>
+          <span class="marks-sheet-fill__label">with</span>
+          <input type="text" inputmode="decimal" class="form-control form-control-sm" data-sheet-fill-value placeholder="e.g. 20">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-sheet-fill-btn>Apply</button>
+        </div>
+      </div>
+      <div class="marks-sheet-scroll">
+        <table class="marks-sheet">
+          <thead>
             <tr>
-              <th style="width:5%">#</th>
-              <th>Admission #</th>
-              <th>Student</th>
-              <th style="width:11%" class="text-center" title="Mid-term (max 30)">
-                <abbr title="Mid-term — maximum 30 marks">MT</abbr>
-              </th>
-              <th style="width:7%" class="text-center small text-muted">∑</th>
-              <th style="width:11%" class="text-center" title="End of term (max 70)">
-                <abbr title="End of term — maximum 70 marks">EOT</abbr>
-              </th>
-              <th style="width:7%" class="text-center small text-muted">∑</th>
-              <th style="width:9%" class="text-center">Total</th>
-              <th style="width:7%" class="text-center small">Gr</th>
+              <th class="msheet-sticky-1">#</th>
+              <th class="msheet-sticky-2">Admission</th>
+              <th class="msheet-sticky-3">Student</th>
+              <th class="text-center" title="Mid-term (max 30)">MT</th>
+              <th class="text-center">Gr</th>
+              <th class="text-center" title="End of term (max 70)">EOT</th>
+              <th class="text-center">Gr</th>
+              <th class="text-center">Total</th>
+              <th class="text-center">Gr</th>
             </tr>
           </thead>
           <tbody>
@@ -120,24 +127,28 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
               $valM = $existingMid[$sid] ?? '';
               $valE = $existingEnd[$sid] ?? '';
             ?>
-              <tr>
-                <td class="text-muted small"><?= $i + 1 ?></td>
-                <td><?= View::e($st['admission_no']) ?></td>
-                <td><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
+              <tr data-row="<?= $i ?>">
+                <td class="msheet-sticky-1 msheet-row-num"><?= $i + 1 ?></td>
+                <td class="msheet-sticky-2 font-monospace small"><?= View::e($st['admission_no']) ?></td>
+                <td class="msheet-sticky-3"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
                 <td>
-                  <input type="number" min="0" max="30" step="0.01"
-                         class="form-control form-control-sm score-mid"
+                  <input type="text" inputmode="decimal" autocomplete="off"
+                         class="msheet-input score-mid"
+                         data-row="<?= $i ?>" data-col="mid"
                          name="scores_mid[<?= $sid ?>]"
                          value="<?= $valM !== '' ? View::e(rtrim(rtrim(number_format((float) $valM, 2, '.', ''), '0'), '.')) : '' ?>"
-                         placeholder="—" aria-label="Mid-term mark">
+                         placeholder="—" aria-label="Mid-term mark, max 30">
+                  <span class="msheet-cell-err"></span>
                 </td>
                 <td class="text-center"><span class="badge bg-secondary grade-mid">—</span></td>
                 <td>
-                  <input type="number" min="0" max="70" step="0.01"
-                         class="form-control form-control-sm score-end"
+                  <input type="text" inputmode="decimal" autocomplete="off"
+                         class="msheet-input score-end"
+                         data-row="<?= $i ?>" data-col="end"
                          name="scores_end[<?= $sid ?>]"
                          value="<?= $valE !== '' ? View::e(rtrim(rtrim(number_format((float) $valE, 2, '.', ''), '0'), '.')) : '' ?>"
-                         placeholder="—" aria-label="End of term mark">
+                         placeholder="—" aria-label="End of term mark, max 70">
+                  <span class="msheet-cell-err"></span>
                 </td>
                 <td class="text-center"><span class="badge bg-secondary grade-end">—</span></td>
                 <td class="text-center font-monospace small"><span class="score-total-val">—</span></td>
@@ -147,17 +158,16 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
           </tbody>
         </table>
       </div>
-      <div class="card-footer bg-white d-flex justify-content-end gap-2">
-        <div class="small text-muted me-auto">MT ≤ 30 · EOT ≤ 70 · leave blank to skip</div>
-        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save marks</button>
+      <div class="card-footer d-flex justify-content-end gap-2">
+        <div class="small text-muted me-auto">MT ≤ 30 · EOT ≤ 70 · leave blank to skip · ↑↓ or Enter moves rows</div>
+        <button type="submit" class="btn btn-primary" data-sheet-submit><i class="bi bi-save"></i> Save marks</button>
       </div>
     </div>
   </form>
 
   <script src="<?= View::asset($base, 'assets/js/academic-marks.js') ?>"></script>
   <script>
-  SSDACMIS.academicMarks.wireDualExamRows(document.getElementById('marks-entry-form-dual'));
-  SSDACMIS.academicMarks.attachFormGuard('marks-entry-form-dual', true);
+  SSDACMIS.academicMarks.initDualSheet(document.getElementById('marks-entry-form-dual'), { tiers: <?= $tiersJson ?> });
   </script>
 <?php else: ?>
   <?php
@@ -172,50 +182,69 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
     <input type="hidden" name="term"       value="<?= View::e($term) ?>">
     <input type="hidden" name="exam_type"  value="<?= View::e($examType) ?>">
 
-    <div class="card border-0 shadow-sm">
-      <div class="table-responsive">
-        <table class="table mb-0 align-middle">
-          <thead class="table-light">
+    <div class="card border-0 shadow-sm marks-sheet-card">
+      <div class="marks-sheet-toolbar">
+        <div class="marks-sheet-toolbar__left">
+          <span class="marks-sheet-progress" data-sheet-progress>
+            <i class="bi bi-list-check"></i>
+            <span data-progress-count>0 / 0 entered</span>
+            <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
+          </span>
+          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill" style="font-size:.5rem"></i> Unsaved changes</span>
+        </div>
+        <div class="marks-sheet-fill">
+          <span class="marks-sheet-fill__label">Fill blank cells with</span>
+          <input type="text" inputmode="decimal" class="form-control form-control-sm" data-sheet-fill-value placeholder="e.g. 20">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-sheet-fill-btn>Apply</button>
+        </div>
+      </div>
+      <div class="marks-sheet-scroll">
+        <table class="marks-sheet">
+          <thead>
             <tr>
-              <th style="width:6%">#</th>
-              <th>Admission #</th>
-              <th>Student</th>
-              <th style="width:18%">Score (max <?= (int) $examMax ?>)</th>
-              <th style="width:10%">Preview</th>
+              <th class="msheet-sticky-1">#</th>
+              <th class="msheet-sticky-2">Admission</th>
+              <th class="msheet-sticky-3">Student</th>
+              <th class="text-center">Score (max <?= (int) $examMax ?>)</th>
+              <th class="text-center">Grade</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($students as $i => $st):
               $val = $existing[(int) $st['id']] ?? '';
             ?>
-              <tr>
-                <td class="text-muted small"><?= $i + 1 ?></td>
-                <td><?= View::e($st['admission_no']) ?></td>
-                <td><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
+              <tr data-row="<?= $i ?>">
+                <td class="msheet-sticky-1 msheet-row-num"><?= $i + 1 ?></td>
+                <td class="msheet-sticky-2 font-monospace small"><?= View::e($st['admission_no']) ?></td>
+                <td class="msheet-sticky-3"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
                 <td>
-                  <input type="number" min="0" max="<?= (int) $examMax ?>" step="0.01"
-                         class="form-control form-control-sm score-input"
+                  <input type="text" inputmode="decimal" autocomplete="off"
+                         class="msheet-input score-input"
+                         data-row="<?= $i ?>" data-col="score"
                          name="scores[<?= (int) $st['id'] ?>]"
                          title="<?= View::e($examHint) ?>"
                          value="<?= $val !== '' ? View::e(rtrim(rtrim(number_format((float) $val, 2, '.', ''), '0'), '.')) : '' ?>"
-                         placeholder="—">
+                         placeholder="—" aria-label="<?= View::e($examHint) ?>">
+                  <span class="msheet-cell-err"></span>
                 </td>
-                <td><span class="badge bg-secondary grade-badge">—</span></td>
+                <td class="text-center"><span class="badge bg-secondary grade-badge">—</span></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
       </div>
-      <div class="card-footer bg-white d-flex justify-content-end gap-2">
-        <div class="small text-muted me-auto"><?= View::e($exams[$examType]) ?> · leave blank to skip</div>
-        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save marks</button>
+      <div class="card-footer d-flex justify-content-end gap-2">
+        <div class="small text-muted me-auto"><?= View::e($exams[$examType]) ?> · leave blank to skip · ↑↓ or Enter moves rows</div>
+        <button type="submit" class="btn btn-primary" data-sheet-submit><i class="bi bi-save"></i> Save marks</button>
       </div>
     </div>
   </form>
 
   <script src="<?= View::asset($base, 'assets/js/academic-marks.js') ?>"></script>
   <script>
-  SSDACMIS.academicMarks.wireSingleExam(document.getElementById('marks-entry-form-single'), <?= json_encode($examType, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
-  SSDACMIS.academicMarks.attachFormGuard('marks-entry-form-single', false);
+  SSDACMIS.academicMarks.initSingleSheet(document.getElementById('marks-entry-form-single'), {
+    examType: <?= json_encode($examType, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+    tiers: <?= $tiersJson ?>
+  });
   </script>
 <?php endif; ?>

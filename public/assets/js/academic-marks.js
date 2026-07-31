@@ -1,51 +1,53 @@
 /**
  * SSD-ACMIS South Sudan marking: Mid-term max 30, End-of-term max 70.
+ * Shared behaviour for the mark-entry sheets: inline validation, keyboard
+ * navigation between cells, a live "entered" progress pill, an unsaved-
+ * changes guard, and a "fill blank cells" bulk-entry helper.
  */
 (function (global) {
   'use strict';
 
   var MID_MAX = 30;
   var END_MAX = 70;
+  var TOTAL_MAX = 100;
 
   function parseCell(v) {
     if (v === '' || v === null || typeof v === 'undefined') return null;
-    var n = parseFloat(String(v).replace(',', '.'));
+    var n = parseFloat(String(v).trim().replace(',', '.'));
     return Number.isFinite(n) ? n : NaN;
   }
 
-  /**
-   * @returns {{ ok: boolean, msg?: string }}
-   */
+  /** @returns {{ ok: boolean, msg?: string }} */
   function validateMid(value) {
     if (value === null) return { ok: true };
     if (!Number.isFinite(value)) return { ok: false, msg: 'Invalid number' };
-    if (value < 0) return { ok: false, msg: 'Mid-term marks cannot be below 0' };
-    if (value > MID_MAX + 1e-9) return { ok: false, msg: 'Mid-term marks cannot exceed 30' };
+    if (value < 0) return { ok: false, msg: 'Cannot be below 0' };
+    if (value > MID_MAX + 1e-9) return { ok: false, msg: 'Max is 30' };
     return { ok: true };
   }
 
-  /**
-   * @returns {{ ok: boolean, msg?: string }}
-   */
+  /** @returns {{ ok: boolean, msg?: string }} */
   function validateEnd(value) {
     if (value === null) return { ok: true };
     if (!Number.isFinite(value)) return { ok: false, msg: 'Invalid number' };
-    if (value < 0) return { ok: false, msg: 'End-of-term marks cannot be below 0' };
-    if (value > END_MAX + 1e-9) return { ok: false, msg: 'End-of-term marks cannot exceed 70' };
+    if (value < 0) return { ok: false, msg: 'Cannot be below 0' };
+    if (value > END_MAX + 1e-9) return { ok: false, msg: 'Max is 70' };
     return { ok: true };
   }
 
-  /** Grade letter from subject total (0–100). Mirrors server default tiers if tiers omitted. */
+  var DEFAULT_TIERS = [
+    { label: 'A', min: 80, max: 100 },
+    { label: 'B', min: 70, max: 79.99 },
+    { label: 'C', min: 60, max: 69.99 },
+    { label: 'D', min: 50, max: 59.99 },
+    { label: 'F', min: 0, max: 49.99 }
+  ];
+
+  /** Grade letter from a /100 figure, using the school's actual configured tiers. */
   function letterFromTotal(score, tiers) {
     if (!Number.isFinite(score)) return ['—', 'secondary'];
-    var t = tiers && tiers.length ? tiers : [
-      { label: 'A', min: 80, max: 100 },
-      { label: 'B', min: 70, max: 79.99 },
-      { label: 'C', min: 60, max: 69.99 },
-      { label: 'D', min: 50, max: 59.99 },
-      { label: 'F', min: 0, max: 49.99 }
-    ];
-    t = t.slice().sort(function (a, b) { return (b.min || 0) - (a.min || 0); });
+    var t = (tiers && tiers.length ? tiers : DEFAULT_TIERS).slice()
+      .sort(function (a, b) { return (b.min || 0) - (a.min || 0); });
     for (var i = 0; i < t.length; i++) {
       var row = t[i];
       if (score >= row.min && score <= row.max) {
@@ -60,55 +62,270 @@
     return ['—', 'secondary'];
   }
 
-  function wireDualExamRows(root) {
-    root = root || document;
-    root.querySelectorAll('tr').forEach(function (tr) {
+  /**
+   * Raw subject total, mirroring AcademicMarking::subjectTotal() server-side:
+   * Mid + End when both are entered (max 100); otherwise the single entered
+   * component AT FACE VALUE against its own max — out of 30 when only mid is
+   * in, out of 70 when only end is in. Nothing is scaled up. Use
+   * subjectMax() for the denominator and subjectPercentage() for anything
+   * that needs a comparable 0–100 figure (grade lookup, row/class averages).
+   */
+  function subjectTotal(mid, end) {
+    if (mid !== null && Number.isFinite(mid) && end !== null && Number.isFinite(end)) {
+      return Math.min(TOTAL_MAX, mid + end);
+    }
+    if (mid !== null && Number.isFinite(mid)) return mid;
+    if (end !== null && Number.isFinite(end)) return end;
+    return null;
+  }
+
+  /** The denominator subjectTotal() is out of, given which components exist. */
+  function subjectMax(mid, end) {
+    var hasMid = mid !== null && Number.isFinite(mid);
+    var hasEnd = end !== null && Number.isFinite(end);
+    if (hasMid && hasEnd) return TOTAL_MAX;
+    if (hasMid) return MID_MAX;
+    if (hasEnd) return END_MAX;
+    return null;
+  }
+
+  /** subjectTotal() as a 0–100 percentage of subjectMax() — for grading/averaging. */
+  function subjectPercentage(mid, end) {
+    var total = subjectTotal(mid, end);
+    var max = subjectMax(mid, end);
+    if (total === null || !max) return null;
+    return Math.min(TOTAL_MAX, (total / max) * TOTAL_MAX);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Inline (non-blocking) validation                                    */
+  /* ------------------------------------------------------------------ */
+
+  /** Paint/clear the quiet inline error under one cell — no popups. */
+  function paintCell(input, check, hasValue) {
+    var cell = input.closest('td') || input.parentElement;
+    var errEl = cell ? cell.querySelector('.msheet-cell-err') : null;
+    var invalid = hasValue && check && !check.ok;
+    input.classList.toggle('is-invalid', !!invalid);
+    input.classList.toggle('is-filled', hasValue && !invalid);
+    if (errEl) errEl.textContent = invalid ? check.msg : '';
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Keyboard navigation: Up/Down/Enter move within a column, Left/Right  */
+  /* move to the adjacent cell — spreadsheet-style entry.                */
+  /* ------------------------------------------------------------------ */
+
+  function wireKeyboardNav(inputs) {
+    function findByRowCol(row, col) {
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].dataset.row === String(row) && inputs[i].dataset.col === col) return inputs[i];
+      }
+      return null;
+    }
+    inputs.forEach(function (inp, idx) {
+      inp.addEventListener('keydown', function (e) {
+        var row = parseInt(inp.dataset.row || '-1', 10);
+        var col = inp.dataset.col || '';
+        var target = null;
+
+        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+          e.preventDefault();
+          target = findByRowCol(row + 1, col);
+          if (!target) {
+            var form = inp.closest('form');
+            var btn = form ? form.querySelector('[data-sheet-submit]') : null;
+            if (btn) btn.focus();
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          target = findByRowCol(row - 1, col);
+        } else if (e.key === 'ArrowRight') {
+          if (inp.selectionStart === inp.value.length) { target = inputs[idx + 1] || null; }
+        } else if (e.key === 'ArrowLeft') {
+          if (inp.selectionStart === 0) { target = inputs[idx - 1] || null; }
+        }
+        if (target) {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') e.preventDefault();
+          target.focus();
+          if (typeof target.select === 'function') target.select();
+        }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Live progress pill: "X / Y entered"                                  */
+  /* ------------------------------------------------------------------ */
+
+  function wireProgress(form, inputs) {
+    var pill = form.querySelector('[data-sheet-progress]');
+    if (!pill) return function () {};
+    var countEl = pill.querySelector('[data-progress-count]');
+    var fillEl = pill.querySelector('.marks-sheet-progress__fill');
+    var total = inputs.length;
+
+    function recompute() {
+      var filled = 0;
+      inputs.forEach(function (inp) { if (String(inp.value || '').trim() !== '') filled++; });
+      if (countEl) countEl.textContent = filled + ' / ' + total + ' entered';
+      if (fillEl) fillEl.style.width = (total ? (filled / total) * 100 : 0) + '%';
+      pill.classList.toggle('marks-sheet-progress--done', total > 0 && filled === total);
+    }
+    inputs.forEach(function (inp) { inp.addEventListener('input', recompute); });
+    recompute();
+    return recompute;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Unsaved-changes guard                                                */
+  /* ------------------------------------------------------------------ */
+
+  function wireUnsavedGuard(form, inputs) {
+    var flag = form.querySelector('[data-sheet-unsaved]');
+    var dirty = false;
+
+    function markDirty() {
+      dirty = true;
+      if (flag) flag.classList.add('is-active');
+    }
+    inputs.forEach(function (inp) { inp.addEventListener('input', markDirty); });
+
+    form.addEventListener('submit', function () { dirty = false; });
+
+    window.addEventListener('beforeunload', function (e) {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
+
+    // The "Reload/Refresh" period mini-form is a plain GET link/form elsewhere
+    // on the page — warn before it discards unsaved edits.
+    document.querySelectorAll('[data-sheet-reload]').forEach(function (reloadForm) {
+      reloadForm.addEventListener('submit', function (e) {
+        if (dirty && !window.confirm('You have unsaved marks on this sheet. Discard them and reload?')) {
+          e.preventDefault();
+        }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Fill-blanks: apply one value to every currently-empty matching cell  */
+  /* ------------------------------------------------------------------ */
+
+  function wireFillBlanks(form, getTargetInputs, onFilled) {
+    var btn = form.querySelector('[data-sheet-fill-btn]');
+    var valueEl = form.querySelector('[data-sheet-fill-value]');
+    if (!btn || !valueEl) return;
+    btn.addEventListener('click', function () {
+      var raw = String(valueEl.value || '').trim();
+      if (raw === '') return;
+      var targets = getTargetInputs();
+      var changed = false;
+      targets.forEach(function (inp) {
+        if (String(inp.value || '').trim() === '') {
+          inp.value = raw;
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+          changed = true;
+        }
+      });
+      if (changed && typeof onFilled === 'function') onFilled();
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Sheet initializers                                                   */
+  /* ------------------------------------------------------------------ */
+
+  /** Single exam-type sheet (ordinary teacher: one column of scores). */
+  function initSingleSheet(form, opts) {
+    if (!form) return;
+    opts = opts || {};
+    var tiers = opts.tiers;
+    var examType = opts.examType || 'midterm';
+    var validateFn = examType === 'midterm' ? validateMid : validateEnd;
+    var max = examType === 'midterm' ? MID_MAX : END_MAX;
+
+    var inputs = Array.prototype.slice.call(form.querySelectorAll('.score-input'));
+    inputs.forEach(function (inp) {
+      var badge = (inp.closest('tr') || document).querySelector('.grade-badge');
+      function refresh() {
+        var raw = String(inp.value || '').trim();
+        var v = parseCell(raw);
+        var check = validateFn(v);
+        paintCell(inp, check, raw !== '');
+        if (badge) {
+          if (raw === '' || !check.ok) {
+            badge.textContent = '—';
+            badge.className = 'badge grade-badge bg-secondary';
+          } else {
+            var t = letterFromTotal((v / max) * 100, tiers);
+            badge.textContent = t[0];
+            badge.className = 'badge grade-badge bg-' + t[1];
+          }
+        }
+      }
+      inp.addEventListener('input', refresh);
+      refresh();
+    });
+
+    wireKeyboardNav(inputs);
+    wireProgress(form, inputs);
+    wireUnsavedGuard(form, inputs);
+    wireFillBlanks(form, function () { return inputs; });
+    attachFormGuard(form);
+  }
+
+  /** Dual exam-type sheet (HOD single subject: Mid + End together). */
+  function initDualSheet(form, opts) {
+    if (!form) return;
+    opts = opts || {};
+    var tiers = opts.tiers;
+
+    var mids = Array.prototype.slice.call(form.querySelectorAll('.score-mid'));
+    var ends = Array.prototype.slice.call(form.querySelectorAll('.score-end'));
+    var all = mids.concat(ends);
+
+    form.querySelectorAll('tr[data-row]').forEach(function (tr) {
       var mIn = tr.querySelector('.score-mid');
       var eIn = tr.querySelector('.score-end');
       var mBd = tr.querySelector('.grade-mid');
       var eBd = tr.querySelector('.grade-end');
       var totEl = tr.querySelector('.score-total-val');
       var totBd = tr.querySelector('.grade-total');
-      if (!mIn || !eIn || !mBd || !eBd) return;
+      if (!mIn || !eIn) return;
 
-      function bindPart(input, badge, validateFn, scaledLetter) {
-        function run() {
-          var pv = parseCell(input.value);
-          var v = pv === null ? null : pv;
-          var chk = validateFn(v);
-          input.classList.toggle('is-invalid', !chk.ok && input.value !== '');
-          if (!chk.ok && input.value !== '') {
-            badge.textContent = '!';
-            badge.className = 'badge bg-danger';
-            return;
+      function refreshPart(input, badge, validateFn, max) {
+        var raw = String(input.value || '').trim();
+        var v = parseCell(raw);
+        var check = validateFn(v);
+        paintCell(input, check, raw !== '');
+        if (badge) {
+          if (raw === '' || !check.ok) {
+            badge.textContent = '—';
+            badge.className = 'badge bg-secondary';
+          } else {
+            var t = letterFromTotal((v / max) * 100, tiers);
+            badge.textContent = t[0];
+            badge.className = 'badge bg-' + t[1];
           }
-          var t = scaledLetter(v);
-          badge.textContent = v !== null && chk.ok ? t[0] : '—';
-          badge.className = 'badge bg-' + (v !== null && chk.ok ? t[1] : 'secondary');
         }
-        input.addEventListener('input', run);
-        run();
       }
 
-      bindPart(mIn, mBd, validateMid, function (v) {
-        return letterFromTotal(v !== null ? (v / MID_MAX) * 100 : NaN);
-      });
-      bindPart(eIn, eBd, validateEnd, function (v) {
-        return letterFromTotal(v !== null ? (v / END_MAX) * 100 : NaN);
-      });
-
       function refreshTotal() {
-        var pm = parseCell(mIn.value);
-        var pe = parseCell(eIn.value);
-        var vm = pm === null ? null : pm;
-        var ve = pe === null ? null : pe;
+        var vm = parseCell(mIn.value);
+        var ve = parseCell(eIn.value);
         var cm = validateMid(vm);
         var ce = validateEnd(ve);
+        var ok = cm.ok && ce.ok;
+        var total = ok ? subjectTotal(vm, ve) : null;
+        var max = ok ? subjectMax(vm, ve) : null;
+        var pct = ok ? subjectPercentage(vm, ve) : null;
         if (totEl && totBd) {
-          if (vm !== null && ve !== null && cm.ok && ce.ok) {
-            var sum = Math.min(100, vm + ve);
-            totEl.textContent = String(Math.round(sum * 100) / 100);
-            var lg = letterFromTotal(sum);
+          if (total !== null) {
+            totEl.textContent = String(Math.round(total * 100) / 100) + (max ? ' /' + max : '');
+            var lg = letterFromTotal(pct, tiers);
             totBd.textContent = lg[0];
             totBd.className = 'badge bg-' + lg[1];
           } else {
@@ -118,44 +335,106 @@
           }
         }
       }
-      mIn.addEventListener('input', refreshTotal);
-      eIn.addEventListener('input', refreshTotal);
+
+      mIn.addEventListener('input', function () { refreshPart(mIn, mBd, validateMid, MID_MAX); refreshTotal(); });
+      eIn.addEventListener('input', function () { refreshPart(eIn, eBd, validateEnd, END_MAX); refreshTotal(); });
+      refreshPart(mIn, mBd, validateMid, MID_MAX);
+      refreshPart(eIn, eBd, validateEnd, END_MAX);
       refreshTotal();
     });
-    attachFieldBlurValidation(root);
+
+    wireKeyboardNav(all);
+    wireProgress(form, all);
+    wireUnsavedGuard(form, all);
+    wireFillBlanks(form, function () {
+      var col = form.querySelector('[data-sheet-fill-col]');
+      var which = col ? col.value : 'mid';
+      return which === 'end' ? ends : mids;
+    });
+    attachFormGuard(form);
   }
 
-  function wireSingleExam(root, examType) {
-    root = root || document;
-    root.querySelectorAll('tr').forEach(function (tr) {
-      var input = tr.querySelector('.score-input');
-      var badge = tr.querySelector('.grade-badge');
-      if (!input || !badge) return;
-      function refresh() {
-        var pv = parseCell(input.value);
-        var chk = examType === 'midterm' ? validateMid(pv === null ? null : pv) : validateEnd(pv === null ? null : pv);
-        input.classList.toggle('is-invalid', !chk.ok && input.value !== '');
-        if (!chk.ok && input.value !== '') {
-          badge.textContent = '!';
-          badge.className = 'badge grade-badge bg-danger';
+  /** Department matrix sheet (HOD: every subject in a category, Mid + End). */
+  function initDepartmentSheet(form, opts) {
+    if (!form) return;
+    opts = opts || {};
+    var tiers = opts.tiers;
+
+    var mids = Array.prototype.slice.call(form.querySelectorAll('.score-mid'));
+    var ends = Array.prototype.slice.call(form.querySelectorAll('.score-end'));
+    var all = mids.concat(ends);
+
+    function paintOne(input, validateFn) {
+      var raw = String(input.value || '').trim();
+      var v = parseCell(raw);
+      paintCell(input, validateFn(v), raw !== '');
+    }
+    all.forEach(function (inp) {
+      var validateFn = inp.classList.contains('score-mid') ? validateMid : validateEnd;
+      inp.addEventListener('input', function () { paintOne(inp, validateFn); });
+      paintOne(inp, validateFn);
+    });
+
+    form.querySelectorAll('tr[data-row]').forEach(function (tr) {
+      var rowMids = tr.querySelectorAll('.score-mid');
+      var rowEnds = tr.querySelectorAll('.score-end');
+      var avgEl = tr.querySelector('.row-avg');
+      if (!rowMids.length || !avgEl) return;
+
+      function recalc() {
+        // Average each subject's own PERCENTAGE, not its raw total — a
+        // mid-only subject is out of 30, a complete one out of 100, so
+        // summing raw totals directly would corrupt the row average the
+        // moment a student has a mix of the two.
+        var sum = 0, n = 0;
+        for (var i = 0; i < rowMids.length; i++) {
+          var m = parseCell(rowMids[i].value);
+          var e = parseCell(rowEnds[i] ? rowEnds[i].value : '');
+          var cm = validateMid(m);
+          var ce = validateEnd(e);
+          if (!cm.ok || !ce.ok) continue;
+          var pct = subjectPercentage(m, e);
+          if (pct === null) continue;
+          sum += pct;
+          n++;
+        }
+        if (!n) {
+          avgEl.textContent = '—';
+          avgEl.className = 'badge bg-secondary row-avg';
           return;
         }
-        var v = pv === null ? NaN : pv;
-        var scaled = examType === 'midterm' ? (v / MID_MAX) * 100 : (v / END_MAX) * 100;
-        var t = letterFromTotal(scaled);
-        badge.textContent = input.value !== '' && chk.ok ? t[0] : '—';
-        badge.className = 'badge grade-badge bg-' + (input.value !== '' && chk.ok ? t[1] : 'secondary');
+        var avg = sum / n;
+        avgEl.textContent = avg.toFixed(1);
+        var lg = letterFromTotal(avg, tiers);
+        avgEl.className = 'badge row-avg bg-' + lg[1];
       }
-      input.addEventListener('input', refresh);
-      refresh();
+      [].forEach.call(rowMids, function (inp) { inp.addEventListener('input', recalc); });
+      [].forEach.call(rowEnds, function (inp) { inp.addEventListener('input', recalc); });
+      recalc();
     });
-    attachFieldBlurValidation(root);
+
+    wireKeyboardNav(all);
+    wireProgress(form, all);
+    wireUnsavedGuard(form, all);
+
+    // "Jump to subject" chips scroll the sheet horizontally to that subject's columns.
+    form.querySelectorAll('[data-jump-subject]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var head = document.getElementById('subj-head-' + chip.dataset.jumpSubject);
+        if (head && typeof head.scrollIntoView === 'function') {
+          head.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      });
+    });
+
+    attachFormGuard(form);
   }
 
-  /**
-   * Same Bootstrap modal pattern as student enrollment validation (rounded card, icon, bullet list).
-   * Modal node is created once and appended to document.body.
-   */
+  /* ------------------------------------------------------------------ */
+  /* Final pre-submit check — a summary modal is appropriate here (once   */
+  /* per save attempt), unlike per-keystroke popups.                     */
+  /* ------------------------------------------------------------------ */
+
   function ensureMarksValidationModal() {
     var existing = document.getElementById('marksValidationModal');
     if (existing) return existing;
@@ -177,7 +456,7 @@
       '</div>' +
       '<div class="flex-grow-1 min-w-0 pt-0">' +
       '<h3 class="h6 fw-bold mb-2" id="marksValidationModalTitle" data-marks-modal-title></h3>' +
-      '<p class="small text-muted mb-2 mb-lg-3">Correct the scores below, then continue.</p>' +
+      '<p class="small text-muted mb-2 mb-lg-3">Correct the highlighted cells, then save again.</p>' +
       '<ul class="small mb-0 ps-3 text-body" data-marks-modal-list></ul>' +
       '</div>' +
       '</div>' +
@@ -218,13 +497,7 @@
 
     try {
       var Modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-      modalEl.addEventListener(
-        'hidden.bs.modal',
-        function () {
-          focusAfterClose();
-        },
-        { once: true }
-      );
+      modalEl.addEventListener('hidden.bs.modal', focusAfterClose, { once: true });
       Modal.show();
     } catch (err) {
       window.alert((title || 'Marks') + '\n\n' + msgs.join('\n'));
@@ -232,102 +505,34 @@
     }
   }
 
-  /** Blocking popup + refocus when user leaves a field with an invalid value (Tab/click away). */
-  function attachFieldBlurValidation(root) {
-    root = root || document;
-
-    function alertInvalid(title, detail, input) {
-      showMarksValidationModal(title || 'Invalid mark', [detail], input);
-    }
-
-    root.querySelectorAll('.score-mid').forEach(function (inp) {
-      inp.addEventListener('blur', function () {
-        var raw = String(inp.value || '').trim();
-        if (raw === '') return;
-        var pv = parseCell(raw);
-        if (pv === null || !Number.isFinite(pv)) {
-          alertInvalid('Invalid mark', 'Please enter a valid number.', inp);
-          return;
-        }
-        var chk = validateMid(pv);
-        if (!chk.ok) {
-          alertInvalid('Invalid mark', chk.msg || 'Mid-term mark is not valid.', inp);
-        }
-      });
-    });
-
-    root.querySelectorAll('.score-end').forEach(function (inp) {
-      inp.addEventListener('blur', function () {
-        var raw = String(inp.value || '').trim();
-        if (raw === '') return;
-        var pv = parseCell(raw);
-        if (pv === null || !Number.isFinite(pv)) {
-          alertInvalid('Invalid mark', 'Please enter a valid number.', inp);
-          return;
-        }
-        var chk = validateEnd(pv);
-        if (!chk.ok) {
-          alertInvalid('Invalid mark', chk.msg || 'End-of-term mark is not valid.', inp);
-        }
-      });
-    });
-
-    root.querySelectorAll('.score-input').forEach(function (inp) {
-      inp.addEventListener('blur', function () {
-        var raw = String(inp.value || '').trim();
-        if (raw === '') return;
-        var pv = parseCell(raw);
-        if (pv === null || !Number.isFinite(pv)) {
-          alertInvalid('Invalid mark', 'Please enter a valid number.', inp);
-          return;
-        }
-        var form = inp.closest('form');
-        var ex = form ? form.querySelector('[name="exam_type"]') : null;
-        var et = ex ? String(ex.value || 'midterm') : 'midterm';
-        var chk = et === 'midterm' ? validateMid(pv) : validateEnd(pv);
-        if (!chk.ok) {
-          alertInvalid('Invalid mark', chk.msg || 'Score is not valid.', inp);
-        }
-      });
-    });
-  }
-
-  function attachFormGuard(formId, dualExam) {
-    var form = document.getElementById(formId);
-    if (!form) return;
+  function attachFormGuard(form) {
+    if (!form || form.dataset.guardAttached) return;
+    form.dataset.guardAttached = '1';
     form.addEventListener('submit', function (e) {
       var errs = [];
-      form.querySelectorAll('.score-mid').forEach(function (inp) {
-        var pv = parseCell(inp.value);
-        if (pv === null && inp.value !== '') errs.push('Mid-term: invalid number');
-        if (pv !== null) {
-          var c = validateMid(pv);
-          if (!c.ok) errs.push(c.msg || 'Mid-term invalid');
+      var firstBad = null;
+      form.querySelectorAll('.score-mid, .score-end, .score-input').forEach(function (inp) {
+        var raw = String(inp.value || '').trim();
+        if (raw === '') return;
+        var v = parseCell(raw);
+        var validateFn = inp.classList.contains('score-end') ? validateEnd : validateMid;
+        if (inp.classList.contains('score-input')) {
+          var form2 = inp.closest('form');
+          var ex = form2 ? form2.querySelector('[name="exam_type"]') : null;
+          validateFn = (ex && ex.value === 'endterm') ? validateEnd : validateMid;
+        }
+        var check = validateFn(v);
+        if (!check.ok) {
+          errs.push((check.msg || 'Invalid value') + ' — check the highlighted cell.');
+          if (!firstBad) firstBad = inp;
         }
       });
-      form.querySelectorAll('.score-end').forEach(function (inp) {
-        var pv = parseCell(inp.value);
-        if (pv === null && inp.value !== '') errs.push('End-of-term: invalid number');
-        if (pv !== null) {
-          var c = validateEnd(pv);
-          if (!c.ok) errs.push(c.msg || 'End-of-term invalid');
-        }
-      });
-      if (!dualExam) {
-        form.querySelectorAll('.score-input').forEach(function (inp) {
-          var pv = parseCell(inp.value);
-          if (pv === null && inp.value !== '') errs.push('Score: invalid number');
-          if (pv !== null) {
-            var ex = form.querySelector('[name="exam_type"]');
-            var et = ex ? ex.value : 'midterm';
-            var c = et === 'midterm' ? validateMid(pv) : validateEnd(pv);
-            if (!c.ok) errs.push(c.msg || 'Score invalid');
-          }
-        });
-      }
       if (errs.length) {
         e.preventDefault();
-        showMarksValidationModal('Cannot save marks', errs.slice(0, 16), null);
+        showMarksValidationModal('Cannot save marks', errs.slice(0, 16), firstBad);
+        if (firstBad && typeof firstBad.scrollIntoView === 'function') {
+          firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     });
   }
@@ -339,10 +544,12 @@
     validateMid: validateMid,
     validateEnd: validateEnd,
     letterFromTotal: letterFromTotal,
-    wireDualExamRows: wireDualExamRows,
-    wireSingleExam: wireSingleExam,
-    attachFormGuard: attachFormGuard,
-    attachFieldBlurValidation: attachFieldBlurValidation,
+    subjectTotal: subjectTotal,
+    subjectMax: subjectMax,
+    subjectPercentage: subjectPercentage,
+    initSingleSheet: initSingleSheet,
+    initDualSheet: initDualSheet,
+    initDepartmentSheet: initDepartmentSheet,
     showMarksValidationModal: showMarksValidationModal
   };
 })(typeof window !== 'undefined' ? window : this);

@@ -184,13 +184,15 @@ $nMatrix = count($matrixPeers);
                 <span class="text-muted small">(<?= View::e($st['admission_no']) ?>)</span>
               </td>
               <?php foreach ($sectionSubjects as $sub):
-                $cell = $row[(int) $sub['id']] ?? ['mid' => null, 'end' => null, 'total' => null];
+                $cell = $row[(int) $sub['id']] ?? ['mid' => null, 'end' => null, 'total' => null, 'max' => null];
               ?>
                 <td class="t-num"><?= $cell['mid'] !== null ? number_format($cell['mid'], 0) : '—' ?></td>
                 <td class="t-num"><?= $cell['end'] !== null ? number_format($cell['end'], 0) : '—' ?></td>
-                <td class="t-num"><?= isset($cell['total']) && $cell['total'] !== null ? number_format((float) $cell['total'], 0) : '—' ?></td>
+                <td class="t-num"><?= isset($cell['total']) && $cell['total'] !== null
+                    ? number_format((float) $cell['total'], 0) . (!empty($cell['max']) ? '/' . (int) $cell['max'] : '')
+                    : '—' ?></td>
               <?php endforeach; ?>
-              <td class="t-num"><strong><?= number_format($row['_total'] ?? 0, 0) ?></strong></td>
+              <td class="t-num"><strong><?= number_format($row['_total'] ?? 0, 0) ?><?php if (!empty($row['_maxTotal'])): ?><span class="text-muted">/<?= (int) $row['_maxTotal'] ?></span><?php endif; ?></strong></td>
               <td class="t-num"><?= isset($row['_average']) && $row['_average'] !== null ? number_format($row['_average'], 1) : '—' ?></td>
               <td class="t-grade"><strong><?= letter_for($row['_average'] ?? null) ?></strong></td>
             </tr>
@@ -201,7 +203,7 @@ $nMatrix = count($matrixPeers);
     <?php endforeach; ?>
 
     <div class="small text-muted mt-2">
-      M = Mid-term (×/30) · E = End-term (×/70) · T = Subject total (Mid+End, max 100) · Σ Tot = sum of subject totals · Avg % = mean across subjects with both components · Position uses competition ranking on average %.
+      M = Mid-term (×/30) · E = End-term (×/70) · T = Subject total so far, out of 30/70/100 depending on which components are entered · Σ Tot = sum of subject totals, out of the combined max · Avg % = mean of each subject's own percentage, so it stays comparable even before every subject is complete · Position uses competition ranking on average %.
       <?php if (!empty($isUpperForm)): ?>
         Form 3 &amp; Form 4 students are ranked within their stream.
       <?php endif; ?>

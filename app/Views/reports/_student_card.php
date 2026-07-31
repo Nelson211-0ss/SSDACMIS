@@ -143,9 +143,11 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
           <td class="t-num"><?= $r['midterm'] !== null ? number_format((float) $r['midterm'], 1) : '—' ?></td>
           <td class="t-num"><?= $r['endterm'] !== null ? number_format((float) $r['endterm'], 1) : '—' ?></td>
           <td class="t-num">
-            <?= $r['average'] !== null
-                 ? '<strong>' . number_format((float) $r['average'], 1) . '</strong>'
-                 : '—' ?>
+            <?php if ($r['average'] !== null): ?>
+              <strong><?= number_format((float) $r['average'], 1) ?></strong><?php if (!empty($r['max'])): ?><span class="text-muted">/<?= (int) $r['max'] ?></span><?php endif; ?>
+            <?php else: ?>
+              —
+            <?php endif; ?>
           </td>
           <td class="t-grade">
             <?php if ($grade !== ''): ?>
@@ -181,7 +183,7 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
       <tbody>
         <tr class="report-student__summary-row">
           <td class="t-num"><strong><?= (int) $sheet['count'] ?></strong></td>
-          <td class="t-num"><strong><?= number_format((float) $sheet['total'], 0) ?></strong></td>
+          <td class="t-num"><strong><?= number_format((float) $sheet['total'], 0) ?><?php if (!empty($sheet['maxTotal'])): ?><span class="text-muted">/<?= (int) $sheet['maxTotal'] ?></span><?php endif; ?></strong></td>
           <td class="t-num"><strong><?= number_format((float) $sheet['average'], 1) ?>%</strong></td>
           <td class="t-grade">
             <span class="report-grade-pill report-grade-pill--large" data-grade="<?= View::e($overallKey) ?>"><?= View::e($overallGrade ?: '—') ?></span>
