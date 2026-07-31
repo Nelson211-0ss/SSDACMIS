@@ -113,6 +113,9 @@ $router->post('/marks',            'MarksController@store',           [$staffAdm
 //   Department-wide (HOD matrix entry — every subject in a department for a class):
 $router->get('/marks/department',  'MarksController@departmentEntry', [$staffAdminOrHod]);
 $router->post('/marks/department', 'MarksController@departmentStore', [$staffAdminOrHod]);
+//   Autosave: persists one cell at a time as a teacher types, independent of
+//   the full-sheet "Save marks" submit.
+$router->post('/marks/autosave-cell', 'MarksController@autosaveCell', [$staffAdminOrHod]);
 //   HOD-portal aliases — same controllers, but on URLs that fall inside the
 //   /hod/* prefix so HOD sessions stay isolated from the main school portal.
 $router->get('/hod/marks',             'MarksController@index',           [$staffAdminOrHod]);
@@ -120,6 +123,7 @@ $router->get('/hod/marks/entry',       'MarksController@entry',           [$staf
 $router->post('/hod/marks',            'MarksController@store',           [$staffAdminOrHod]);
 $router->get('/hod/marks/department',  'MarksController@departmentEntry', [$staffAdminOrHod]);
 $router->post('/hod/marks/department', 'MarksController@departmentStore', [$staffAdminOrHod]);
+$router->post('/hod/marks/autosave-cell', 'MarksController@autosaveCell', [$staffAdminOrHod]);
 
 // Results (computed averages & positions — Mid ×/30 + End ×/70)
 $router->get('/results',              'ResultsController@index',      [$staffAdminOrHod]);

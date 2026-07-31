@@ -26,7 +26,7 @@ use App\Services\TermResultsService;
 class MarksController extends Controller
 {
     private const TERMS = ['Term 1', 'Term 2', 'Term 3'];
-    private const EXAMS = ['midterm' => 'Mid-term', 'endterm' => 'End-term'];
+    private const EXAMS = ['midterm' => 'Mid-term', 'endterm' => 'End-term', 'both' => 'Both (Mid + End)'];
 
     /* -------- helpers --------------------------------------------------- */
 
@@ -397,9 +397,14 @@ class MarksController extends Controller
             ]);
         }
 
-        if (!array_key_exists($examType, self::EXAMS)) $examType = 'midterm';
+        if (!array_key_exists($examType, self::EXAMS)) {
+            // HODs default to the combined sheet for convenience; everyone
+            // else defaults to mid-term. Either way it's just a starting
+            // point — the exam-type filter lets anyone switch freely.
+            $examType = Auth::isCurrentHod() ? 'both' : 'midterm';
+        }
 
-        $dualEntry = Auth::isCurrentHod();
+        $dualEntry = ($examType === 'both');
 
         $class   = Database::query("SELECT id, name, level FROM classes  WHERE id = ?", [$classId])->fetch();
         $subject = Database::query("SELECT id, name, category, is_offered FROM subjects WHERE id = ?", [$subjectId])->fetch();
@@ -509,10 +514,10 @@ class MarksController extends Controller
         $filter     = $this->streamFilterFor($classId, $subjectCat);
 
         if ((string) $this->input('dual_exam') === '1') {
-            if (!Auth::isCurrentHod()) {
-                http_response_code(403);
-                return $this->view('errors/403');
-            }
+            // "Both" is a filter choice available to anyone who can already
+            // grade this (class, subject) — canGrade() above is the only
+            // authorization that matters here, same as the single-exam path.
+            $entryRedirQ .= '&exam_type=both';
 
             $midM = (array) ($_POST['scores_mid'] ?? []);
             $endM = (array) ($_POST['scores_end'] ?? []);
@@ -615,7 +620,10 @@ class MarksController extends Controller
         $examType = trim((string) $this->input('exam_type'));
         $scores   = (array) ($_POST['scores'] ?? []);
 
-        if ($examType === '' || !array_key_exists($examType, self::EXAMS)) {
+        // "Both" only ever submits via the dual_exam=1 branch above — a
+        // single-column sheet's exam_type must be midterm or endterm, the
+        // only values grades.exam_type actually accepts.
+        if (!in_array($examType, ['midterm', 'endterm'], true)) {
             Flash::set('danger', 'Missing or invalid exam type.');
             $this->redirect('/marks');
             return '';
@@ -724,6 +732,99 @@ class MarksController extends Controller
         $this->redirect("/marks/entry?class_id=$classId&subject_id=$subjectId&year="
             . rawurlencode($year) . "&term=" . rawurlencode($term) . "&exam_type=$examType");
         return '';
+    }
+
+    /**
+     * Autosave a single mark as a teacher types, independent of the explicit
+     * "Save marks" submit. Persists one (student, subject, exam_type) score
+     * and resyncs that class's term results, then returns JSON — no redirect,
+     * no full-page flash, since this is called from JS on a debounced timer.
+     *
+     * This is a JSON endpoint, so it deliberately does NOT reuse
+     * Controller::validateCsrf() — that method redirects on failure, which is
+     * meaningless for a fetch() call and would leave the JS parsing an HTML
+     * login/redirect page as if it were JSON.
+     */
+    public function autosaveCell(): string
+    {
+        header('Content-Type: application/json');
+
+        $csrf = (string) $this->input('_csrf', '');
+        if (!hash_equals($_SESSION['_csrf'] ?? '', $csrf)) {
+            http_response_code(419);
+            return json_encode(['ok' => false, 'error' => 'Your session expired. Refresh the page and try again.']);
+        }
+
+        $classId   = (int) $this->input('class_id');
+        $subjectId = (int) $this->input('subject_id');
+        $studentId = (int) $this->input('student_id');
+        $year      = trim((string) $this->input('year', ''));
+        $term      = trim((string) $this->input('term', ''));
+        $examType  = trim((string) $this->input('exam_type', ''));
+        $raw       = trim((string) $this->input('value', ''));
+
+        if (!$classId || !$subjectId || !$studentId || $year === '' || $term === ''
+            || !self::isValidYear($year) || !in_array($term, self::TERMS, true)
+            || !in_array($examType, ['midterm', 'endterm'], true)) {
+            http_response_code(422);
+            return json_encode(['ok' => false, 'error' => 'Invalid request.']);
+        }
+        if (!$this->canGrade($classId, $subjectId)) {
+            http_response_code(403);
+            return json_encode(['ok' => false, 'error' => 'Not authorized to grade this subject.']);
+        }
+
+        $subjectRow = Database::query("SELECT category FROM subjects WHERE id = ?", [$subjectId])->fetch();
+        $filter = $this->streamFilterFor($classId, (string) ($subjectRow['category'] ?? ''));
+        $belongs = Database::query(
+            "SELECT 1 FROM students WHERE id = ? AND class_id = ? {$filter['where']}",
+            array_merge([$studentId, $classId], $filter['params'])
+        )->fetch();
+        if (!$belongs) {
+            http_response_code(422);
+            return json_encode(['ok' => false, 'error' => 'That student is not in this class.']);
+        }
+
+        if ($raw === '') {
+            // Blank means "clear this mark" rather than leaving a stray 0 behind.
+            Database::query(
+                "DELETE FROM grades WHERE student_id = ? AND subject_id = ? AND academic_year = ? AND term = ? AND exam_type = ?",
+                [$studentId, $subjectId, $year, $term, $examType]
+            );
+        } else {
+            if (!is_numeric($raw)) {
+                http_response_code(422);
+                return json_encode(['ok' => false, 'error' => 'Enter a valid number.']);
+            }
+            $score = (float) $raw;
+            $err = $examType === 'midterm'
+                ? AcademicMarking::validateMid($score)
+                : AcademicMarking::validateEnd($score);
+            if ($err !== null) {
+                http_response_code(422);
+                return json_encode(['ok' => false, 'error' => $err]);
+            }
+
+            $userId = (int) (Auth::user()['id'] ?? 0);
+            Database::query(
+                "INSERT INTO grades (student_id, subject_id, academic_year, term, exam_type, score, recorded_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                    score       = VALUES(score),
+                    recorded_by = VALUES(recorded_by)",
+                [$studentId, $subjectId, $year, $term, $examType, $score, $userId ?: null]
+            );
+        }
+
+        try {
+            TermResultsService::syncClass($classId, $year, $term);
+        } catch (\Throwable $e) {
+            // The mark itself is saved — only the derived results/rankings
+            // failed to refresh. Say so distinctly rather than claiming failure.
+            return json_encode(['ok' => true, 'syncFailed' => true]);
+        }
+
+        return json_encode(['ok' => true]);
     }
 
     /* -------- Department-wide entry (HOD dashboard) -------------------- */

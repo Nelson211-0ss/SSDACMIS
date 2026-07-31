@@ -42,7 +42,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
   <input type="hidden" name="class_id"   value="<?= (int) $class['id'] ?>">
   <input type="hidden" name="subject_id" value="<?= (int) $subject['id'] ?>">
   <div class="card-body row g-3 align-items-end">
-    <div class="col-md-<?= $dual ? '4' : '3' ?>">
+    <div class="col-md-3">
       <label class="form-label">Academic year <span class="text-danger">*</span></label>
       <select name="year" class="form-select" required>
         <?php foreach ($years as $y): ?>
@@ -50,7 +50,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
         <?php endforeach; ?>
       </select>
     </div>
-    <div class="col-md-<?= $dual ? '4' : '3' ?>">
+    <div class="col-md-3">
       <label class="form-label">Term <span class="text-danger">*</span></label>
       <select name="term" class="form-select" required>
         <?php foreach ($terms as $t): ?>
@@ -58,17 +58,16 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
         <?php endforeach; ?>
       </select>
     </div>
-    <?php if (!$dual): ?>
-      <div class="col-md-3">
-        <label class="form-label">Exam</label>
-        <select name="exam_type" class="form-select">
-          <?php foreach ($exams as $k => $label): ?>
-            <option value="<?= $k ?>" <?= $k === $examType ? 'selected' : '' ?>><?= View::e($label) ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-    <?php endif; ?>
-    <div class="col-md-<?= $dual ? '4' : '3' ?>">
+    <div class="col-md-3">
+      <label class="form-label">Exam</label>
+      <select name="exam_type" class="form-select">
+        <?php foreach ($exams as $k => $label): ?>
+          <option value="<?= $k ?>" <?= $k === $examType ? 'selected' : '' ?>><?= View::e($label) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <div class="form-text small">Filters which mark fields are shown below.</div>
+    </div>
+    <div class="col-md-3">
       <button class="btn btn-outline-primary w-100"><i class="bi bi-arrow-clockwise"></i> Reload</button>
     </div>
   </div>
@@ -77,7 +76,8 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
 <?php if (empty($students)): ?>
   <div class="alert alert-info">No students in <?= View::e($class['name']) ?> yet.</div>
 <?php elseif ($dual): ?>
-  <form id="marks-entry-form-dual" method="post" action="<?= $base ?><?= $portalPrefix ?>/marks">
+  <form id="marks-entry-form-dual" method="post" action="<?= $base ?><?= $portalPrefix ?>/marks"
+        data-autosave-url="<?= $base ?><?= $portalPrefix ?>/marks/autosave-cell">
     <input type="hidden" name="_csrf"         value="<?= $csrf ?>">
     <input type="hidden" name="class_id"      value="<?= (int) $class['id'] ?>">
     <input type="hidden" name="subject_id"    value="<?= (int) $subject['id'] ?>">
@@ -93,7 +93,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
             <span data-progress-count>0 / 0 entered</span>
             <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
           </span>
-          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill" style="font-size:.5rem"></i> Unsaved changes</span>
+          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill"></i> <span data-sheet-unsaved-text>All changes saved</span></span>
         </div>
         <div class="marks-sheet-fill">
           <span class="marks-sheet-fill__label">Fill blank</span>
@@ -135,6 +135,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                   <input type="text" inputmode="decimal" autocomplete="off"
                          class="msheet-input score-mid"
                          data-row="<?= $i ?>" data-col="mid"
+                         data-student-id="<?= $sid ?>" data-subject-id="<?= (int) $subject['id'] ?>" data-exam-type="midterm"
                          name="scores_mid[<?= $sid ?>]"
                          value="<?= $valM !== '' ? View::e(rtrim(rtrim(number_format((float) $valM, 2, '.', ''), '0'), '.')) : '' ?>"
                          placeholder="—" aria-label="Mid-term mark, max 30">
@@ -145,6 +146,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                   <input type="text" inputmode="decimal" autocomplete="off"
                          class="msheet-input score-end"
                          data-row="<?= $i ?>" data-col="end"
+                         data-student-id="<?= $sid ?>" data-subject-id="<?= (int) $subject['id'] ?>" data-exam-type="endterm"
                          name="scores_end[<?= $sid ?>]"
                          value="<?= $valE !== '' ? View::e(rtrim(rtrim(number_format((float) $valE, 2, '.', ''), '0'), '.')) : '' ?>"
                          placeholder="—" aria-label="End of term mark, max 70">
@@ -159,7 +161,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
         </table>
       </div>
       <div class="card-footer d-flex justify-content-end gap-2">
-        <div class="small text-muted me-auto">MT ≤ 30 · EOT ≤ 70 · leave blank to skip · ↑↓ or Enter moves rows</div>
+        <div class="small text-muted me-auto">MT ≤ 30 · EOT ≤ 70 · saves automatically as you type · leave blank to skip · ↑↓ or Enter moves rows</div>
         <button type="submit" class="btn btn-primary" data-sheet-submit><i class="bi bi-save"></i> Save marks</button>
       </div>
     </div>
@@ -174,7 +176,8 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
     $examMax = ($examType === 'midterm') ? 30 : 70;
     $examHint = ($examType === 'midterm') ? 'Mid-term — maximum 30 marks' : 'End-of-term — maximum 70 marks';
   ?>
-  <form id="marks-entry-form-single" method="post" action="<?= $base ?><?= $portalPrefix ?>/marks">
+  <form id="marks-entry-form-single" method="post" action="<?= $base ?><?= $portalPrefix ?>/marks"
+        data-autosave-url="<?= $base ?><?= $portalPrefix ?>/marks/autosave-cell">
     <input type="hidden" name="_csrf"      value="<?= $csrf ?>">
     <input type="hidden" name="class_id"   value="<?= (int) $class['id'] ?>">
     <input type="hidden" name="subject_id" value="<?= (int) $subject['id'] ?>">
@@ -190,7 +193,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
             <span data-progress-count>0 / 0 entered</span>
             <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
           </span>
-          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill" style="font-size:.5rem"></i> Unsaved changes</span>
+          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill"></i> <span data-sheet-unsaved-text>All changes saved</span></span>
         </div>
         <div class="marks-sheet-fill">
           <span class="marks-sheet-fill__label">Fill blank cells with</span>
@@ -221,6 +224,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                   <input type="text" inputmode="decimal" autocomplete="off"
                          class="msheet-input score-input"
                          data-row="<?= $i ?>" data-col="score"
+                         data-student-id="<?= (int) $st['id'] ?>" data-subject-id="<?= (int) $subject['id'] ?>" data-exam-type="<?= View::e($examType) ?>"
                          name="scores[<?= (int) $st['id'] ?>]"
                          title="<?= View::e($examHint) ?>"
                          value="<?= $val !== '' ? View::e(rtrim(rtrim(number_format((float) $val, 2, '.', ''), '0'), '.')) : '' ?>"
@@ -234,7 +238,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
         </table>
       </div>
       <div class="card-footer d-flex justify-content-end gap-2">
-        <div class="small text-muted me-auto"><?= View::e($exams[$examType]) ?> · leave blank to skip · ↑↓ or Enter moves rows</div>
+        <div class="small text-muted me-auto"><?= View::e($exams[$examType]) ?> · saves automatically as you type · leave blank to skip · ↑↓ or Enter moves rows</div>
         <button type="submit" class="btn btn-primary" data-sheet-submit><i class="bi bi-save"></i> Save marks</button>
       </div>
     </div>

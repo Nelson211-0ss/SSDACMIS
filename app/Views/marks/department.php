@@ -76,7 +76,8 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
 <?php elseif (empty($students)): ?>
   <div class="alert alert-info">No students in <?= View::e($class['name']) ?> yet.</div>
 <?php else: ?>
-  <form id="marks-dept-form" method="post" action="<?= $base ?><?= $portalPrefix ?>/marks/department">
+  <form id="marks-dept-form" method="post" action="<?= $base ?><?= $portalPrefix ?>/marks/department"
+        data-autosave-url="<?= $base ?><?= $portalPrefix ?>/marks/autosave-cell">
     <input type="hidden" name="_csrf"     value="<?= $csrf ?>">
     <input type="hidden" name="class_id"  value="<?= (int) $class['id'] ?>">
     <input type="hidden" name="category"  value="<?= View::e($category) ?>">
@@ -102,9 +103,9 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
             <span data-progress-count>0 / 0 entered</span>
             <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
           </span>
-          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill" style="font-size:.5rem"></i> Unsaved changes</span>
+          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill"></i> <span data-sheet-unsaved-text>All changes saved</span></span>
         </div>
-        <div class="small text-muted">Mid ≤ 30 · End ≤ 70 per subject · ↑↓ or Enter moves rows</div>
+        <div class="small text-muted">Mid ≤ 30 · End ≤ 70 per subject · saves automatically · ↑↓ or Enter moves rows</div>
       </div>
       <div class="marks-sheet-scroll">
         <table class="marks-sheet">
@@ -149,6 +150,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                     <input type="text" inputmode="decimal" autocomplete="off"
                            class="msheet-input score-mid"
                            data-row="<?= $i ?>" data-col="mid-<?= $subId ?>"
+                           data-student-id="<?= $sid ?>" data-subject-id="<?= $subId ?>" data-exam-type="midterm"
                            name="scores_mid[<?= $sid ?>][<?= $subId ?>]"
                            value="<?= View::e($md) ?>"
                            placeholder="—" aria-label="Mid <?= View::e($sub['name']) ?>">
@@ -157,6 +159,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                     <input type="text" inputmode="decimal" autocomplete="off"
                            class="msheet-input score-end"
                            data-row="<?= $i ?>" data-col="end-<?= $subId ?>"
+                           data-student-id="<?= $sid ?>" data-subject-id="<?= $subId ?>" data-exam-type="endterm"
                            name="scores_end[<?= $sid ?>][<?= $subId ?>]"
                            value="<?= View::e($ed) ?>"
                            placeholder="—" aria-label="End <?= View::e($sub['name']) ?>">
@@ -170,7 +173,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
       </div>
       <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="small text-muted">
-          Leave blank to skip. Results overview updates after save — averages/positions compute from mid-term alone if end-term isn't in yet.
+          Marks save automatically as you type. Leave blank to skip. Averages/positions compute from mid-term alone if end-term isn't in yet.
         </div>
         <div class="d-flex gap-2">
           <a class="btn btn-outline-primary btn-sm"

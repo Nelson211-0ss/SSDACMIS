@@ -178,36 +178,153 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Unsaved-changes guard                                                */
+  /* Autosave: persists one cell at a time, debounced, independent of the  */
+  /* explicit "Save marks" submit. Drives the same status pill that used   */
+  /* to be a plain "unsaved changes" flag — it now reflects Saving / Saved  */
+  /* / Save failed, since edits are committed automatically as you type.   */
   /* ------------------------------------------------------------------ */
 
-  function wireUnsavedGuard(form, inputs) {
+  function wireAutosave(form, inputs) {
     var flag = form.querySelector('[data-sheet-unsaved]');
-    var dirty = false;
+    var textEl = flag ? flag.querySelector('[data-sheet-unsaved-text]') : null;
+    var url = form.getAttribute('data-autosave-url');
+    var pending = 0;
+    var errored = false;
+    var timers = [];
 
-    function markDirty() {
-      dirty = true;
-      if (flag) flag.classList.add('is-active');
+    function setState(state, message) {
+      if (!flag) return;
+      flag.classList.add('is-active');
+      flag.classList.remove('marks-sheet-unsaved--saving', 'marks-sheet-unsaved--saved', 'marks-sheet-unsaved--error');
+      flag.classList.add('marks-sheet-unsaved--' + state);
+      if (textEl) textEl.textContent = message;
     }
-    inputs.forEach(function (inp) { inp.addEventListener('input', markDirty); });
 
-    form.addEventListener('submit', function () { dirty = false; });
+    function refreshFlag() {
+      if (errored) {
+        setState('error', 'Save failed — fix highlighted cells or click Save');
+      } else if (pending > 0) {
+        setState('saving', 'Saving…');
+      } else {
+        setState('saved', 'All changes saved');
+      }
+    }
+
+    function cellError(input, message) {
+      var cell = input.closest('td') || input.parentElement;
+      var errEl = cell ? cell.querySelector('.msheet-cell-err') : null;
+      input.classList.add('is-invalid', 'is-autosave-error');
+      if (errEl) errEl.textContent = message || 'Could not save.';
+    }
+
+    function clearCellError(input) {
+      input.classList.remove('is-autosave-error');
+      if (!input.classList.contains('is-invalid')) {
+        var cell = input.closest('td') || input.parentElement;
+        var errEl = cell ? cell.querySelector('.msheet-cell-err') : null;
+        if (errEl) errEl.textContent = '';
+      }
+    }
+
+    function anyStillErrored() {
+      return inputs.some(function (inp) { return inp.classList.contains('is-autosave-error'); });
+    }
+
+    function save(input) {
+      if (!url) return;
+      var studentId = input.dataset.studentId;
+      var subjectId = input.dataset.subjectId;
+      var examType  = input.dataset.examType;
+      if (!studentId || !subjectId || !examType) return;
+
+      pending++;
+      refreshFlag();
+
+      var body = new URLSearchParams({
+        _csrf: form._csrf ? form._csrf.value : '',
+        class_id: form.class_id ? form.class_id.value : '',
+        subject_id: subjectId,
+        student_id: studentId,
+        year: form.year ? form.year.value : '',
+        term: form.term ? form.term.value : '',
+        exam_type: examType,
+        value: String(input.value || '').trim()
+      });
+
+      fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      })
+        .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+        .then(function (data) {
+          if (data && data.ok) {
+            clearCellError(input);
+          } else {
+            cellError(input, (data && data.error) || 'Could not save.');
+          }
+        })
+        .catch(function () {
+          cellError(input, 'Offline — will need Save marks.');
+        })
+        .then(function () {
+          pending = Math.max(0, pending - 1);
+          errored = anyStillErrored();
+          refreshFlag();
+        });
+    }
+
+    inputs.forEach(function (input, idx) {
+      input.addEventListener('input', function () {
+        clearTimeout(timers[idx]);
+        timers[idx] = setTimeout(function () { save(input); }, 800);
+      });
+    });
+
+    form.addEventListener('submit', function () {
+      // The explicit "Save marks" click always does a full, authoritative
+      // save — autosave's per-cell status no longer matters after that.
+      pending = 0;
+      errored = false;
+    });
 
     window.addEventListener('beforeunload', function (e) {
-      if (!dirty) return;
+      if (pending === 0 && !errored) return;
       e.preventDefault();
       e.returnValue = '';
     });
 
-    // The "Reload/Refresh" period mini-form is a plain GET link/form elsewhere
-    // on the page — warn before it discards unsaved edits.
+    // The "Reload/Refresh" period mini-form is a separate GET form elsewhere
+    // on the page — only warn if something hasn't actually saved yet.
     document.querySelectorAll('[data-sheet-reload]').forEach(function (reloadForm) {
       reloadForm.addEventListener('submit', function (e) {
-        if (dirty && !window.confirm('You have unsaved marks on this sheet. Discard them and reload?')) {
+        if ((pending > 0 || errored)
+            && !window.confirm('Some marks have not saved yet. Discard them and reload?')) {
           e.preventDefault();
         }
       });
     });
+
+    if (url) refreshFlag();
+  }
+
+  /** Keep the sticky table header stacked just below the sticky toolbar,
+   *  using the toolbar's REAL rendered height (it can wrap to two lines on
+   *  narrow screens) rather than a guessed constant. */
+  function stickToolbarOffset(form) {
+    var toolbar = form.querySelector('.marks-sheet-toolbar');
+    var card = form.querySelector('.marks-sheet-card');
+    if (!toolbar || !card) return;
+    function apply() {
+      card.style.setProperty('--marks-toolbar-h', toolbar.offsetHeight + 'px');
+    }
+    apply();
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(apply).observe(toolbar);
+    } else {
+      window.addEventListener('resize', apply);
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -272,7 +389,8 @@
 
     wireKeyboardNav(inputs);
     wireProgress(form, inputs);
-    wireUnsavedGuard(form, inputs);
+    wireAutosave(form, inputs);
+    stickToolbarOffset(form);
     wireFillBlanks(form, function () { return inputs; });
     attachFormGuard(form);
   }
@@ -345,7 +463,8 @@
 
     wireKeyboardNav(all);
     wireProgress(form, all);
-    wireUnsavedGuard(form, all);
+    wireAutosave(form, all);
+    stickToolbarOffset(form);
     wireFillBlanks(form, function () {
       var col = form.querySelector('[data-sheet-fill-col]');
       var which = col ? col.value : 'mid';
@@ -415,7 +534,8 @@
 
     wireKeyboardNav(all);
     wireProgress(form, all);
-    wireUnsavedGuard(form, all);
+    wireAutosave(form, all);
+    stickToolbarOffset(form);
 
     // "Jump to subject" chips scroll the sheet horizontally to that subject's columns.
     form.querySelectorAll('[data-jump-subject]').forEach(function (chip) {
