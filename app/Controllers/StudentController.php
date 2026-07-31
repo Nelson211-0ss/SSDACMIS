@@ -534,7 +534,8 @@ class StudentController extends Controller
     }
 
     /**
-     * Names, class, section, date of birth — required for create and update.
+     * Names, class, section — required for create and update. Date of birth
+     * is optional, but if one is entered it must be a real, non-future date.
      */
     private function validateStudentCoreFields(array &$data, string $redirect): bool
     {
@@ -554,17 +555,12 @@ class StudentController extends Controller
             return false;
         }
         $dob = trim((string) ($data['dob'] ?? ''));
-        if ($dob === '') {
-            Flash::set('danger', 'Date of birth is required.');
-            $this->redirect($redirect);
-            return false;
-        }
-        if (!$this->isValidStudentDob($dob)) {
+        if ($dob !== '' && !$this->isValidStudentDob($dob)) {
             Flash::set('danger', 'Enter a valid date of birth (not in the future).');
             $this->redirect($redirect);
             return false;
         }
-        $data['dob'] = $dob;
+        $data['dob'] = $dob !== '' ? $dob : null;
 
         return true;
     }

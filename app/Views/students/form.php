@@ -153,8 +153,8 @@ $dobMaxAttr = date('Y-m-d');
                 </select>
               </div>
               <div class="col-sm-6">
-                <label class="form-label small fw-semibold mb-1" for="studentDob">Date of birth <span class="text-danger">*</span></label>
-                <input id="studentDob" type="date" name="dob" class="form-control form-control-sm shadow-sm" required
+                <label class="form-label small fw-semibold mb-1" for="studentDob">Date of birth</label>
+                <input id="studentDob" type="date" name="dob" class="form-control form-control-sm shadow-sm"
                        min="<?= View::e($dobMinAttr) ?>" max="<?= View::e($dobMaxAttr) ?>"
                        value="<?= View::e($student['dob'] ?? '') ?>">
               </div>
@@ -460,9 +460,7 @@ $dobMaxAttr = date('Y-m-d');
     var dobEl = document.getElementById('studentDob');
     if (dobEl) {
       var dv = String(dobEl.value || '').trim();
-      if (!dv) {
-        errs.push('Date of birth is required.');
-      } else {
+      if (dv) {
         var ok = /^\d{4}-\d{2}-\d{2}$/.test(dv);
         if (ok) {
           var d = new Date(dv + 'T12:00:00');
