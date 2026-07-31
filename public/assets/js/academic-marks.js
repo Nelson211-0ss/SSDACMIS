@@ -309,24 +309,6 @@
     if (url) refreshFlag();
   }
 
-  /** Keep the sticky table header stacked just below the sticky toolbar,
-   *  using the toolbar's REAL rendered height (it can wrap to two lines on
-   *  narrow screens) rather than a guessed constant. */
-  function stickToolbarOffset(form) {
-    var toolbar = form.querySelector('.marks-sheet-toolbar');
-    var card = form.querySelector('.marks-sheet-card');
-    if (!toolbar || !card) return;
-    function apply() {
-      card.style.setProperty('--marks-toolbar-h', toolbar.offsetHeight + 'px');
-    }
-    apply();
-    if (typeof ResizeObserver === 'function') {
-      new ResizeObserver(apply).observe(toolbar);
-    } else {
-      window.addEventListener('resize', apply);
-    }
-  }
-
   /* ------------------------------------------------------------------ */
   /* Fill-blanks: apply one value to every currently-empty matching cell  */
   /* ------------------------------------------------------------------ */
@@ -390,7 +372,6 @@
     wireKeyboardNav(inputs);
     wireProgress(form, inputs);
     wireAutosave(form, inputs);
-    stickToolbarOffset(form);
     wireFillBlanks(form, function () { return inputs; });
     attachFormGuard(form);
   }
@@ -464,7 +445,6 @@
     wireKeyboardNav(all);
     wireProgress(form, all);
     wireAutosave(form, all);
-    stickToolbarOffset(form);
     wireFillBlanks(form, function () {
       var col = form.querySelector('[data-sheet-fill-col]');
       var which = col ? col.value : 'mid';
@@ -535,7 +515,6 @@
     wireKeyboardNav(all);
     wireProgress(form, all);
     wireAutosave(form, all);
-    stickToolbarOffset(form);
 
     // "Jump to subject" chips scroll the sheet horizontally to that subject's columns.
     form.querySelectorAll('[data-jump-subject]').forEach(function (chip) {

@@ -5880,7 +5880,21 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   padding-bottom: .25rem;
 }
 
-.marks-sheet-scroll { overflow-x: auto; }
+/*
+ * Bounded on purpose, NOT just overflow-x. Setting only overflow-x:auto here
+ * forces the browser to compute overflow-y as auto too (CSS Overflow spec:
+ * one non-visible axis makes the other auto) — but with no height limit,
+ * this box never actually scrolls vertically, so it silently becomes the
+ * (inert) sticky containing block for the thead below, and the header's
+ * position:sticky does nothing as the PAGE scrolls. Giving it a real
+ * max-height makes it a genuine scroll container so the header correctly
+ * sticks to ITS top as you scroll through the rows — the classic
+ * frozen-header-table pattern, empirically verified in a headless browser.
+ */
+.marks-sheet-scroll {
+  overflow: auto;
+  max-height: 70vh;
+}
 .marks-sheet {
   border-collapse: separate;
   border-spacing: 0;
@@ -5889,9 +5903,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .marks-sheet thead th {
   position: sticky;
-  /* Stacks below the sticky toolbar above it — --marks-toolbar-h is measured
-     and set by JS (falls back to a reasonable single-line estimate). */
-  top: calc(var(--topbar-h) + var(--marks-toolbar-h, 3.4rem));
+  top: 0;
   z-index: 3;
   background: var(--surface-2);
   color: var(--text-muted);
@@ -6003,6 +6015,10 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .app-main > div.bursar-dash > * { animation: none !important; }
   .app-main { background: var(--bg) !important; }
   .card { box-shadow: none !important; }
+  /* The mark-entry sheet's bounded scroll box is a screen-only affordance —
+     on paper every row should print, not just the ~70vh that's on-screen. */
+  .marks-sheet-scroll { max-height: none !important; overflow: visible !important; }
+  .marks-sheet thead th { position: static !important; }
 }
 
 /* ---------- Mobile polish ---------- */
