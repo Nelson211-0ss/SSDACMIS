@@ -233,4 +233,151 @@ class ResultsController extends Controller
             'schoolName'  => Settings::get('school_name') ?: App::config('app.name'),
         ]);
     }
+
+    /**
+     * Boys-vs-girls performance breakdown: student counts, average %, and
+     * pass rate (>= 50%), aggregated per class and — for the super admin,
+     * who is not scoped to a single school — per school as well.
+     */
+    public function genderPerformance(): string
+    {
+        $year = (string) ($this->input('year') ?: self::defaultYear());
+        $term = (string) ($this->input('term') ?: 'Term 1');
+        if (!in_array($term, self::TERMS, true)) {
+            $term = 'Term 1';
+        }
+
+        TermResultsService::ensureTables();
+
+        $classIds = $this->visibleClassIds();
+        $byClass  = [];
+        $totals   = ['male' => self::emptyGenderBucket(), 'female' => self::emptyGenderBucket()];
+        $bySchool = [];
+        $otherCount = 0;
+
+        if ($classIds !== []) {
+            $ph = implode(',', array_fill(0, count($classIds), '?'));
+
+            $classRows = Database::query(
+                "SELECT id, name, level FROM classes WHERE id IN ($ph) ORDER BY level, name",
+                $classIds
+            )->fetchAll();
+            foreach ($classRows as $c) {
+                $byClass[(int) $c['id']] = [
+                    'name'  => $c['name'],
+                    'level' => $c['level'],
+                    'male'   => self::emptyGenderBucket(),
+                    'female' => self::emptyGenderBucket(),
+                ];
+            }
+
+            $params = array_merge($classIds, [$year, $term]);
+
+            $classGender = Database::query(
+                "SELECT tsr.class_id, s.gender,
+                        COUNT(*) AS n,
+                        AVG(tsr.average_percentage) AS avg_pct,
+                        SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
+                 FROM term_student_results tsr
+                 JOIN students s ON s.id = tsr.student_id
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                       AND s.gender IN ('male','female')
+                 GROUP BY tsr.class_id, s.gender",
+                $params
+            )->fetchAll();
+            foreach ($classGender as $r) {
+                $cid = (int) $r['class_id'];
+                if (!isset($byClass[$cid])) {
+                    continue;
+                }
+                $byClass[$cid][$r['gender']] = self::genderBucketFromRow($r);
+            }
+
+            $overall = Database::query(
+                "SELECT s.gender,
+                        COUNT(*) AS n,
+                        AVG(tsr.average_percentage) AS avg_pct,
+                        SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
+                 FROM term_student_results tsr
+                 JOIN students s ON s.id = tsr.student_id
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                       AND s.gender IN ('male','female')
+                 GROUP BY s.gender",
+                $params
+            )->fetchAll();
+            foreach ($overall as $r) {
+                $totals[$r['gender']] = self::genderBucketFromRow($r);
+            }
+
+            $otherCount = (int) (Database::query(
+                "SELECT COUNT(*) AS n
+                 FROM term_student_results tsr
+                 JOIN students s ON s.id = tsr.student_id
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                       AND s.gender = 'other'",
+                $params
+            )->fetch()['n'] ?? 0);
+
+            // Per-school breakdown only makes sense for the super admin, who
+            // isn't already scoped to one school — everyone else's "totals"
+            // above already ARE their one school's numbers.
+            if (Auth::schoolId() === null) {
+                $schoolRows = Database::query(
+                    "SELECT sch.id AS school_id, sch.name AS school_name, s.gender,
+                            COUNT(*) AS n,
+                            AVG(tsr.average_percentage) AS avg_pct,
+                            SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
+                     FROM term_student_results tsr
+                     JOIN students s ON s.id = tsr.student_id
+                     JOIN schools sch ON sch.id = s.school_id
+                     WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                           AND s.gender IN ('male','female')
+                     GROUP BY sch.id, sch.name, s.gender
+                     ORDER BY sch.name",
+                    $params
+                )->fetchAll();
+                foreach ($schoolRows as $r) {
+                    $sid = (int) $r['school_id'];
+                    if (!isset($bySchool[$sid])) {
+                        $bySchool[$sid] = [
+                            'name'   => $r['school_name'],
+                            'male'   => self::emptyGenderBucket(),
+                            'female' => self::emptyGenderBucket(),
+                        ];
+                    }
+                    $bySchool[$sid][$r['gender']] = self::genderBucketFromRow($r);
+                }
+            }
+        }
+
+        return $this->view('results/gender', [
+            'year'       => $year,
+            'term'       => $term,
+            'terms'      => self::TERMS,
+            'years'      => self::selectableYears(),
+            'byClass'    => $byClass,
+            'bySchool'   => $bySchool,
+            'totals'     => $totals,
+            'otherCount' => $otherCount,
+            'schoolName' => Settings::get('school_name') ?: App::config('app.name'),
+        ]);
+    }
+
+    /** @return array{n:int,avg:?float,passed:int,passPct:?float} */
+    private static function emptyGenderBucket(): array
+    {
+        return ['n' => 0, 'avg' => null, 'passed' => 0, 'passPct' => null];
+    }
+
+    /** @return array{n:int,avg:?float,passed:int,passPct:?float} */
+    private static function genderBucketFromRow(array $r): array
+    {
+        $n = (int) $r['n'];
+        return [
+            'n'       => $n,
+            'avg'     => $r['avg_pct'] !== null ? (float) $r['avg_pct'] : null,
+            'passed'  => (int) $r['passed'],
+            'passPct' => $n > 0 ? ((float) $r['passed'] / $n) * 100 : null,
+        ];
+    }
 }

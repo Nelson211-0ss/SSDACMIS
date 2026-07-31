@@ -124,8 +124,10 @@ $router->post('/hod/marks/department', 'MarksController@departmentStore', [$staf
 // Results (computed averages & positions — Mid ×/30 + End ×/70)
 $router->get('/results',              'ResultsController@index',      [$staffAdminOrHod]);
 $router->get('/results/class/{id}', 'ResultsController@classView',   [$staffAdminOrHod]);
+$router->get('/results/gender',     'ResultsController@genderPerformance', [$staffAdminOrHod]);
 $router->get('/hod/results',              'ResultsController@index',      [$staffAdminOrHod]);
 $router->get('/hod/results/class/{id}', 'ResultsController@classView',   [$staffAdminOrHod]);
+$router->get('/hod/results/gender', 'ResultsController@genderPerformance', [$staffAdminOrHod]);
 
 // Reports (printable mid-term & end-term report cards)
 $router->get('/reports',                'ReportController@index',       [$auth]);
