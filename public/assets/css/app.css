@@ -5816,6 +5816,30 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: .6rem;
   min-width: 0;
 }
+.marks-sheet-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.marks-sheet-search i {
+  position: absolute;
+  left: .65rem;
+  color: var(--text-muted);
+  font-size: .8rem;
+  pointer-events: none;
+}
+.marks-sheet-search input {
+  width: 14rem;
+  max-width: 100%;
+  padding-left: 1.85rem;
+}
+.marks-sheet-search__count {
+  font-size: .74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: .4rem;
+}
 .marks-sheet-progress {
   display: inline-flex;
   align-items: center;
@@ -5999,6 +6023,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 @media (max-width: 575.98px) {
   .marks-sheet-toolbar { flex-direction: column; align-items: stretch; }
   .marks-sheet-fill { justify-content: space-between; }
+  .marks-sheet-search input { width: 100%; }
 }
 
 /* ---------- Auth pages: keep card shadow neutral ---------- */

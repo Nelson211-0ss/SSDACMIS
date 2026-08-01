@@ -97,6 +97,12 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
 
     <div class="card border-0 shadow-sm marks-sheet-card">
       <div class="marks-sheet-toolbar">
+        <div class="marks-sheet-search">
+          <i class="bi bi-search"></i>
+          <input type="search" class="form-control form-control-sm" data-sheet-search
+                 placeholder="Find student by name or admission no.">
+          <span class="marks-sheet-search__count" data-sheet-search-count></span>
+        </div>
         <div class="marks-sheet-toolbar__left">
           <span class="marks-sheet-progress" data-sheet-progress>
             <i class="bi bi-list-check"></i>
@@ -135,7 +141,8 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
               $rowMid = $existingMid[$sid] ?? [];
               $rowEnd = $existingEnd[$sid] ?? [];
             ?>
-              <tr data-row="<?= $i ?>">
+              <tr data-row="<?= $i ?>"
+                  data-search="<?= View::e(mb_strtolower($st['first_name'] . ' ' . $st['last_name'] . ' ' . $st['admission_no'])) ?>">
                 <td class="msheet-sticky-1 msheet-row-num"><?= $i + 1 ?></td>
                 <td class="msheet-sticky-2 font-monospace small"><?= View::e($st['admission_no']) ?></td>
                 <td class="msheet-sticky-3"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>

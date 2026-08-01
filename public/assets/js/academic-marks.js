@@ -117,12 +117,40 @@
   /* ------------------------------------------------------------------ */
 
   function wireKeyboardNav(inputs) {
-    function findByRowCol(row, col) {
+    function rowHidden(inp) {
+      var tr = inp.closest('tr');
+      return !!tr && tr.style.display === 'none';
+    }
+
+    // Steps row-by-row in `dir` past any rows a search filter has hidden,
+    // so Up/Down/Enter never lands on an invisible cell.
+    function findByRowCol(row, col, dir) {
+      var maxRow = -1;
       for (var i = 0; i < inputs.length; i++) {
-        if (inputs[i].dataset.row === String(row) && inputs[i].dataset.col === col) return inputs[i];
+        var r = parseInt(inputs[i].dataset.row || '-1', 10);
+        if (r > maxRow) maxRow = r;
+      }
+      while (row >= 0 && row <= maxRow) {
+        for (var j = 0; j < inputs.length; j++) {
+          if (inputs[j].dataset.row === String(row) && inputs[j].dataset.col === col && !rowHidden(inputs[j])) {
+            return inputs[j];
+          }
+        }
+        row += dir;
       }
       return null;
     }
+
+    // Steps left/right through the flat input list, skipping filtered-out rows.
+    function nextVisible(idx, dir) {
+      var i = idx + dir;
+      while (i >= 0 && i < inputs.length) {
+        if (!rowHidden(inputs[i])) return inputs[i];
+        i += dir;
+      }
+      return null;
+    }
+
     inputs.forEach(function (inp, idx) {
       inp.addEventListener('keydown', function (e) {
         var row = parseInt(inp.dataset.row || '-1', 10);
@@ -131,7 +159,7 @@
 
         if (e.key === 'ArrowDown' || e.key === 'Enter') {
           e.preventDefault();
-          target = findByRowCol(row + 1, col);
+          target = findByRowCol(row + 1, col, 1);
           if (!target) {
             var form = inp.closest('form');
             var btn = form ? form.querySelector('[data-sheet-submit]') : null;
@@ -139,11 +167,11 @@
           }
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
-          target = findByRowCol(row - 1, col);
+          target = findByRowCol(row - 1, col, -1);
         } else if (e.key === 'ArrowRight') {
-          if (inp.selectionStart === inp.value.length) { target = inputs[idx + 1] || null; }
+          if (inp.selectionStart === inp.value.length) { target = nextVisible(idx, 1); }
         } else if (e.key === 'ArrowLeft') {
-          if (inp.selectionStart === 0) { target = inputs[idx - 1] || null; }
+          if (inp.selectionStart === 0) { target = nextVisible(idx, -1); }
         }
         if (target) {
           if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') e.preventDefault();
@@ -323,6 +351,9 @@
       var targets = getTargetInputs();
       var changed = false;
       targets.forEach(function (inp) {
+        // Respect an active search filter — only fill what's actually shown.
+        var tr = inp.closest('tr');
+        if (tr && tr.style.display === 'none') return;
         if (String(inp.value || '').trim() === '') {
           inp.value = raw;
           inp.dispatchEvent(new Event('input', { bubbles: true }));
@@ -330,6 +361,62 @@
         }
       });
       if (changed && typeof onFilled === 'function') onFilled();
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Search: type a name or admission number to filter the roster down —  */
+  /* every row already has a data-search haystack rendered server-side.   */
+  /* ------------------------------------------------------------------ */
+
+  function wireSearchFilter(form) {
+    var input = form.querySelector('[data-sheet-search]');
+    if (!input) return;
+
+    var rows = Array.prototype.slice.call(form.querySelectorAll('tbody tr[data-row]'));
+    var countEl = form.querySelector('[data-sheet-search-count]');
+    var emptyRow = null;
+
+    function ensureEmptyRow() {
+      if (emptyRow) return emptyRow;
+      var table = form.querySelector('.marks-sheet');
+      var tbody = table ? table.querySelector('tbody') : null;
+      var headRow = table ? table.querySelector('thead tr') : null;
+      if (!tbody || !headRow) return null;
+      var cols = 0;
+      Array.prototype.forEach.call(headRow.children, function (th) { cols += th.colSpan || 1; });
+      emptyRow = document.createElement('tr');
+      emptyRow.className = 'msheet-search-empty';
+      emptyRow.style.display = 'none';
+      var td = document.createElement('td');
+      td.colSpan = cols;
+      td.className = 'text-center text-muted small py-3';
+      td.textContent = 'No students match that search.';
+      emptyRow.appendChild(td);
+      tbody.appendChild(emptyRow);
+      return emptyRow;
+    }
+
+    function apply() {
+      var q = input.value.trim().toLowerCase();
+      var visible = 0;
+      rows.forEach(function (tr) {
+        var haystack = tr.getAttribute('data-search') || '';
+        var match = q === '' || haystack.indexOf(q) !== -1;
+        tr.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      var empty = ensureEmptyRow();
+      if (empty) empty.style.display = (q !== '' && visible === 0) ? '' : 'none';
+      if (countEl) countEl.textContent = q === '' ? '' : (visible + ' of ' + rows.length + ' shown');
+    }
+
+    input.addEventListener('input', apply);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && input.value !== '') {
+        input.value = '';
+        apply();
+      }
     });
   }
 
@@ -373,6 +460,7 @@
     wireProgress(form, inputs);
     wireAutosave(form, inputs);
     wireFillBlanks(form, function () { return inputs; });
+    wireSearchFilter(form);
     attachFormGuard(form);
   }
 
@@ -450,6 +538,7 @@
       var which = col ? col.value : 'mid';
       return which === 'end' ? ends : mids;
     });
+    wireSearchFilter(form);
     attachFormGuard(form);
   }
 
@@ -515,6 +604,7 @@
     wireKeyboardNav(all);
     wireProgress(form, all);
     wireAutosave(form, all);
+    wireSearchFilter(form);
 
     // "Jump to subject" chips scroll the sheet horizontally to that subject's columns.
     form.querySelectorAll('[data-jump-subject]').forEach(function (chip) {
