@@ -339,11 +339,16 @@ final class AcademicMarking
             }
         }
 
-        // `average` is always a genuine 0–100 percentage — the mean of each
-        // subject's own percentage, never the raw totals — so it stays valid
-        // and comparable for ranking even when subjects are on different
-        // denominators (some /30 mid-only, some /100 complete).
-        $average = $subjectCount > 0 ? round($pctSum / $subjectCount, 2) : null;
+        // `average` is a genuine 0–100 percentage — the mean of each graded
+        // subject's own percentage, never the raw totals, so it stays valid
+        // and comparable even when subjects are on different denominators
+        // (some /30 mid-only, some /100 complete). It's divided by the FULL
+        // curriculum count (count($subjects)), not by how many subjects are
+        // graded — an ungraded subject counts as 0 rather than being
+        // skipped, so a student isn't ranked only on their best few
+        // subjects while the rest are still ungraded. A student with no
+        // marks in anything yet stays null ("—"), not 0%.
+        $average = $subjectCount > 0 ? round($pctSum / count($subjects), 2) : null;
 
         return [
             'groups'   => $sorted,

@@ -203,7 +203,7 @@ $nMatrix = count($matrixPeers);
     <?php endforeach; ?>
 
     <div class="small text-muted mt-2">
-      M = Mid-term (×/30) · E = End-term (×/70) · T = Subject total so far, out of 30/70/100 depending on which components are entered · Σ Tot = sum of subject totals, out of the combined max · Avg % = mean of each subject's own percentage, so it stays comparable even before every subject is complete · Position uses competition ranking on average %.
+      M = Mid-term (×/30) · E = End-term (×/70) · T = Subject total so far, out of 30/70/100 depending on which components are entered · Σ Tot = sum of subject totals, out of the combined max · Avg % = sum of each graded subject's percentage ÷ the student's full subject count, so an ungraded subject counts as 0 rather than being left out · Position uses competition ranking on average %.
       <?php if (!empty($isUpperForm)): ?>
         Form 3 &amp; Form 4 students are ranked within their stream.
       <?php endif; ?>

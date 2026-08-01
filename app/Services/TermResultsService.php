@@ -94,6 +94,7 @@ final class TermResultsService
             );
 
             $membersByGroup = [];
+            $curriculumCounts = [];
             foreach ($students as $st) {
                 $studentId = (int) $st['id'];
                 $stream = (string) ($st['stream'] ?? 'none');
@@ -105,6 +106,12 @@ final class TermResultsService
                 $membersByGroup[$cohort][] = ['student_id' => $studentId, 'stream' => $stream];
 
                 $subs = AcademicMarking::offeredSubjectsForStudent($studentId);
+                // The full curriculum for this student (core + their stream +
+                // optional) — the average below is divided by THIS count, not
+                // by how many subjects happen to have marks so far, so a
+                // student with 2 of 8 subjects graded isn't ranked only on
+                // their best 2.
+                $curriculumCounts[$studentId] = count($subs);
                 $subIds = array_map(static fn ($s) => (int) $s['id'], $subs);
                 if ($subIds === []) {
                     continue;
@@ -169,7 +176,7 @@ final class TermResultsService
                 $averages = [];
                 foreach ($memberRows as $meta) {
                     $sid = (int) $meta['student_id'];
-                    // Average the PERCENTAGE of each subject (not the raw
+                    // Sum the PERCENTAGE of each graded subject (not the raw
                     // total_marks) — a mid-only subject is stored out of 30, a
                     // complete one out of 100, so summing raw totals directly
                     // would silently corrupt the average the moment a student
@@ -189,9 +196,17 @@ final class TermResultsService
                            AND total_marks IS NOT NULL',
                         [$sid, $year, $term]
                     )->fetch();
-                    $n = (int) ($sumRow['n'] ?? 0);
-                    $s = (float) ($sumRow['s'] ?? 0);
-                    $avg = $n > 0 ? round($s / $n, 2) : null;
+                    $gradedCount = (int) ($sumRow['n'] ?? 0);
+                    $pctSum = (float) ($sumRow['s'] ?? 0);
+                    // Divide by the FULL curriculum count, not by how many
+                    // subjects are graded — an ungraded subject counts as 0
+                    // rather than being skipped, so the average reflects
+                    // every subject the student is meant to take. A student
+                    // with no marks in anything yet stays null ("—"), not 0%.
+                    $curriculumCount = $curriculumCounts[$sid] ?? 0;
+                    $avg = ($gradedCount > 0 && $curriculumCount > 0)
+                        ? round($pctSum / $curriculumCount, 2)
+                        : null;
                     $averages[$sid] = $avg;
                 }
 
