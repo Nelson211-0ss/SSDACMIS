@@ -373,6 +373,8 @@
     var input = form.querySelector('[data-sheet-search]');
     if (!input) return;
 
+    var wrap = input.closest('.marks-sheet-search');
+    var clearBtn = form.querySelector('[data-sheet-search-clear]');
     var rows = Array.prototype.slice.call(form.querySelectorAll('tbody tr[data-row]'));
     var countEl = form.querySelector('[data-sheet-search-count]');
     var emptyRow = null;
@@ -409,6 +411,7 @@
       var empty = ensureEmptyRow();
       if (empty) empty.style.display = (q !== '' && visible === 0) ? '' : 'none';
       if (countEl) countEl.textContent = q === '' ? '' : (visible + ' of ' + rows.length + ' shown');
+      if (wrap) wrap.classList.toggle('has-value', input.value !== '');
     }
 
     input.addEventListener('input', apply);
@@ -418,6 +421,13 @@
         apply();
       }
     });
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        input.value = '';
+        apply();
+        input.focus();
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ */

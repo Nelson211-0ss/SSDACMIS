@@ -97,21 +97,31 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
 
     <div class="card border-0 shadow-sm marks-sheet-card">
       <div class="marks-sheet-toolbar">
-        <div class="marks-sheet-search">
-          <i class="bi bi-search"></i>
-          <input type="search" class="form-control form-control-sm" data-sheet-search
-                 placeholder="Find student by name or admission no.">
-          <span class="marks-sheet-search__count" data-sheet-search-count></span>
+        <div class="marks-sheet-toolbar__row marks-sheet-toolbar__row--primary">
+          <div class="d-flex align-items-center gap-2 flex-wrap" style="min-width:0;">
+            <div class="marks-sheet-search">
+              <i class="bi bi-search"></i>
+              <input type="text" class="form-control form-control-sm" data-sheet-search autocomplete="off"
+                     placeholder="Name or admission no."
+                     title="Find a student by name or admission number">
+              <button type="button" class="marks-sheet-search__clear" data-sheet-search-clear aria-label="Clear search">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <span class="marks-sheet-search__count" data-sheet-search-count></span>
+          </div>
+          <div class="marks-sheet-toolbar__status">
+            <span class="marks-sheet-progress" data-sheet-progress>
+              <i class="bi bi-list-check"></i>
+              <span data-progress-count>0 / 0 entered</span>
+              <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
+            </span>
+            <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill"></i> <span data-sheet-unsaved-text>All changes saved</span></span>
+          </div>
         </div>
-        <div class="marks-sheet-toolbar__left">
-          <span class="marks-sheet-progress" data-sheet-progress>
-            <i class="bi bi-list-check"></i>
-            <span data-progress-count>0 / 0 entered</span>
-            <span class="marks-sheet-progress__bar"><span class="marks-sheet-progress__fill" style="width:0%"></span></span>
-          </span>
-          <span class="marks-sheet-unsaved" data-sheet-unsaved><i class="bi bi-circle-fill"></i> <span data-sheet-unsaved-text>All changes saved</span></span>
+        <div class="marks-sheet-toolbar__row">
+          <div class="small text-muted">Mid ≤ 30 · End ≤ 70 per subject · saves automatically · ↑↓ or Enter moves rows</div>
         </div>
-        <div class="small text-muted">Mid ≤ 30 · End ≤ 70 per subject · saves automatically · ↑↓ or Enter moves rows</div>
       </div>
       <div class="marks-sheet-scroll">
         <table class="marks-sheet">

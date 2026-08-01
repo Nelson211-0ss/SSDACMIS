@@ -5792,13 +5792,20 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .marks-sheet-card {
   border-radius: var(--radius-lg) !important;
 }
+/*
+ * Two stable rows, always — never "however many groups happen to fit on one
+ * line before wrapping." A single flex row with 3 independent widget groups
+ * (search / status / fill-blanks) looked fine at desktop width, but at
+ * laptop/tablet widths flex-wrap dropped the last group onto its own line
+ * with a large, unrelated gap above it — it read as an orphaned afterthought
+ * rather than part of the toolbar. Row 1 (search + status) is what you look
+ * at constantly; row 2 (fill-blanks / hints) is a secondary, less-frequent
+ * action, so it gets its own consistently-bordered row instead of
+ * competing for space on row 1 at every viewport width.
+ */
 .marks-sheet-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: .65rem 1rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: .75rem 1rem;
+  flex-direction: column;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -5809,7 +5816,18 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .marks-sheet-card > .card-footer {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
-.marks-sheet-toolbar__left {
+.marks-sheet-toolbar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem 1rem;
+  padding: .6rem 1rem;
+}
+.marks-sheet-toolbar__row--primary { justify-content: space-between; }
+.marks-sheet-toolbar__row + .marks-sheet-toolbar__row {
+  border-top: 1px dashed var(--border);
+}
+.marks-sheet-toolbar__status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -5820,9 +5838,11 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1 1 15rem;
+  max-width: 24rem;
   min-width: 0;
 }
-.marks-sheet-search i {
+.marks-sheet-search i.bi-search {
   position: absolute;
   left: .65rem;
   color: var(--text-muted);
@@ -5830,15 +5850,32 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   pointer-events: none;
 }
 .marks-sheet-search input {
-  width: 14rem;
-  max-width: 100%;
+  width: 100%;
   padding-left: 1.85rem;
+  padding-right: 1.85rem;
 }
+.marks-sheet-search__clear {
+  position: absolute;
+  right: .35rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 999px;
+  font-size: .8rem;
+  cursor: pointer;
+}
+.marks-sheet-search__clear:hover { background: rgba(var(--accent-rgb), .1); color: var(--text); }
+.marks-sheet-search.has-value .marks-sheet-search__clear { display: flex; }
 .marks-sheet-search__count {
   font-size: .74rem;
   color: var(--text-muted);
   white-space: nowrap;
-  margin-left: .4rem;
+  flex-shrink: 0;
 }
 .marks-sheet-progress {
   display: inline-flex;
@@ -6021,9 +6058,9 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 
 @media (max-width: 575.98px) {
-  .marks-sheet-toolbar { flex-direction: column; align-items: stretch; }
+  .marks-sheet-toolbar__row { flex-direction: column; align-items: stretch; }
   .marks-sheet-fill { justify-content: space-between; }
-  .marks-sheet-search input { width: 100%; }
+  .marks-sheet-search { max-width: none; }
 }
 
 /* ---------- Auth pages: keep card shadow neutral ---------- */
