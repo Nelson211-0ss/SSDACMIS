@@ -630,6 +630,124 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
   </section>
   <?php endif; ?>
 
+  <?php
+    $genderPerfPeriod = $genderPerfPeriod ?? null;
+    $genderPerf         = $genderPerf ?? null;
+    $genderPerfBySchool = $genderPerfBySchool ?? [];
+    $gpFmtPct = static function (?float $v): string {
+        return $v === null ? '—' : number_format($v, 1) . '%';
+    };
+    $gpYear = (string) ($genderPerfPeriod['year'] ?? '');
+    $gpTerm = (string) ($genderPerfPeriod['term'] ?? '');
+    $gpLink = $base . '/results/gender?year=' . rawurlencode($gpYear) . '&term=' . rawurlencode($gpTerm);
+  ?>
+
+  <?php if ($isSchoolAdmin && $genderPerf !== null):
+    $gpBoys  = $genderPerf['male'];
+    $gpGirls = $genderPerf['female'];
+  ?>
+  <section class="sa-panel mb-3 dash-fly dash-fly--5">
+    <div class="sa-panel__head">
+      <div>
+        <h3 class="sa-panel__title">Gender performance</h3>
+        <p class="sa-panel__sub"><?= View::e($gpYear) ?> &middot; <?= View::e($gpTerm) ?> &middot; boys vs girls average % and pass rate</p>
+      </div>
+      <a href="<?= View::e($gpLink) ?>" class="btn btn-sm btn-outline-secondary">View full analysis</a>
+    </div>
+    <div class="row g-3 p-3">
+      <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-gender-male"></i></div>
+          <div class="kpi-card__body">
+            <div class="kpi-card__label">Boys &mdash; average</div>
+            <div class="kpi-card__value"><?= $gpFmtPct($gpBoys['avg']) ?></div>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= (int) $gpBoys['n'] ?> student<?= $gpBoys['n'] === 1 ? '' : 's' ?></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--blue"><i class="bi bi-check2-circle"></i></div>
+          <div class="kpi-card__body">
+            <div class="kpi-card__label">Boys &mdash; pass rate</div>
+            <div class="kpi-card__value"><?= $gpFmtPct($gpBoys['passPct']) ?></div>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= (int) $gpBoys['passed'] ?> of <?= (int) $gpBoys['n'] ?> passed</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--pink"><i class="bi bi-gender-female"></i></div>
+          <div class="kpi-card__body">
+            <div class="kpi-card__label">Girls &mdash; average</div>
+            <div class="kpi-card__value"><?= $gpFmtPct($gpGirls['avg']) ?></div>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= (int) $gpGirls['n'] ?> student<?= $gpGirls['n'] === 1 ? '' : 's' ?></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--pink"><i class="bi bi-check2-circle"></i></div>
+          <div class="kpi-card__body">
+            <div class="kpi-card__label">Girls &mdash; pass rate</div>
+            <div class="kpi-card__value"><?= $gpFmtPct($gpGirls['passPct']) ?></div>
+            <div class="kpi-card__delta kpi-card__delta--flat"><?= (int) $gpGirls['passed'] ?> of <?= (int) $gpGirls['n'] ?> passed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <?php endif; ?>
+
+  <?php if ($isAdmin && !empty($genderPerfBySchool)): ?>
+  <section class="sa-panel mb-3 dash-fly dash-fly--6">
+    <div class="sa-panel__head">
+      <div>
+        <h3 class="sa-panel__title">Gender performance by school</h3>
+        <p class="sa-panel__sub"><?= View::e($gpYear) ?> &middot; <?= View::e($gpTerm) ?> &middot; each school's boys vs girls average, shown separately &mdash; never merged into one system-wide figure</p>
+      </div>
+      <a href="<?= View::e($gpLink) ?>" class="btn btn-sm btn-outline-secondary">View full analysis</a>
+    </div>
+    <div class="sa-table-wrap">
+      <table class="table sa-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th rowspan="2" class="align-middle">School</th>
+            <th colspan="3" class="text-center">Boys</th>
+            <th colspan="3" class="text-center">Girls</th>
+          </tr>
+          <tr>
+            <th class="text-center small text-muted fw-normal">Students</th>
+            <th class="text-center small text-muted fw-normal">Avg %</th>
+            <th class="text-center small text-muted fw-normal">Pass %</th>
+            <th class="text-center small text-muted fw-normal">Students</th>
+            <th class="text-center small text-muted fw-normal">Avg %</th>
+            <th class="text-center small text-muted fw-normal">Pass %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($genderPerfBySchool as $sid => $row):
+            $rBoys  = $row['male'];
+            $rGirls = $row['female'];
+          ?>
+            <tr>
+              <td>
+                <a href="<?= $base ?>/schools/<?= (int) $sid ?>"><?= View::e($row['name']) ?></a>
+              </td>
+              <td class="text-center"><?= (int) $rBoys['n'] ?></td>
+              <td class="text-center"><?= $gpFmtPct($rBoys['avg']) ?></td>
+              <td class="text-center"><?= $gpFmtPct($rBoys['passPct']) ?></td>
+              <td class="text-center"><?= (int) $rGirls['n'] ?></td>
+              <td class="text-center"><?= $gpFmtPct($rGirls['avg']) ?></td>
+              <td class="text-center"><?= $gpFmtPct($rGirls['passPct']) ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <?php endif; ?>
+
   <!-- ============================================================
        Bottom row: Recent enrollments + Announcements
        ============================================================ -->

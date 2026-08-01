@@ -287,6 +287,79 @@ class DashboardController extends Controller
             ];
         }
 
+        // ---------- Gender performance analysis ----------
+        // School admin sees their own school's boys-vs-girls averages; the
+        // super admin sees every school broken out separately — never
+        // merged into one system-wide figure (schools aren't comparable
+        // once averaged together). Both default to the most recently
+        // synced (year, term) so the widget shows something meaningful
+        // without forcing a period picker on the dashboard.
+        $genderPerfPeriod   = null;
+        $genderPerf         = null;
+        $genderPerfBySchool = [];
+
+        if ($role === 'school_admin' && $schoolId !== null) {
+            $period = Database::query(
+                "SELECT tsr.academic_year, tsr.term
+                 FROM term_student_results tsr
+                 JOIN students s ON s.id = tsr.student_id
+                 WHERE s.school_id = ?
+                 ORDER BY tsr.updated_at DESC LIMIT 1",
+                [$schoolId]
+            )->fetch();
+
+            if ($period) {
+                $genderPerfPeriod = ['year' => $period['academic_year'], 'term' => $period['term']];
+                $rows = Database::query(
+                    "SELECT s.gender, COUNT(*) AS n,
+                            AVG(tsr.average_percentage) AS avg_pct,
+                            SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
+                     FROM term_student_results tsr
+                     JOIN students s ON s.id = tsr.student_id
+                     WHERE s.school_id = ? AND tsr.academic_year = ? AND tsr.term = ?
+                           AND s.gender IN ('male', 'female')
+                     GROUP BY s.gender",
+                    [$schoolId, $genderPerfPeriod['year'], $genderPerfPeriod['term']]
+                )->fetchAll();
+
+                $genderPerf = ['male' => self::emptyGenderBucket(), 'female' => self::emptyGenderBucket()];
+                foreach ($rows as $r) {
+                    $genderPerf[$r['gender']] = self::genderBucketFromRow($r);
+                }
+            }
+        } elseif ($isAdmin) {
+            $period = Database::query(
+                'SELECT academic_year, term FROM term_student_results ORDER BY updated_at DESC LIMIT 1'
+            )->fetch();
+
+            if ($period) {
+                $genderPerfPeriod = ['year' => $period['academic_year'], 'term' => $period['term']];
+                $rows = Database::query(
+                    "SELECT sch.id AS school_id, sch.name AS school_name, s.gender,
+                            COUNT(*) AS n,
+                            AVG(tsr.average_percentage) AS avg_pct,
+                            SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
+                     FROM term_student_results tsr
+                     JOIN students s ON s.id = tsr.student_id
+                     JOIN schools sch ON sch.id = s.school_id
+                     WHERE tsr.academic_year = ? AND tsr.term = ? AND s.gender IN ('male', 'female')
+                     GROUP BY sch.id, sch.name, s.gender
+                     ORDER BY sch.name",
+                    [$genderPerfPeriod['year'], $genderPerfPeriod['term']]
+                )->fetchAll();
+
+                foreach ($rows as $r) {
+                    $sid = (int) $r['school_id'];
+                    $genderPerfBySchool[$sid] ??= [
+                        'name'   => $r['school_name'],
+                        'male'   => self::emptyGenderBucket(),
+                        'female' => self::emptyGenderBucket(),
+                    ];
+                    $genderPerfBySchool[$sid][$r['gender']] = self::genderBucketFromRow($r);
+                }
+            }
+        }
+
         return $this->view('dashboard/index', compact(
             'isAdmin',
             'stats',
@@ -302,7 +375,28 @@ class DashboardController extends Controller
             'schoolProfile',
             'schoolsOverview',
             'platformTotals',
-            'studentSummary'
+            'studentSummary',
+            'genderPerfPeriod',
+            'genderPerf',
+            'genderPerfBySchool'
         ));
+    }
+
+    /** @return array{n:int,avg:?float,passed:int,passPct:?float} */
+    private static function emptyGenderBucket(): array
+    {
+        return ['n' => 0, 'avg' => null, 'passed' => 0, 'passPct' => null];
+    }
+
+    /** @return array{n:int,avg:?float,passed:int,passPct:?float} */
+    private static function genderBucketFromRow(array $r): array
+    {
+        $n = (int) $r['n'];
+        return [
+            'n'       => $n,
+            'avg'     => $r['avg_pct'] !== null ? (float) $r['avg_pct'] : null,
+            'passed'  => (int) $r['passed'],
+            'passPct' => $n > 0 ? ((float) $r['passed'] / $n) * 100 : null,
+        ];
     }
 }
