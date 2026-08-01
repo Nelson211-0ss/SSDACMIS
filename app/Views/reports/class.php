@@ -180,8 +180,8 @@ $nMatrix = count($matrixPeers);
             <tr>
               <td class="t-pos"><?= isset($row['_position']) ? (int) $row['_position'] : '—' ?></td>
               <td class="t-name">
-                <?= View::e($st['first_name'].' '.$st['last_name']) ?>
-                <span class="text-muted small">(<?= View::e($st['admission_no']) ?>)</span>
+                <div class="t-name__full"><?= View::e($st['first_name'].' '.$st['last_name']) ?></div>
+                <div class="text-muted small"><?= View::e($st['admission_no']) ?></div>
               </td>
               <?php foreach ($sectionSubjects as $sub):
                 $cell = $row[(int) $sub['id']] ?? ['mid' => null, 'end' => null, 'total' => null, 'max' => null];

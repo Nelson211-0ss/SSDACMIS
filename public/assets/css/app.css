@@ -2487,6 +2487,10 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .report-matrix th, .report-matrix td { padding: 4px 6px; font-size: .8rem; }
 .report-matrix .t-pos  { width: 40px; text-align: center; }
 .report-matrix .t-name { min-width: 160px; }
+/* Admission no. sits on its own line below the name (see markup) so the
+   name itself always has the full cell width and renders on one line
+   instead of wrapping once it's long enough to compete with "(ADM0023)". */
+.report-matrix .t-name__full { white-space: nowrap; }
 /* Keep wide matrix tables horizontally scrollable WITHIN their own
    container so the sticky sidebar isn't dragged sideways with them. */
 .report-matrix-scroll {
