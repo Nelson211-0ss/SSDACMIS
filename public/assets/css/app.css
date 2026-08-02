@@ -6934,6 +6934,14 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   width: 100% !important;
   height: 100% !important;
 }
+.chart-surface--gender-class {
+  height: 340px;
+  min-height: 280px;
+}
+.chart-surface--gender-class canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
 .overview-analytics-row .col-lg-5 .chart-card {
   flex: 1 1 auto;
 }

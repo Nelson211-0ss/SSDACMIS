@@ -103,8 +103,10 @@ $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
     </p>
   <?php endif; ?>
 
-  <canvas id="genderClassChart" height="90" class="mb-4 d-print-none" role="img"
-          aria-label="Average percentage by class, boys versus girls"></canvas>
+  <div class="chart-surface chart-surface--gender-class mb-4 d-print-none">
+    <canvas id="genderClassChart" role="img"
+            aria-label="Average percentage by class, boys versus girls"></canvas>
+  </div>
 
   <?php if (!empty($bySchool)): ?>
     <h5 class="mb-2"><i class="bi bi-buildings"></i> By school</h5>
