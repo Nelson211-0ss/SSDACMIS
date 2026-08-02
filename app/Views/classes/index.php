@@ -71,7 +71,22 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
             <tr><td colspan="6" class="text-center text-muted py-4">No classes yet.</td></tr>
           <?php else: foreach ($classes as $c): ?>
             <tr>
-              <td><?= View::e($c['name']) ?></td>
+              <td>
+                <?php if ($canManage): ?>
+                  <form method="post"
+                        action="<?= $base ?>/classes/<?= (int) $c['id'] ?>/rename"
+                        class="d-flex gap-1">
+                    <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+                    <input name="name" class="form-control form-control-sm"
+                           style="max-width: 10rem"
+                           maxlength="100" required
+                           value="<?= View::e($c['name']) ?>">
+                    <button class="btn btn-sm btn-outline-primary" title="Save name"><i class="bi bi-check2"></i></button>
+                  </form>
+                <?php else: ?>
+                  <?= View::e($c['name']) ?>
+                <?php endif; ?>
+              </td>
               <td><?= View::e($c['level'] ?: '—') ?></td>
               <td>
                 <?php if ($canManage): ?>

@@ -78,6 +78,7 @@ $router->post('/hods/{id}/delete', 'HodAccountController@destroy', [$schoolAdmin
 // Classes
 $router->get('/classes',                'ClassController@index',     [$staffOrAdmin]);
 $router->post('/classes',               'ClassController@store',     [$schoolAdminOrAdmin]);
+$router->post('/classes/{id}/rename',   'ClassController@rename',    [$schoolAdminOrAdmin]);
 $router->post('/classes/{id}/teacher',  'ClassController@setTeacher',[$schoolAdminOrAdmin]);
 $router->post('/classes/{id}/prefix',   'ClassController@setPrefix', [$schoolAdminOrAdmin]);
 $router->post('/classes/{id}/delete',   'ClassController@destroy',   [$schoolAdminOrAdmin]);

@@ -66,6 +66,49 @@ class ClassController extends Controller
         $this->redirect('/classes'); return '';
     }
 
+    /**
+     * Admin renames a class. Level is deliberately not editable here (or
+     * anywhere) — once a class is created its level is fixed, only the
+     * name can change (e.g. "Form 1A" -> "Form 1 Blue").
+     */
+    public function rename(string $id): string
+    {
+        $this->validateCsrf();
+        $name = trim((string) $this->input('name'));
+        if ($name === '') {
+            Flash::set('danger', 'Class name is required.');
+            $this->redirect('/classes');
+            return '';
+        }
+
+        $schoolId = Auth::schoolId();
+        $findSql = "SELECT id, school_id FROM classes WHERE id = ?";
+        $findParams = [(int) $id];
+        if ($schoolId !== null) { $findSql .= ' AND school_id = ?'; $findParams[] = $schoolId; }
+        $class = Database::query($findSql, $findParams)->fetch();
+        if (!$class) {
+            Flash::set('danger', 'That class does not exist or is not in your school.');
+            $this->redirect('/classes');
+            return '';
+        }
+
+        $dupe = Database::query(
+            "SELECT 1 FROM classes WHERE school_id = ? AND name = ? AND id != ? LIMIT 1",
+            [(int) $class['school_id'], $name, (int) $id]
+        )->fetch();
+        if ($dupe) {
+            Flash::set('danger', "A class named \"{$name}\" already exists in this school.");
+            $this->redirect('/classes');
+            return '';
+        }
+
+        Database::query("UPDATE classes SET name = ? WHERE id = ?", [$name, (int) $id]);
+        ActivityLog::record('update', 'class', (int) $id, "Renamed class #{$id} to '{$name}'");
+        Flash::set('success', 'Class name updated.');
+        $this->redirect('/classes');
+        return '';
+    }
+
     /** Admin updates the admission prefix for a class. */
     public function setPrefix(string $id): string
     {
