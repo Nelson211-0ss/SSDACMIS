@@ -236,46 +236,60 @@ class DashboardController extends Controller
         $schoolsOverview   = [];
         $platformTotals    = [];
         if ($isAdmin) {
+            // Every joined table below is pre-aggregated to exactly one row
+            // per school_id BEFORE joining, so schools joining multiple
+            // unrelated tables (staff, classes, HODs, bursars, students)
+            // never produce a cross-product that would inflate a SUM/COUNT.
+            // (A previous version joined those tables directly against
+            // `schools`, which cross-multiplied every student row by however
+            // many staff/class/HOD/bursar rows that school had — COUNT(DISTINCT)
+            // masked it for the plain totals, but male_count/female_count used
+            // a plain SUM(CASE...) and were silently wrong; just never rendered.)
             $schoolsOverview = Database::query(
                 "SELECT
                     s.id, s.name, s.code, s.status, s.logo,
-                    COUNT(DISTINCT st.id)  AS student_count,
-                    COUNT(DISTINCT sf.id)  AS staff_count,
-                    COUNT(DISTINCT dh.staff_id) AS hod_count,
-                    COUNT(DISTINCT u_b.id) AS bursar_count,
-                    COUNT(DISTINCT cl.id)  AS class_count,
-                    SUM(CASE WHEN st.gender = 'male'   THEN 1 ELSE 0 END) AS male_count,
-                    SUM(CASE WHEN st.gender = 'female' THEN 1 ELSE 0 END) AS female_count
+                    COALESCE(st.student_count, 0)  AS student_count,
+                    COALESCE(sf.staff_count, 0)    AS staff_count,
+                    COALESCE(dh.hod_count, 0)      AS hod_count,
+                    COALESCE(ub.bursar_count, 0)   AS bursar_count,
+                    COALESCE(cl.class_count, 0)    AS class_count,
+                    COALESCE(st.male_count, 0)     AS male_count,
+                    COALESCE(st.female_count, 0)   AS female_count,
+                    COALESCE(st.day_count, 0)      AS day_count,
+                    COALESCE(st.boarding_count, 0) AS boarding_count,
+                    COALESCE(st.science_count, 0)  AS science_count,
+                    COALESCE(st.arts_count, 0)     AS arts_count
                  FROM schools s
-                 LEFT JOIN students           st  ON st.school_id  = s.id
-                 LEFT JOIN staff              sf  ON sf.school_id  = s.id
-                 LEFT JOIN classes            cl  ON cl.school_id  = s.id
-                 LEFT JOIN staff              sf2 ON sf2.school_id = s.id
-                 LEFT JOIN department_heads   dh  ON dh.staff_id   = sf2.id
-                 LEFT JOIN users              u_b ON u_b.school_id = s.id
-                                                 AND u_b.role = 'bursar'
-                                                 AND u_b.status = 'active'
-                 GROUP BY s.id
+                 LEFT JOIN (
+                     SELECT school_id,
+                            COUNT(*) AS student_count,
+                            SUM(CASE WHEN gender  = 'male'     THEN 1 ELSE 0 END) AS male_count,
+                            SUM(CASE WHEN gender  = 'female'   THEN 1 ELSE 0 END) AS female_count,
+                            SUM(CASE WHEN section = 'day'      THEN 1 ELSE 0 END) AS day_count,
+                            SUM(CASE WHEN section = 'boarding'  THEN 1 ELSE 0 END) AS boarding_count,
+                            SUM(CASE WHEN stream  = 'science'  THEN 1 ELSE 0 END) AS science_count,
+                            SUM(CASE WHEN stream  = 'arts'     THEN 1 ELSE 0 END) AS arts_count
+                     FROM students GROUP BY school_id
+                 ) st ON st.school_id = s.id
+                 LEFT JOIN (
+                     SELECT school_id, COUNT(*) AS staff_count FROM staff GROUP BY school_id
+                 ) sf ON sf.school_id = s.id
+                 LEFT JOIN (
+                     SELECT school_id, COUNT(*) AS class_count FROM classes GROUP BY school_id
+                 ) cl ON cl.school_id = s.id
+                 LEFT JOIN (
+                     SELECT sf3.school_id, COUNT(DISTINCT dh.staff_id) AS hod_count
+                     FROM department_heads dh
+                     JOIN staff sf3 ON sf3.id = dh.staff_id
+                     GROUP BY sf3.school_id
+                 ) dh ON dh.school_id = s.id
+                 LEFT JOIN (
+                     SELECT school_id, COUNT(*) AS bursar_count
+                     FROM users WHERE role = 'bursar' AND status = 'active'
+                     GROUP BY school_id
+                 ) ub ON ub.school_id = s.id
                  ORDER BY s.name ASC"
             )->fetchAll();
-
-            // Build clean per-school aggregate (fix duplicate-join inflation).
-            // The query above joins staff twice (sf + sf2) so school-count is doubled
-            // for HODs. Re-fetch HODs separately to be safe.
-            $hodBySchool = [];
-            foreach (Database::query(
-                "SELECT s.school_id, COUNT(DISTINCT dh.staff_id) c
-                 FROM department_heads dh
-                 JOIN staff s ON s.id = dh.staff_id
-                 GROUP BY s.school_id"
-            )->fetchAll() as $r) {
-                $hodBySchool[(int) $r['school_id']] = (int) $r['c'];
-            }
-
-            foreach ($schoolsOverview as &$row) {
-                $row['hod_count'] = $hodBySchool[(int) $row['id']] ?? 0;
-            }
-            unset($row);
 
             $platformTotals = [
                 'schools'  => count($schoolsOverview),

@@ -456,71 +456,137 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       </div>
     </div>
 
-    <div class="col-lg-5 d-flex flex-column gap-3">
-      <div class="card chart-card flex-fill">
-        <div class="card-body pb-2">
-          <div class="chart-card__head mb-1">
-            <div>
-              <h3 class="chart-card__title">Gender</h3>
-              <p class="chart-card__sub"><?= number_format($gTotal) ?> students</p>
-            </div>
-          </div>
-          <div class="row g-0 align-items-center">
-            <div class="col-5">
-              <div class="chart-surface chart-surface--donut-side">
-                <?php if ($gTotal === 0): ?>
-                  <div class="chart-empty">No data yet.</div>
-                <?php else: ?>
-                  <canvas id="genderChart" aria-label="Gender distribution" role="img"></canvas>
-                <?php endif; ?>
+    <?php if ($isAdmin): ?>
+      <div class="col-lg-5">
+        <div class="card chart-card h-100">
+          <div class="card-body">
+            <div class="chart-card__head">
+              <div>
+                <h3 class="chart-card__title">Gender by school</h3>
+                <p class="chart-card__sub">Boys vs girls enrolled at each school &mdash; shown separately, not merged</p>
               </div>
             </div>
-            <div class="col-7 ps-3">
-              <ul class="donut-legend mb-2">
-                <li><span class="donut-legend__swatch" style="background:#3b82f6"></span><span class="donut-legend__label">Male</span><span class="donut-legend__value"><?= number_format($gMale) ?></span></li>
-                <li><span class="donut-legend__swatch" style="background:#ec4899"></span><span class="donut-legend__label">Female</span><span class="donut-legend__value"><?= number_format($gFemale) ?></span></li>
-                <?php if ($gOther > 0): ?>
-                  <li><span class="donut-legend__swatch" style="background:#6b7280"></span><span class="donut-legend__label">Other</span><span class="donut-legend__value"><?= number_format($gOther) ?></span></li>
-                <?php endif; ?>
-              </ul>
-              <div class="mini-stats">
-                <div class="mini-stat"><div class="mini-stat__label">Science</div><div class="mini-stat__value"><?= number_format($streamScience) ?></div></div>
-                <div class="mini-stat"><div class="mini-stat__label">Arts</div><div class="mini-stat__value"><?= number_format($streamArts) ?></div></div>
+            <div class="chart-surface">
+              <?php if (empty($schoolsOverview)): ?>
+                <div class="chart-empty">
+                  <div class="text-center">
+                    <i class="bi bi-buildings d-block mb-2 fs-3 text-subtle"></i>
+                    No schools on the system yet.
+                  </div>
+                </div>
+              <?php else: ?>
+                <canvas id="genderBySchoolChart" aria-label="Gender by school" role="img"></canvas>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="col-lg-5 d-flex flex-column gap-3">
+        <div class="card chart-card flex-fill">
+          <div class="card-body pb-2">
+            <div class="chart-card__head mb-1">
+              <div>
+                <h3 class="chart-card__title">Gender</h3>
+                <p class="chart-card__sub"><?= number_format($gTotal) ?> students</p>
+              </div>
+            </div>
+            <div class="row g-0 align-items-center">
+              <div class="col-5">
+                <div class="chart-surface chart-surface--donut-side">
+                  <?php if ($gTotal === 0): ?>
+                    <div class="chart-empty">No data yet.</div>
+                  <?php else: ?>
+                    <canvas id="genderChart" aria-label="Gender distribution" role="img"></canvas>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <div class="col-7 ps-3">
+                <ul class="donut-legend mb-2">
+                  <li><span class="donut-legend__swatch" style="background:#3b82f6"></span><span class="donut-legend__label">Male</span><span class="donut-legend__value"><?= number_format($gMale) ?></span></li>
+                  <li><span class="donut-legend__swatch" style="background:#ec4899"></span><span class="donut-legend__label">Female</span><span class="donut-legend__value"><?= number_format($gFemale) ?></span></li>
+                  <?php if ($gOther > 0): ?>
+                    <li><span class="donut-legend__swatch" style="background:#6b7280"></span><span class="donut-legend__label">Other</span><span class="donut-legend__value"><?= number_format($gOther) ?></span></li>
+                  <?php endif; ?>
+                </ul>
+                <div class="mini-stats">
+                  <div class="mini-stat"><div class="mini-stat__label">Science</div><div class="mini-stat__value"><?= number_format($streamScience) ?></div></div>
+                  <div class="mini-stat"><div class="mini-stat__label">Arts</div><div class="mini-stat__value"><?= number_format($streamArts) ?></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card chart-card flex-fill">
+          <div class="card-body pb-2">
+            <div class="chart-card__head mb-1">
+              <div>
+                <h3 class="chart-card__title">Section split</h3>
+                <p class="chart-card__sub">Day vs boarding &middot; <?= number_format($sectionTotal) ?></p>
+              </div>
+            </div>
+            <div class="row g-0 align-items-center">
+              <div class="col-5">
+                <div class="chart-surface chart-surface--donut-side">
+                  <?php if ($sectionTotal === 0): ?>
+                    <div class="chart-empty">No data yet.</div>
+                  <?php else: ?>
+                    <canvas id="sectionChart" aria-label="Section distribution" role="img"></canvas>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <div class="col-7 ps-3">
+                <ul class="donut-legend mb-0">
+                  <li><span class="donut-legend__swatch" style="background:#14b8a6"></span><span class="donut-legend__label">Day</span><span class="donut-legend__value"><?= number_format($sectionDay) ?></span></li>
+                  <li><span class="donut-legend__swatch" style="background:#f59e0b"></span><span class="donut-legend__label">Boarding</span><span class="donut-legend__value"><?= number_format($sectionBoarding) ?></span></li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </div>
+    <?php endif; ?>
+  </div>
 
-      <div class="card chart-card flex-fill">
-        <div class="card-body pb-2">
-          <div class="chart-card__head mb-1">
-            <div>
-              <h3 class="chart-card__title">Section split</h3>
-              <p class="chart-card__sub">Day vs boarding · <?= number_format($sectionTotal) ?></p>
-            </div>
-          </div>
-          <div class="row g-0 align-items-center">
-            <div class="col-5">
-              <div class="chart-surface chart-surface--donut-side">
-                <?php if ($sectionTotal === 0): ?>
-                  <div class="chart-empty">No data yet.</div>
-                <?php else: ?>
-                  <canvas id="sectionChart" aria-label="Section distribution" role="img"></canvas>
-                <?php endif; ?>
-              </div>
-            </div>
-            <div class="col-7 ps-3">
-              <ul class="donut-legend mb-0">
-                <li><span class="donut-legend__swatch" style="background:#14b8a6"></span><span class="donut-legend__label">Day</span><span class="donut-legend__value"><?= number_format($sectionDay) ?></span></li>
-                <li><span class="donut-legend__swatch" style="background:#f59e0b"></span><span class="donut-legend__label">Boarding</span><span class="donut-legend__value"><?= number_format($sectionBoarding) ?></span></li>
-              </ul>
-            </div>
-          </div>
-        </div>
+  <?php if ($isAdmin && !empty($schoolsOverview)): ?>
+  <section class="sa-panel mb-3 dash-fly dash-fly--4">
+    <div class="sa-panel__head">
+      <div>
+        <h3 class="sa-panel__title">Demographics by school</h3>
+        <p class="sa-panel__sub">Section and stream split for each school &mdash; shown separately, not merged</p>
       </div>
     </div>
-  </div>
+    <div class="sa-table-wrap">
+      <table class="table sa-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>School</th>
+            <th class="text-end">Students</th>
+            <th class="text-end d-none d-md-table-cell">Day</th>
+            <th class="text-end d-none d-md-table-cell">Boarding</th>
+            <th class="text-end d-none d-lg-table-cell">Science</th>
+            <th class="text-end d-none d-lg-table-cell">Arts</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($schoolsOverview as $sc): ?>
+            <tr>
+              <td>
+                <a href="<?= $base ?>/schools/<?= (int) $sc['id'] ?>"><?= View::e((string) $sc['name']) ?></a>
+              </td>
+              <td class="text-end fw-semibold"><?= number_format((int) ($sc['student_count'] ?? 0)) ?></td>
+              <td class="text-end d-none d-md-table-cell"><?= number_format((int) ($sc['day_count'] ?? 0)) ?></td>
+              <td class="text-end d-none d-md-table-cell"><?= number_format((int) ($sc['boarding_count'] ?? 0)) ?></td>
+              <td class="text-end d-none d-lg-table-cell"><?= number_format((int) ($sc['science_count'] ?? 0)) ?></td>
+              <td class="text-end d-none d-lg-table-cell"><?= number_format((int) ($sc['arts_count'] ?? 0)) ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <?php endif; ?>
 
   <?php if ($isSchoolAdmin && !empty($schoolProfile)):
     $profileActive = ($schoolProfile['status'] ?? '') === 'active';
@@ -1017,7 +1083,16 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       'data'   => [$sectionDay, $sectionBoarding],
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
-    var charts = { enrollment: null, gender: null, section: null };
+    // Per-school gender — super admin only. Each school is its own bar pair;
+    // never summed into one system-wide number (schools aren't comparable
+    // once averaged together).
+    var genderBySchoolData = <?= json_encode([
+      'labels' => array_map(fn($r) => (string) $r['name'], $schoolsOverview ?? []),
+      'male'   => array_map(fn($r) => (int) ($r['male_count']   ?? 0), $schoolsOverview ?? []),
+      'female' => array_map(fn($r) => (int) ($r['female_count'] ?? 0), $schoolsOverview ?? []),
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    var charts = { enrollment: null, gender: null, section: null, genderBySchool: null };
 
     function readTheme() {
       var css = getComputedStyle(document.documentElement);
@@ -1217,11 +1292,60 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       });
     }
 
+    function buildGenderBySchool(theme) {
+      var el = document.getElementById('genderBySchoolChart');
+      if (!el || !window.Chart || !genderBySchoolData.labels.length) return;
+
+      // Same validated blue/pink pair used everywhere else in the app for
+      // boys/girls (kpi-card icons, results/gender.php).
+      charts.genderBySchool = new Chart(el, {
+        type: 'bar',
+        data: {
+          labels: genderBySchoolData.labels,
+          datasets: [
+            { label: 'Boys',  data: genderBySchoolData.male,   backgroundColor: '#3b82f6', borderRadius: 6, maxBarThickness: 28 },
+            { label: 'Girls', data: genderBySchoolData.female, backgroundColor: '#ec4899', borderRadius: 6, maxBarThickness: 28 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              align: 'end',
+              labels: { color: theme.muted, boxWidth: 10, boxHeight: 10, font: { family: theme.chartFont, size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: theme.surface,
+              titleColor: theme.text,
+              bodyColor: theme.muted,
+              borderColor: theme.border,
+              borderWidth: 1,
+              padding: 10,
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false, drawBorder: false },
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 10 }, maxRotation: 30, minRotation: 0 }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: theme.border, drawBorder: false },
+              ticks: { color: theme.muted, font: { family: theme.chartFont, size: 11 }, precision: 0 }
+            }
+          }
+        }
+      });
+    }
+
     function renderAll() {
       if (!window.Chart) return;
       destroyAll();
       var theme = readTheme();
       buildEnrollment(theme);
+      buildGenderBySchool(theme);
       buildGender(theme);
       buildSection(theme);
     }

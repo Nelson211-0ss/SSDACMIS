@@ -122,4 +122,29 @@
       } catch (e) { el.remove(); }
     }, 5000);
   });
+
+  // --- Landscape print fix -------------------------------------------------
+  // app.css defines a named "landscape" @page alongside the default portrait
+  // @page (used by student report cards etc). Chrome has a known quirk where
+  // the LAST page of a multi-page print job can fall back to the default
+  // (portrait) page box instead of the named one — e.g. an edge-case trailing
+  // page generated right at a page-break boundary. Rather than fight that
+  // named-page fallback, we temporarily redefine the DEFAULT @page itself to
+  // landscape for the duration of printing, but only on pages that actually
+  // contain landscape report content — so any stray fallback page during
+  // THIS print job is landscape too, and every other page in the app is
+  // unaffected.
+  var landscapePrintStyle = null;
+  window.addEventListener('beforeprint', function () {
+    if (!document.querySelector('.report-page--print-landscape')) return;
+    landscapePrintStyle = document.createElement('style');
+    landscapePrintStyle.textContent = '@page { size: A4 landscape; margin: 8mm 10mm; }';
+    document.head.appendChild(landscapePrintStyle);
+  });
+  window.addEventListener('afterprint', function () {
+    if (landscapePrintStyle && landscapePrintStyle.parentNode) {
+      landscapePrintStyle.parentNode.removeChild(landscapePrintStyle);
+    }
+    landscapePrintStyle = null;
+  });
 })();
