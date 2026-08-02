@@ -2795,13 +2795,34 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
    the stacked store moves out of sight on screen but is brought back for print. */
 .report-booklet-layout #reportStudentViewport { display: none; }
 .report-booklet-layout.js-booklet-active #reportStudentViewport { display: flex; }
-.report-booklet-layout.js-booklet-active #bookletStore { display: none; }
+/* Kept laid out (not display:none) and at the true print content width
+   (210mm - 24mm margin) even while hidden on screen, so its cards are
+   always measurable — the print-fit script (class_booklet.php) needs an
+   accurate height read to scale oversized cards down to one page, and
+   display:none elements measure as zero height whenever the script runs
+   relative to the browser's print-media timing. */
+.report-booklet-layout.js-booklet-active #bookletStore {
+  position: absolute;
+  top: 0;
+  left: -99999px;
+  width: 186mm;
+  max-width: none;
+  visibility: hidden;
+  pointer-events: none;
+}
 .report-booklet-layout.js-booklet-active .report-booklet-viewport .report-page--student {
   margin: 0 !important;
 }
 @media print {
   .report-booklet-layout #reportStudentViewport { display: none !important; }
-  .report-booklet-layout #bookletStore { display: block !important; }
+  .report-booklet-layout #bookletStore {
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    width: auto !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
 }
 
 /* Print: strip the app chrome, fit page, force light styling */
@@ -2933,6 +2954,18 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
     page-break-before: always;
     page-break-after: always;
     page-break-inside: avoid;
+    /* Hard cap at exactly one A4-portrait content page (297mm - 12mm top -
+       12mm bottom margin, per the @page rule above). break-inside:avoid is
+       only a hint the fragmentation engine can ignore when content is
+       simply too tall — a student with many optional subjects would then
+       spill the tail of their card onto a second (mostly blank) sheet,
+       pushing every following student's report onto the wrong page. The
+       booklet's print handler (below, in class_booklet.php) measures each
+       card and scales it down to fit this box when needed, so overflow is
+       clipped only after being shrunk to fit — never in the common case. */
+    height: 273mm;
+    overflow: hidden;
+    position: relative;
   }
   /* The very first card doesn't need a leading break (would emit a
      blank first sheet in some browsers). */
@@ -2954,6 +2987,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
     width: 100% !important;
     break-inside: avoid;
     page-break-inside: avoid;
+    transform-origin: top left;
   }
   .report-page--student .report-table tr { page-break-inside: avoid; break-inside: avoid; }
 

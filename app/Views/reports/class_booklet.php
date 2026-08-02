@@ -151,7 +151,14 @@ $peersAttr = htmlspecialchars(json_encode($peersJson, JSON_HEX_TAG | JSON_HEX_AP
     if (current >= pages.length) current = pages.length - 1;
     var card = pickCard(pages[current]);
     sheet.innerHTML = '';
-    if (card) sheet.appendChild(card.cloneNode(true));
+    if (card) {
+      var clone = card.cloneNode(true);
+      /* The source card may carry a print-fit scale (see fitBookletForPrint
+         below) — the on-screen preview has its own independent fitCard()
+         scaling below, so start the clone clean. */
+      clone.style.transform = '';
+      sheet.appendChild(clone);
+    }
     if (indexEl) indexEl.textContent = String(current + 1);
     if (prevBtn) prevBtn.disabled = (current <= 0);
     if (nextBtn) nextBtn.disabled = (current >= pages.length - 1);
@@ -183,6 +190,41 @@ $peersAttr = htmlspecialchars(json_encode($peersJson, JSON_HEX_TAG | JSON_HEX_AP
       window.requestAnimationFrame(fitCard);
     });
   }
+
+  /* Printing: guarantee exactly one physical page per student, no matter
+     how many subjects they take. .report-booklet__page is capped to one
+     A4-portrait content page (273mm, see the print CSS) with overflow
+     hidden — a card that would otherwise be taller than that (e.g. a
+     student with many optional subjects) gets shrunk to fit instead of
+     spilling its tail onto a second, mostly-blank sheet and pushing every
+     following student onto the wrong page. */
+  function fitBookletForPrint() {
+    var MM_TO_PX = 96 / 25.4;
+    var pageHeightPx = 273 * MM_TO_PX;
+    pages.forEach(function (pageEl) {
+      var card = pickCard(pageEl);
+      if (!card) return;
+      card.style.transform = 'none';
+      var h = card.getBoundingClientRect().height;
+      if (h > pageHeightPx) {
+        var scale = (pageHeightPx / h) * 0.985; /* small safety margin against rounding */
+        card.style.transformOrigin = 'top left';
+        card.style.transform = 'scale(' + scale + ')';
+      } else {
+        card.style.transform = 'none';
+      }
+    });
+  }
+
+  function unfitBookletAfterPrint() {
+    pages.forEach(function (pageEl) {
+      var card = pickCard(pageEl);
+      if (card) card.style.transform = '';
+    });
+  }
+
+  window.addEventListener('beforeprint', fitBookletForPrint);
+  window.addEventListener('afterprint', unfitBookletAfterPrint);
 
   var ro = typeof ResizeObserver !== 'undefined'
     ? new ResizeObserver(function () { fitCardRaf(); })
