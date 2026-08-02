@@ -3,8 +3,21 @@ use App\Core\View;
 
 $layout = 'app';
 $title = 'Print student roster';
-$showClassCol = empty($classId) || (int) $classId <= 0;
+
 $total = count($students ?? []);
+$grouped = empty($classId) || (int) $classId <= 0; // viewing more than one class -> group by class instead of a per-row Class column
+$showSchoolInGroup = empty($selectedSchoolId); // super admin, "All schools"
+$letterhead = $letterhead ?? [];
+$logoRel = trim((string) ($letterhead['logo'] ?? ''));
+$logoUrl = '';
+if ($logoRel !== '') {
+    $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
+    if (is_file($abs)) $logoUrl = rtrim($base, '/') . '/' . ltrim($logoRel, '/');
+}
+$motto  = trim((string) ($letterhead['motto']  ?? ''));
+$addr   = trim((string) ($letterhead['address'] ?? ''));
+$htName = trim((string) ($letterhead['headteacher_name']  ?? ''));
+$htTitle = trim((string) ($letterhead['headteacher_title'] ?? '')) ?: 'Head Teacher';
 ?>
 <div class="student-roster-print results-print-area report-page--print-landscape">
   <div class="page-header student-roster-page-head d-print-none">
@@ -88,43 +101,34 @@ $total = count($students ?? []);
   </div>
 
   <div class="results-table-panel student-roster-sheet border-0 shadow-sm">
-    <div class="student-roster-brand pb-3 mb-3 border-bottom">
-      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <header class="report-head roster-letterhead">
+      <div class="report-head__brand">
+        <?php if ($logoUrl !== ''): ?>
+          <img src="<?= View::e($logoUrl) ?>" alt="">
+        <?php else: ?>
+          <i class="bi bi-mortarboard-fill"></i>
+        <?php endif; ?>
         <div>
-          <div class="fw-bold fs-5 text-body"><?= View::e($schoolName ?? '') ?></div>
-          <div class="text-secondary small text-uppercase letter-spacing-wide mt-1">Student enrollment roster</div>
-        </div>
-        <div class="student-roster-meta-pill text-center px-3 py-2 rounded-3 border bg-body-secondary bg-opacity-25">
-          <div class="small text-muted text-uppercase fw-semibold" style="font-size: .65rem; letter-spacing: .06em;">Students</div>
-          <div class="fs-4 fw-semibold lh-1 mt-1"><?= (int) $total ?></div>
+          <div class="report-head__school"><?= View::e($schoolName ?? '') ?></div>
+          <?php if ($motto !== ''): ?>
+            <div class="report-head__motto fst-italic"><?= View::e($motto) ?></div>
+          <?php endif; ?>
+          <div class="report-head__sub">
+            Student Enrollment Roster<?php if ($addr !== ''): ?> &middot; <?= View::e($addr) ?><?php endif; ?>
+          </div>
         </div>
       </div>
-      <div class="mt-3 pt-2 border-top border-opacity-50 d-flex flex-wrap align-items-center gap-2">
-        <?php if (!empty($filterClass)): ?>
-          <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill px-3 py-2">
-            <i class="bi bi-mortarboard me-1"></i><?= View::e($filterClass['name'] ?? '') ?>
-            <?php if (!empty($filterClass['level'])): ?>
-              <span class="opacity-75"><?= View::e($filterClass['level']) ?></span>
-            <?php endif; ?>
-          </span>
-        <?php else: ?>
-          <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-3 py-2">
-            <i class="bi bi-globe2 me-1"></i>All classes
-          </span>
-        <?php endif; ?>
-        <?php if (!empty($gender)): ?>
-          <span class="badge bg-info-subtle text-info-emphasis rounded-pill px-3 py-2">
-            <i class="bi bi-gender-ambiguous me-1"></i><?= View::studentEnumUpper('gender', $gender) ?>
-          </span>
-        <?php else: ?>
-          <span class="badge bg-light text-secondary border rounded-pill px-3 py-2">
-            <i class="bi bi-people me-1"></i>All genders
-          </span>
-        <?php endif; ?>
-        <span class="text-muted small ms-2 d-none d-print-inline">Generated <?= View::e($printedAt ?? '') ?></span>
+      <div class="report-head__period">
+        <div><strong>Students:</strong> <?= (int) $total ?></div>
+        <div>
+          <strong>Scope:</strong>
+          <?= !empty($filterClass)
+              ? View::e(($filterClass['name'] ?? '') . (!empty($filterClass['level']) ? ' · ' . $filterClass['level'] : ''))
+              : 'All classes' ?>
+        </div>
+        <div><strong>Gender:</strong> <?= !empty($gender) ? View::studentEnumUpper('gender', $gender) : 'All' ?></div>
       </div>
-      <div class="small text-muted mt-2 d-none d-print-block"><?= View::e($printedAt ?? '') ?></div>
-    </div>
+    </header>
 
     <p class="small text-muted mb-3 d-print-none">
       <i class="bi bi-info-circle"></i> Preview matches what will print (landscape). Use <strong>Print</strong> above.
@@ -145,9 +149,6 @@ $total = count($students ?? []);
               <th scope="col">Student name</th>
               <th class="text-center">Gender</th>
               <th class="text-center">DOB</th>
-              <?php if ($showClassCol): ?>
-                <th scope="col">Class</th>
-              <?php endif; ?>
               <th class="text-center">Section</th>
               <th class="text-center">Stream</th>
               <th scope="col">Guardian</th>
@@ -155,25 +156,36 @@ $total = count($students ?? []);
             </tr>
           </thead>
           <tbody>
-            <?php foreach (array_values($students) as $i => $s):
-              $dob = $s['dob'] ?? null;
-              $dobStr = ($dob && $dob !== '0000-00-00') ? date('d M Y', strtotime((string) $dob)) : '—';
-              $stream = (string) ($s['stream'] ?? 'none');
+            <?php
+              $prevClassId = false; // sentinel: no row seen yet
+              $rowNum = 0;
+              foreach (array_values($students) as $s):
+                $dob = $s['dob'] ?? null;
+                $dobStr = ($dob && $dob !== '0000-00-00') ? date('d M Y', strtotime((string) $dob)) : '—';
+                $stream = (string) ($s['stream'] ?? 'none');
+                $curClassId = $s['class_id'] ?? null;
+
+                if ($grouped && $curClassId !== $prevClassId):
+                  $prevClassId = $curClassId;
+                  $groupLabel = trim((string) ($s['class_name'] ?? '')) !== ''
+                      ? $s['class_name'] . (!empty($s['class_level']) ? ' · ' . $s['class_level'] : '')
+                      : 'Unassigned';
+                  if ($showSchoolInGroup && trim((string) ($s['school_name'] ?? '')) !== '') {
+                      $groupLabel = $s['school_name'] . ' — ' . $groupLabel;
+                  }
             ?>
+              <tr class="roster-group-row">
+                <td colspan="9">
+                  <i class="bi bi-mortarboard"></i> <?= View::e($groupLabel) ?>
+                </td>
+              </tr>
+            <?php endif; $rowNum++; ?>
               <tr>
-                <td class="text-center text-muted rd-pos"><?= $i + 1 ?></td>
+                <td class="text-center text-muted rd-pos"><?= $rowNum ?></td>
                 <td class="font-monospace small"><?= View::e($s['admission_no'] ?? '') ?></td>
                 <td class="fw-medium"><?= View::e(trim(($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? ''))) ?></td>
                 <td class="text-center"><span class="badge rounded-pill bg-light text-secondary border"><?= View::studentEnumUpper('gender', $s['gender'] ?? '') ?></span></td>
                 <td class="text-center small font-monospace"><?= View::e($dobStr) ?></td>
-                <?php if ($showClassCol): ?>
-                  <td class="small">
-                    <span class="d-block"><?= View::upper($s['class_name'] ?? '') ?: '—' ?></span>
-                    <?php if (!empty($s['class_level'])): ?>
-                      <span class="text-muted"><?= View::upper($s['class_level']) ?></span>
-                    <?php endif; ?>
-                  </td>
-                <?php endif; ?>
                 <td class="text-center small"><?= View::studentEnumUpper('section', $s['section'] ?? '') ?></td>
                 <td class="text-center small">
                   <?php if ($stream === 'none'): ?>
@@ -189,6 +201,23 @@ $total = count($students ?? []);
           </tbody>
         </table>
       </div>
+
+      <div class="report-signature-row roster-signature-row">
+        <div>
+          <div class="report-signature-line"></div>
+          <div class="report-signature-lbl">Prepared by (Registrar / Class teacher)</div>
+        </div>
+        <div>
+          <div class="report-signature-line"></div>
+          <div class="report-signature-lbl">
+            Verified by<?= $htName !== '' ? ' &middot; <strong>' . View::e($htName) . '</strong> (' . View::e($htTitle) . ')' : ' (' . View::e($htTitle) . ')' ?>
+          </div>
+        </div>
+      </div>
     <?php endif; ?>
+
+    <footer class="report-footer roster-print-footer">
+      <?= (int) $total ?> student<?= $total === 1 ? '' : 's' ?> listed &middot; Generated <?= View::e($printedAt ?? '') ?>
+    </footer>
   </div>
 </div>

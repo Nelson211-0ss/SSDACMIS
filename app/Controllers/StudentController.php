@@ -71,10 +71,19 @@ class StudentController extends Controller
         $ownSchoolId  = Auth::schoolId();              // null for super admin
         $isSuperAdmin = Auth::role() === 'admin' && $ownSchoolId === null;
 
-        // Resolve which school's roster we're printing.
+        // Resolve which school's roster we're printing — including letterhead
+        // details (logo/motto/address/headteacher) for the printed sheet.
+        // For a super admin printing one specific school, these have to come
+        // straight from that school's own row: SchoolIdentity always reflects
+        // the SIGNED-IN user's own school (null/generic for a super admin),
+        // never an arbitrary school someone else picked from the dropdown.
         $schools          = [];
         $selectedSchoolId = $ownSchoolId;
         $schoolName       = '';
+        $letterhead       = [
+            'logo' => null, 'motto' => '', 'address' => '',
+            'headteacher_name' => '', 'headteacher_title' => '',
+        ];
 
         if ($isSuperAdmin) {
             $schools = Database::query(
@@ -84,7 +93,8 @@ class StudentController extends Controller
             $reqSchool = (int) $this->input('school_id', 0);
             if ($reqSchool > 0) {
                 $row = Database::query(
-                    "SELECT id, name FROM schools WHERE id = ? LIMIT 1",
+                    "SELECT id, name, logo, motto, address, headteacher_name, headteacher_title
+                     FROM schools WHERE id = ? LIMIT 1",
                     [$reqSchool]
                 )->fetch();
                 if (!$row) {
@@ -94,12 +104,30 @@ class StudentController extends Controller
                 }
                 $selectedSchoolId = (int) $row['id'];
                 $schoolName       = (string) $row['name'];
+                $logoRel = trim((string) ($row['logo'] ?? ''));
+                if ($logoRel !== '' && str_starts_with(ltrim($logoRel, '/'), 'uploads/')) {
+                    $abs = dirname(__DIR__, 2) . '/public/' . ltrim($logoRel, '/');
+                    if (is_file($abs)) {
+                        $letterhead['logo'] = ltrim($logoRel, '/');
+                    }
+                }
+                $letterhead['motto']              = (string) ($row['motto'] ?? '');
+                $letterhead['address']            = (string) ($row['address'] ?? '');
+                $letterhead['headteacher_name']    = (string) ($row['headteacher_name'] ?? '');
+                $letterhead['headteacher_title']   = (string) ($row['headteacher_title'] ?? '');
             } else {
                 $selectedSchoolId = null;
                 $schoolName       = 'All schools';
             }
         } else {
             $schoolName = SchoolIdentity::name();
+            $letterhead = [
+                'logo'              => SchoolIdentity::logoUrl(),
+                'motto'             => SchoolIdentity::motto(),
+                'address'           => SchoolIdentity::address(),
+                'headteacher_name'  => SchoolIdentity::headteacherName(),
+                'headteacher_title' => SchoolIdentity::headteacherTitle(),
+            ];
         }
 
         $classId = (int) $this->input('class_id', 0);
@@ -129,12 +157,23 @@ class StudentController extends Controller
             }
         }
 
+        // c.id (not just c.name) is selected so the view can reliably detect
+        // a class change when grouping rows under a class header — two
+        // different schools can otherwise have identically-named classes
+        // (e.g. both have a "Form 1A"), which a name-only comparison would
+        // wrongly merge into one group in the "all schools" view.
         $sql = 'SELECT s.id, s.admission_no, s.first_name, s.last_name, s.gender, s.dob, s.section, s.stream,
                        s.guardian_name, s.guardian_phone, s.created_at,
-                       c.name AS class_name, c.level AS class_level
-                FROM students s
-                LEFT JOIN classes c ON c.id = s.class_id
-                WHERE 1=1';
+                       c.id AS class_id, c.name AS class_name, c.level AS class_level';
+        if ($selectedSchoolId === null) {
+            $sql .= ', sch.name AS school_name';
+        }
+        $sql .= ' FROM students s
+                LEFT JOIN classes c ON c.id = s.class_id';
+        if ($selectedSchoolId === null) {
+            $sql .= ' LEFT JOIN schools sch ON sch.id = s.school_id';
+        }
+        $sql .= ' WHERE 1=1';
         $params = [];
         if ($selectedSchoolId !== null) {
             $sql .= ' AND s.school_id = ?';
@@ -148,7 +187,12 @@ class StudentController extends Controller
             $sql .= ' AND s.gender = ?';
             $params[] = $gender;
         }
-        $sql .= ' ORDER BY c.level, c.name, s.first_name, s.last_name';
+        // Grouped by school first when spanning every school (super admin,
+        // no school picked), so the printed roster reads as one section per
+        // school rather than classes from different schools interleaving.
+        $sql .= $selectedSchoolId === null
+            ? ' ORDER BY sch.name, c.level, c.name, s.first_name, s.last_name'
+            : ' ORDER BY c.level, c.name, s.first_name, s.last_name';
 
         $students = Database::query($sql, $params)->fetchAll();
 
@@ -166,6 +210,7 @@ class StudentController extends Controller
             'selectedSchoolId' => $selectedSchoolId,
             'isSuperAdmin'     => $isSuperAdmin,
             'schoolName'       => $schoolName,
+            'letterhead'       => $letterhead,
             'printedAt'        => date('d M Y H:i'),
         ]);
     }

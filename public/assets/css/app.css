@@ -590,6 +590,43 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
   }
 }
 
+/* Roster letterhead — reuses .report-head/.report-head__* (same building
+   blocks as class matrices and report cards) so the roster gets the same
+   polished, print-tested letterhead instead of a third bespoke look. */
+.roster-letterhead { margin-bottom: 1rem; }
+.roster-letterhead .report-head__period { font-size: .8rem; }
+
+/* Class-group divider row: replaces the old per-row "Class" column when the
+   roster spans more than one class — grouping reads far better on a printed
+   multi-class list than a repeated column value on every row. */
+.roster-group-row td {
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: .8rem;
+  padding: .5rem .6rem !important;
+  border-top: 2px solid var(--border-strong);
+}
+.roster-group-row:first-child td { border-top: none; }
+
+/* Only two signers here (registrar/class teacher + head teacher) — override
+   the shared 3-column signature grid down to 2. */
+.roster-signature-row.report-signature-row {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.roster-print-footer { margin-top: 1rem; }
+
+@media print {
+  .roster-group-row td {
+    background: var(--surface-2) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* ---------- Compact entity forms (students, staff, HODs, subjects add, …) ---------- */
 .entity-form {
   max-width: 1320px;
@@ -673,14 +710,6 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
 
 .entity-form__subject-pick .form-check:last-child {
   margin-bottom: 0;
-}
-
-.student-roster-meta-pill {
-  min-width: 5rem;
-}
-.student-roster-brand .badge {
-  font-weight: 600;
-  font-size: 0.8125rem;
 }
 
 /* ---------- Cards ---------- */
