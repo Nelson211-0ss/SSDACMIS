@@ -171,7 +171,11 @@ class ResultsController extends Controller
         }
 
         $class = Database::query(
-            'SELECT id, name, level FROM classes WHERE id = ?',
+            'SELECT c.id, c.name, c.level,
+                    t.first_name AS teacher_first, t.last_name AS teacher_last
+             FROM classes c
+             LEFT JOIN staff t ON t.id = c.class_teacher_id
+             WHERE c.id = ?',
             [$classId]
         )->fetch();
         if (!$class) {

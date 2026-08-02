@@ -4,6 +4,7 @@ use App\Services\AcademicMarking;
 $layout = 'app';
 $title = 'Results — ' . ($class['name'] ?? '');
 $schoolName = $schoolName ?? '';
+$classTeacherName = trim(($class['teacher_first'] ?? '') . ' ' . ($class['teacher_last'] ?? ''));
 
 /** Short label for dense columns (code preferred). */
 $subLabel = static function (array $sub): string {
@@ -54,12 +55,14 @@ $subLabel = static function (array $sub): string {
     <div class="fw-bold"><?= View::e($schoolName) ?></div>
     <div><?= View::e($class['name'] ?? '') ?><?php if (!empty($class['level'])): ?> · <?= View::e($class['level']) ?><?php endif; ?></div>
     <div class="small"><?= View::e($year) ?> · <?= View::e($term) ?> · Competition ranking on average %</div>
+    <div class="small">Class Teacher: <?= $classTeacherName !== '' ? View::e($classTeacherName) : '—' ?></div>
   </div>
 
   <div class="mb-2 d-print-none">
     <h4 class="mb-1"><?= View::e($class['name']) ?></h4>
     <div class="small text-muted">
-      <?= View::e($year) ?> · <?= View::e($term) ?> · Wide landscape layout fits columns without horizontal scrollbar where possible (subject codes shorten headers).
+      <?= View::e($year) ?> · <?= View::e($term) ?> · Class Teacher: <?= $classTeacherName !== '' ? View::e($classTeacherName) : '—' ?> ·
+      Wide landscape layout fits columns without horizontal scrollbar where possible (subject codes shorten headers).
     </div>
   </div>
 
