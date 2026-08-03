@@ -113,14 +113,11 @@
     });
   }
 
-  // --- Auto-dismiss flash alerts -----------------------------------------
-  document.querySelectorAll('.alert[data-auto-dismiss]').forEach(function (el) {
-    setTimeout(function () {
-      try {
-        var instance = bootstrap.Alert.getOrCreateInstance(el);
-        instance.close();
-      } catch (e) { el.remove(); }
-    }, 5000);
+  // --- Flash toasts (success/info) — pop up, then disappear on their own --
+  document.querySelectorAll('.toast-container .toast').forEach(function (el) {
+    try {
+      bootstrap.Toast.getOrCreateInstance(el, { autohide: true }).show();
+    } catch (e) { /* Bootstrap not ready — leave it visible rather than hide silently */ }
   });
 
   // --- Landscape print fix -------------------------------------------------

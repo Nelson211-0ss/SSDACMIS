@@ -347,14 +347,36 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
   </header>
 
   <main class="app-main">
-    <?php foreach (Flash::pull() as $f): ?>
-      <?php $sticky = in_array($f['type'], ['danger', 'warning'], true); ?>
-      <div class="alert alert-<?= View::e($f['type']) ?> alert-dismissible fade show" role="alert"
-           <?= $sticky ? '' : 'data-auto-dismiss' ?>>
+    <?php
+      $flashes = Flash::pull();
+      // Danger/warning need a deliberate dismissal — keep those as an inline
+      // banner. Success/info are transient confirmations ("Student added"
+      // etc.) — those pop up as a toast that disappears on its own.
+      $stickyFlashes = array_filter($flashes, static fn ($f) => in_array($f['type'], ['danger', 'warning'], true));
+      $toastFlashes  = array_filter($flashes, static fn ($f) => !in_array($f['type'], ['danger', 'warning'], true));
+    ?>
+    <?php foreach ($stickyFlashes as $f): ?>
+      <div class="alert alert-<?= View::e($f['type']) ?> alert-dismissible fade show" role="alert">
         <?= View::e($f['message']) ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     <?php endforeach; ?>
+
+    <?php if (!empty($toastFlashes)): ?>
+      <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <?php foreach ($toastFlashes as $f): ?>
+          <div class="toast align-items-center text-bg-<?= View::e($f['type']) ?> border-0" role="status"
+               aria-live="polite" aria-atomic="true" data-bs-delay="4000">
+            <div class="d-flex">
+              <div class="toast-body">
+                <i class="bi <?= $f['type'] === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill' ?> me-2"></i><?= View::e($f['message']) ?>
+              </div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
 
     <?php if ($useBursarNav):
       // Period selector for the Fees Module — academic year + term scope
