@@ -30,6 +30,11 @@ foreach ($classes as $c) {
 $streamRequired = ($currentLevel === 'Form 3' || $currentLevel === 'Form 4');
 $dobMinAttr = date('Y-m-d', strtotime('-100 years'));
 $dobMaxAttr = date('Y-m-d');
+// Local draft key: on error, the server redirect back to this form doesn't
+// preserve anything that was typed, so a per-form local draft is what lets
+// it come back. Scoped per student when editing, per class when creating,
+// so switching between different students/classes never mixes drafts up.
+$draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('new:' . $currentClassId));
 ?>
 <div class="entity-form<?= $partial ? ' entity-form--modal' : '' ?>">
   <?php if (!$partial): ?>
@@ -49,6 +54,18 @@ $dobMaxAttr = date('Y-m-d');
 
   <form id="studentEnrollmentForm" method="post" action="<?= $action ?>" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+
+    <div class="alert alert-info d-none d-flex flex-wrap align-items-center justify-content-between gap-2 py-2 px-3 mb-3"
+         id="draftRestoreBanner" role="status">
+      <span class="small">
+        <i class="bi bi-clock-history me-1"></i>
+        Unsaved draft found from <span data-draft-age>a moment ago</span>.
+      </span>
+      <span class="d-flex gap-2">
+        <button type="button" class="btn btn-sm btn-primary" data-draft-restore>Restore</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-draft-discard>Discard</button>
+      </span>
+    </div>
 
     <div class="card entity-form__card border-0 shadow-sm">
       <div class="card-body">
@@ -210,6 +227,7 @@ $dobMaxAttr = date('Y-m-d');
       <?php if (!$partial): ?>
       <div class="card-footer py-2 px-3 bg-body-secondary bg-opacity-25 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span class="small text-muted mb-0"><span class="text-danger">*</span> Required · Typed names &amp; address save in CAPITAL LETTERS · Gender, section &amp; stream shown in CAPS</span>
+        <span class="entity-draft-status" data-draft-status><i class="bi bi-circle-fill"></i> <span data-draft-status-text></span></span>
         <div class="d-flex flex-wrap gap-2 ms-auto">
           <a href="<?= $base ?>/students" class="btn btn-outline-secondary btn-sm px-3">Cancel</a>
           <?php if (!$editing): ?>
@@ -329,6 +347,7 @@ $dobMaxAttr = date('Y-m-d');
     <?php if ($partial): ?>
     <div class="entity-form__actions d-flex flex-wrap align-items-center gap-2">
       <span class="entity-form__hint text-muted mb-0 me-auto d-none d-sm-inline"><span class="text-danger">*</span> Required</span>
+      <span class="entity-draft-status" data-draft-status><i class="bi bi-circle-fill"></i> <span data-draft-status-text></span></span>
       <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
       <?php if (!$editing): ?>
         <button type="submit" name="save_mode" value="another" class="btn btn-outline-primary px-3">
@@ -793,6 +812,141 @@ $dobMaxAttr = date('Y-m-d');
         stream = null;
       }
     });
+  })();
+
+  /* -----------------------------------------------------------------
+   * Local draft autosave. Not a server save — a validation error on
+   * store()/update() redirects back here without preserving anything
+   * that was typed, so this is what lets it come back. Cleared the
+   * moment a success flash shows up (the student is now actually saved).
+   * ----------------------------------------------------------------- */
+  (function () {
+    if (!form) return;
+    var DRAFT_KEY = <?= json_encode($draftKey) ?>;
+    var DRAFT_FIELDS = ['school_id', 'class_id', 'section', 'stream', 'first_name', 'last_name', 'gender', 'dob', 'guardian_name', 'guardian_phone', 'address'];
+    var statusEls = document.querySelectorAll('[data-draft-status]');
+    var saveTimer = null;
+
+    function setStatus(mode, text) {
+      statusEls.forEach(function (el) {
+        el.classList.remove('entity-draft-status--saving', 'entity-draft-status--saved');
+        if (mode) el.classList.add('entity-draft-status--' + mode);
+        el.classList.toggle('is-active', !!mode);
+        var t = el.querySelector('[data-draft-status-text]');
+        if (t) t.textContent = text || '';
+      });
+    }
+
+    function fieldEls(name) {
+      return Array.prototype.slice.call(form.querySelectorAll('[name="' + name + '"]'));
+    }
+
+    function readForm() {
+      var data = {};
+      DRAFT_FIELDS.forEach(function (name) {
+        var els = fieldEls(name);
+        if (!els.length) return;
+        if (els[0].type === 'radio') {
+          var checked = els.filter(function (r) { return r.checked; })[0];
+          data[name] = checked ? checked.value : '';
+        } else {
+          data[name] = els[0].value;
+        }
+      });
+      return data;
+    }
+
+    function hasAnyValue(data) {
+      return Object.keys(data).some(function (k) { return String(data[k] || '').trim() !== ''; });
+    }
+
+    function writeForm(data) {
+      DRAFT_FIELDS.forEach(function (name) {
+        if (!(name in data) || data[name] === '') return;
+        var els = fieldEls(name);
+        if (!els.length) return;
+        if (els[0].type === 'radio') {
+          els.forEach(function (r) { r.checked = (r.value === data[name]); });
+        } else {
+          els[0].value = data[name];
+        }
+      });
+    }
+
+    function saveDraft() {
+      try {
+        var data = readForm();
+        if (!hasAnyValue(data)) { localStorage.removeItem(DRAFT_KEY); setStatus(null); return; }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: Date.now(), data: data }));
+        setStatus('saved', 'Draft saved locally · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      } catch (e) { /* storage unavailable/full — nothing lost server-side, just skip */ }
+    }
+
+    function clearDraft() {
+      try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ }
+      setStatus(null);
+    }
+
+    function readDraft() {
+      try {
+        var raw = localStorage.getItem(DRAFT_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function scheduleSave() {
+      setStatus('saving', 'Saving draft…');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveDraft, 700);
+    }
+
+    DRAFT_FIELDS.forEach(function (name) {
+      fieldEls(name).forEach(function (el) {
+        el.addEventListener('input', scheduleSave);
+        el.addEventListener('change', scheduleSave);
+      });
+    });
+
+    // The layout renders the last flash message as .alert-success/.alert-danger.
+    var hadSuccess = !!document.querySelector('.alert-success');
+    var hadError = !!document.querySelector('.alert-danger');
+
+    if (hadSuccess) {
+      clearDraft();
+    } else {
+      var draft = readDraft();
+      if (draft && draft.data) {
+        if (hadError) {
+          // Same entry attempt that just failed — restore it automatically,
+          // since the server has no memory of what was typed.
+          writeForm(draft.data);
+          if (typeof syncStream === 'function') syncStream();
+          if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
+          setStatus('saved', 'Draft restored after the error above');
+        } else {
+          var banner = document.getElementById('draftRestoreBanner');
+          if (banner) {
+            banner.classList.remove('d-none');
+            var ago = Math.max(1, Math.round((Date.now() - draft.savedAt) / 60000));
+            var ageEl = banner.querySelector('[data-draft-age]');
+            if (ageEl) ageEl.textContent = ago + ' minute' + (ago === 1 ? '' : 's') + ' ago';
+            var restoreBtn = banner.querySelector('[data-draft-restore]');
+            var discardBtn = banner.querySelector('[data-draft-discard]');
+            if (restoreBtn) restoreBtn.addEventListener('click', function () {
+              writeForm(draft.data);
+              if (typeof syncStream === 'function') syncStream();
+              if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
+              banner.classList.add('d-none');
+              setStatus('saved', 'Draft restored');
+            });
+            if (discardBtn) discardBtn.addEventListener('click', function () {
+              clearDraft();
+              banner.classList.add('d-none');
+            });
+          }
+        }
+      }
+    }
   })();
 })();
 </script>

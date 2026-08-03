@@ -5959,6 +5959,24 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .marks-sheet-unsaved--saving .bi { animation: marks-sheet-pulse 1s ease-in-out infinite; }
 .marks-sheet-unsaved--saved  { color: var(--success); }
 .marks-sheet-unsaved--error  { color: var(--danger); font-weight: 700; }
+
+/* Entity-form local draft autosave (students, and any other form reusing
+   the pattern) — same visual language as the marks-sheet save pill. */
+.entity-draft-status {
+  display: none;
+  align-items: center;
+  gap: .35rem;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.entity-draft-status.is-active { display: inline-flex; }
+.entity-draft-status .bi { font-size: .5rem; }
+.entity-draft-status--saving { color: var(--accent); }
+.entity-draft-status--saving .bi { animation: marks-sheet-pulse 1s ease-in-out infinite; }
+.entity-draft-status--saved  { color: var(--success); }
+
 @keyframes marks-sheet-pulse {
   0%, 100% { opacity: .35; }
   50%      { opacity: 1; }
