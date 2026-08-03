@@ -7,12 +7,21 @@ $isAdmin  = !empty($isAdmin);
 $schools  = $schools ?? [];
 $title    = $editing ? 'Edit Student' : 'New Student';
 $action   = $editing ? ($base . '/students/' . (int) $student['id']) : ($base . '/students');
-$currentClassId = (int) ($student['class_id'] ?? 0);
+// Creating: carry the class picked on the previous "Save & add another" (or
+// a link from the Classes page) forward, so admins entering several
+// students into the same class never have to re-select it.
+$currentClassId = (int) ($student['class_id'] ?? ($prefillClassId ?? 0));
 $selectedSection = $student['section'] ?? 'day';
 $selectedStream  = $student['stream']  ?? 'none';
 
-// Super admin: remember which school was selected (for editing, default to student's school).
+// Super admin: remember which school was selected (for editing, default to
+// student's school; for a prefilled class, the school it belongs to).
 $selectedSchoolId = $isAdmin ? (int) ($student['school_id'] ?? 0) : 0;
+if ($isAdmin && !$editing && $currentClassId > 0) {
+    foreach ($classes as $c) {
+        if ((int) $c['id'] === $currentClassId) { $selectedSchoolId = (int) ($c['school_id'] ?? 0); break; }
+    }
+}
 
 $currentLevel = '';
 foreach ($classes as $c) {
@@ -203,7 +212,12 @@ $dobMaxAttr = date('Y-m-d');
         <span class="small text-muted mb-0"><span class="text-danger">*</span> Required · Typed names &amp; address save in CAPITAL LETTERS · Gender, section &amp; stream shown in CAPS</span>
         <div class="d-flex flex-wrap gap-2 ms-auto">
           <a href="<?= $base ?>/students" class="btn btn-outline-secondary btn-sm px-3">Cancel</a>
-          <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save' : 'Save student' ?></button>
+          <?php if (!$editing): ?>
+            <button type="submit" name="save_mode" value="another" class="btn btn-outline-primary btn-sm px-3">
+              <i class="bi bi-plus-circle me-1"></i>Save &amp; add another
+            </button>
+          <?php endif; ?>
+          <button type="submit" name="save_mode" value="done" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save' : 'Save student' ?></button>
         </div>
       </div>
       <?php endif; ?>
@@ -316,7 +330,12 @@ $dobMaxAttr = date('Y-m-d');
     <div class="entity-form__actions d-flex flex-wrap align-items-center gap-2">
       <span class="entity-form__hint text-muted mb-0 me-auto d-none d-sm-inline"><span class="text-danger">*</span> Required</span>
       <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-      <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save' : 'Save student' ?></button>
+      <?php if (!$editing): ?>
+        <button type="submit" name="save_mode" value="another" class="btn btn-outline-primary px-3">
+          <i class="bi bi-plus-circle me-1"></i>Save &amp; add another
+        </button>
+      <?php endif; ?>
+      <button type="submit" name="save_mode" value="done" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i><?= $editing ? 'Save' : 'Save student' ?></button>
     </div>
     <?php endif; ?>
   </form>

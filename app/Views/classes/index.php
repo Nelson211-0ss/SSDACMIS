@@ -128,10 +128,16 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
               </td>
               <?php if ($canManage): ?>
                 <td class="text-end">
-                  <form method="post" action="<?= $base ?>/classes/<?= (int)$c['id'] ?>/delete" data-confirm="Delete this class?">
-                    <input type="hidden" name="_csrf" value="<?= $csrf ?>">
-                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                  </form>
+                  <div class="d-inline-flex gap-1">
+                    <a href="<?= $base ?>/students/create?class_id=<?= (int) $c['id'] ?>"
+                       class="btn btn-sm btn-outline-success" title="Add student to this class">
+                      <i class="bi bi-person-plus"></i>
+                    </a>
+                    <form method="post" action="<?= $base ?>/classes/<?= (int)$c['id'] ?>/delete" data-confirm="Delete this class?">
+                      <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+                      <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                  </div>
                 </td>
               <?php endif; ?>
             </tr>

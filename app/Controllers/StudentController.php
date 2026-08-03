@@ -219,6 +219,7 @@ class StudentController extends Controller
     {
         $isAdmin  = Auth::role() === 'admin';
         $schoolId = Auth::schoolId();
+        $prefillClassId = (int) $this->input('class_id', 0);
 
         if ($isAdmin) {
             // Super admin: load every class across all schools for JS filtering.
@@ -239,11 +240,12 @@ class StudentController extends Controller
         }
 
         return $this->view('students/form', [
-            'student'  => null,
-            'classes'  => $classes,
-            'schools'  => $schools,
-            'isAdmin'  => $isAdmin,
-            'partial'  => $this->isAjax(),
+            'student'        => null,
+            'classes'        => $classes,
+            'schools'        => $schools,
+            'isAdmin'        => $isAdmin,
+            'partial'        => $this->isAjax(),
+            'prefillClassId' => $prefillClassId,
         ]);
     }
 
@@ -430,22 +432,27 @@ class StudentController extends Controller
     {
         $this->validateCsrf();
         $data = $this->payload();
+        // Carries the chosen class back to the create form on any error below,
+        // so re-entering a class after a mistake is never required.
+        $backToCreate = '/students/create' . ((int) ($data['class_id'] ?? 0) > 0
+            ? '?class_id=' . (int) $data['class_id']
+            : '');
 
-        if (!$this->validateStudentCoreFields($data, '/students/create')) {
+        if (!$this->validateStudentCoreFields($data, $backToCreate)) {
             return '';
         }
 
         $data['stream'] = $this->resolveStream((int) $data['class_id'], (string) $data['stream']);
         if ($data['stream'] === false) {
             Flash::set('danger', 'Form 3 and Form 4 students must be assigned to either the Science or Arts stream.');
-            $this->redirect('/students/create');
+            $this->redirect($backToCreate);
             return '';
         }
 
         $generated = Student::nextAdmissionNo((int) $data['class_id']);
         if (!$generated) {
             Flash::set('danger', 'The selected class has no admission prefix configured. Set one on the Classes page first.');
-            $this->redirect('/students/create');
+            $this->redirect($backToCreate);
             return '';
         }
         $data['admission_no'] = $generated;
@@ -472,6 +479,14 @@ class StudentController extends Controller
             );
         } else {
             Flash::set('success', "Student added. Admission no: {$generated}");
+        }
+
+        // "Save & add another" keeps the same class selected instead of
+        // sending the admin back to the list to pick it again for every
+        // student in the class.
+        if ($this->input('save_mode') === 'another') {
+            $this->redirect('/students/create?class_id=' . (int) $data['class_id']);
+            return '';
         }
 
         $this->redirect('/students');
