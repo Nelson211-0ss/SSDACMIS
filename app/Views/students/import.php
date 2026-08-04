@@ -98,7 +98,8 @@ if ($isAdmin && $prefillClassId > 0) {
 
           <div class="mb-3">
             <label class="form-label fw-semibold" for="importFile">CSV file <span class="text-danger">*</span></label>
-            <input type="file" id="importFile" name="csv_file" class="form-control" accept=".csv,text/csv" required>
+            <input type="file" id="importFile" name="csv_file" class="form-control" accept=".csv,text/csv" required disabled>
+            <p class="form-text mb-0" id="importFileHint">Choose a class above first.</p>
           </div>
 
           <div class="d-flex flex-wrap gap-2">
@@ -131,6 +132,10 @@ if ($isAdmin && $prefillClassId > 0) {
     });
     classSel.value = prevVal;
     if (!classSel.value && classSel.options.length > 0) classSel.options[0].selected = true;
+    // Setting .value programmatically doesn't fire 'change' — dispatch it so
+    // the file-picker gating below stays in sync when the class list is
+    // rebuilt (e.g. it resets to "— choose —" after switching school).
+    classSel.dispatchEvent(new Event('change'));
   }
 
   schoolSel.addEventListener('change', function () {
@@ -145,3 +150,24 @@ if ($isAdmin && $prefillClassId > 0) {
 })();
 </script>
 <?php endif; ?>
+
+<script>
+(function () {
+  // The file picker stays disabled until a class is chosen, so the upload
+  // is always tied to a class rather than left to fill in at submit time.
+  var classSel  = document.getElementById('importClass');
+  var fileInput = document.getElementById('importFile');
+  var hint      = document.getElementById('importFileHint');
+  if (!classSel || !fileInput) return;
+
+  function syncFileEnabled() {
+    var enabled = !!classSel.value;
+    fileInput.disabled = !enabled;
+    if (!enabled) fileInput.value = '';
+    if (hint) hint.classList.toggle('d-none', enabled);
+  }
+
+  classSel.addEventListener('change', syncFileEnabled);
+  syncFileEnabled();
+})();
+</script>
