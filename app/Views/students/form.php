@@ -907,8 +907,11 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
       });
     });
 
-    // The layout renders the last flash message as .alert-success/.alert-danger.
-    var hadSuccess = !!document.querySelector('.alert-success');
+    // The layout renders success/info flashes as an auto-dismissing toast
+    // (.toast.text-bg-success) and danger/warning as a persistent inline
+    // alert (.alert-danger) — see layouts/app.php. Both stay in the DOM at
+    // page load regardless of whether the toast has auto-hidden yet.
+    var hadSuccess = !!document.querySelector('.toast.text-bg-success');
     var hadError = !!document.querySelector('.alert-danger');
 
     if (hadSuccess) {
