@@ -50,6 +50,10 @@ $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrA
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.
 $router->get('/students/clear-all',    'StudentController@clearAllForm',    [$schoolAdminOrAdmin]);
 $router->post('/students/clear-all',  'StudentController@clearAllExecute', [$schoolAdminOrAdmin]);
+// Bulk CSV import — one whole class at a time.
+$router->get('/students/import',            'StudentController@importForm',     [$staffOrAdmin]);
+$router->get('/students/import/template',   'StudentController@importTemplate', [$staffOrAdmin]);
+$router->post('/students/import',           'StudentController@importStore',    [$staffOrAdmin]);
 $router->post('/students',             'StudentController@store',  [$staffOrAdmin]);
 // Registered after all the static /students/... GET routes above so it
 // doesn't swallow them (Router matches GET routes in insertion order).

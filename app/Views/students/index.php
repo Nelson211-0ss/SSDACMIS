@@ -29,6 +29,9 @@ ob_start();
         <i class="bi bi-envelope-paper"></i> Admission letters
       </a>
     <?php endif; ?>
+    <a class="btn btn-outline-primary" href="<?= $base ?>/students/import" title="Add many students at once from a CSV file">
+      <i class="bi bi-file-earmark-spreadsheet"></i> Import CSV
+    </a>
     <a class="btn btn-primary" href="<?= $base ?>/students/create"
        data-entity-modal data-modal-title="Add student" data-modal-size="entity-modal--student"><i class="bi bi-plus-lg"></i> Add student</a>
 <?php

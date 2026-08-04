@@ -493,6 +493,262 @@ class StudentController extends Controller
         return '';
     }
 
+    /** Hard cap on rows processed from one uploaded CSV file. */
+    private const IMPORT_MAX_ROWS = 1000;
+
+    /** GET /students/import — pick a class, upload a CSV of students for it. */
+    public function importForm(): string
+    {
+        $isAdmin  = Auth::role() === 'admin';
+        $schoolId = Auth::schoolId();
+        $prefillClassId = (int) $this->input('class_id', 0);
+
+        if ($isAdmin) {
+            $classes = Database::query(
+                "SELECT id, name, level, admission_prefix, school_id FROM classes ORDER BY name"
+            )->fetchAll();
+            $schools = Database::query(
+                "SELECT id, name FROM schools WHERE status='active' ORDER BY name"
+            )->fetchAll();
+        } else {
+            $ssf     = $schoolId !== null ? ' WHERE school_id = ?' : '';
+            $ssp     = $schoolId !== null ? [$schoolId] : [];
+            $classes = Database::query(
+                "SELECT id, name, level, admission_prefix, school_id FROM classes{$ssf} ORDER BY name",
+                $ssp
+            )->fetchAll();
+            $schools = [];
+        }
+
+        return $this->view('students/import', [
+            'classes'        => $classes,
+            'schools'        => $schools,
+            'isAdmin'        => $isAdmin,
+            'prefillClassId' => $prefillClassId,
+        ]);
+    }
+
+    /** GET /students/import/template — blank CSV with the expected columns. */
+    public function importTemplate(): string
+    {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="students-import-template.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+        // BOM so Excel opens the file (and re-saved uploads) as UTF-8.
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'first_name', 'last_name', 'gender', 'dob', 'section',
+            'stream', 'guardian_name', 'guardian_phone', 'address',
+        ], ',', '"', '');
+        fputcsv($out, [
+            'JOHN', 'DOE', 'male', '2010-05-14', 'day',
+            'none', 'JANE DOE', '0700000000', 'KAMPALA',
+        ], ',', '"', '');
+        fclose($out);
+        return '';
+    }
+
+    /**
+     * POST /students/import — parse the uploaded CSV and admit every valid
+     * row into the chosen class. Bad rows are skipped (not fatal) so one
+     * typo doesn't block the rest of the file; the results page lists both
+     * what was admitted and what was skipped, with reasons.
+     */
+    public function importStore(): string
+    {
+        $this->validateCsrf();
+
+        $isAdmin      = Auth::role() === 'admin';
+        $classId      = (int) $this->input('class_id', 0);
+        $backToImport = '/students/import' . ($classId > 0 ? '?class_id=' . $classId : '');
+
+        if ($classId <= 0) {
+            Flash::set('danger', 'Choose the class these students belong to.');
+            $this->redirect($backToImport);
+            return '';
+        }
+
+        $classRow = Database::query(
+            "SELECT id, school_id FROM classes WHERE id = ?",
+            [$classId]
+        )->fetch();
+        if (!$classRow) {
+            Flash::set('danger', 'That class does not exist.');
+            $this->redirect('/students/import');
+            return '';
+        }
+
+        // Same school resolution as store(): super admin picks the school
+        // via the form (or inherits the class's own school), everyone else
+        // is scoped to their own school and can't import into another one.
+        if ($isAdmin) {
+            $schoolId = (int) $this->input('school_id', 0) ?: (int) $classRow['school_id'];
+        } else {
+            $schoolId = Auth::schoolId() ?? 1;
+            if ((int) $classRow['school_id'] !== $schoolId) {
+                Flash::set('danger', 'That class does not belong to your school.');
+                $this->redirect('/students/import');
+                return '';
+            }
+        }
+
+        $file = $_FILES['csv_file'] ?? null;
+        $err  = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if (!is_array($file) || $err === UPLOAD_ERR_NO_FILE) {
+            Flash::set('danger', 'Choose a CSV file to upload.');
+            $this->redirect($backToImport);
+            return '';
+        }
+        if ($err !== UPLOAD_ERR_OK) {
+            Flash::set('danger', self::uploadErrorMessage($err));
+            $this->redirect($backToImport);
+            return '';
+        }
+        if (!is_uploaded_file($file['tmp_name'])) {
+            Flash::set('danger', 'Suspicious upload rejected.');
+            $this->redirect($backToImport);
+            return '';
+        }
+        if ((int) $file['size'] <= 0) {
+            Flash::set('danger', 'The uploaded file is empty.');
+            $this->redirect($backToImport);
+            return '';
+        }
+
+        $handle = fopen($file['tmp_name'], 'r');
+        if (!$handle) {
+            Flash::set('danger', 'Could not read the uploaded file.');
+            $this->redirect($backToImport);
+            return '';
+        }
+
+        // Strip a UTF-8 BOM if Excel added one, then read the header row.
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") rewind($handle);
+
+        $header = fgetcsv($handle);
+        if ($header === false || $header === [null]) {
+            fclose($handle);
+            Flash::set('danger', 'The file has no rows. Use the template as a starting point.');
+            $this->redirect($backToImport);
+            return '';
+        }
+        $header = array_map(static fn ($h) => strtolower(trim((string) $h)), $header);
+        foreach (['first_name', 'last_name'] as $col) {
+            if (!in_array($col, $header, true)) {
+                fclose($handle);
+                Flash::set('danger', "The CSV is missing a required column: {$col}.");
+                $this->redirect($backToImport);
+                return '';
+            }
+        }
+
+        $imported = [];
+        $errors   = [];
+        $rowNum   = 1; // header occupies row 1
+        $capped   = false;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNum++;
+            $blank = count(array_filter($row, static fn ($v) => trim((string) $v) !== '')) === 0;
+            if ($blank) {
+                continue;
+            }
+            if (count($imported) + count($errors) >= self::IMPORT_MAX_ROWS) {
+                $capped = true;
+                break;
+            }
+
+            $assoc = [];
+            foreach ($header as $i => $col) {
+                $assoc[$col] = trim((string) ($row[$i] ?? ''));
+            }
+
+            $firstName = mb_strtoupper($assoc['first_name'] ?? '', 'UTF-8');
+            $lastName  = mb_strtoupper($assoc['last_name'] ?? '', 'UTF-8');
+            $name      = trim($firstName . ' ' . $lastName);
+            $reason    = null;
+
+            if ($firstName === '' || $lastName === '') {
+                $reason = 'First name and last name are required.';
+            }
+
+            $gender = strtolower($assoc['gender'] ?? '') ?: 'male';
+            if (!in_array($gender, ['male', 'female', 'other'], true)) $gender = 'male';
+
+            $section = strtolower($assoc['section'] ?? '') ?: 'day';
+            if (!in_array($section, ['day', 'boarding'], true)) $section = 'day';
+
+            $dob = trim($assoc['dob'] ?? '');
+            if ($reason === null && $dob !== '' && !$this->isValidStudentDob($dob)) {
+                $reason = 'Invalid date of birth (use YYYY-MM-DD, not in the future).';
+            }
+
+            $stream = 'none';
+            if ($reason === null) {
+                $resolved = $this->resolveStream($classId, strtolower($assoc['stream'] ?? 'none') ?: 'none');
+                if ($resolved === false) {
+                    $reason = 'Form 3/Form 4 students need stream = science or arts.';
+                } else {
+                    $stream = $resolved;
+                }
+            }
+
+            if ($reason !== null) {
+                $errors[] = ['row' => $rowNum, 'name' => $name, 'reason' => $reason];
+                continue;
+            }
+
+            $admissionNo = Student::nextAdmissionNo($classId);
+            if (!$admissionNo) {
+                $errors[] = [
+                    'row' => $rowNum, 'name' => $name,
+                    'reason' => 'The class has no admission prefix configured.',
+                ];
+                continue;
+            }
+
+            $studentId = Student::create([
+                'school_id'      => $schoolId ?: 1,
+                'admission_no'   => $admissionNo,
+                'first_name'     => $firstName,
+                'last_name'      => $lastName,
+                'gender'         => $gender,
+                'dob'            => $dob !== '' ? $dob : null,
+                'class_id'       => $classId,
+                'section'        => $section,
+                'stream'         => $stream,
+                'guardian_name'  => mb_strtoupper($assoc['guardian_name'] ?? '', 'UTF-8'),
+                'guardian_phone' => $assoc['guardian_phone'] ?? '',
+                'address'        => mb_strtoupper($assoc['address'] ?? '', 'UTF-8'),
+            ]);
+            ActivityLog::record('create', 'student', $studentId, "Admitted student {$admissionNo} via CSV import");
+            $imported[] = ['row' => $rowNum, 'name' => $name, 'admission_no' => $admissionNo];
+        }
+        fclose($handle);
+
+        if ($capped) {
+            $errors[] = [
+                'row' => null, 'name' => null,
+                'reason' => 'Stopped after ' . self::IMPORT_MAX_ROWS . ' rows — split larger files into batches.',
+            ];
+        }
+
+        if (empty($imported) && empty($errors)) {
+            Flash::set('warning', 'The file had no data rows to import.');
+            $this->redirect($backToImport);
+            return '';
+        }
+
+        return $this->view('students/import_result', [
+            'imported' => $imported,
+            'errors'   => $errors,
+            'classId'  => $classId,
+        ]);
+    }
+
     public function edit(string $id): string
     {
         $student = Student::find((int) $id);
