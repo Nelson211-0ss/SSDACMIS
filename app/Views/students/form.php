@@ -55,18 +55,6 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
   <form id="studentEnrollmentForm" method="post" action="<?= $action ?>" enctype="multipart/form-data" novalidate>
     <input type="hidden" name="_csrf" value="<?= $csrf ?>">
 
-    <div class="alert alert-info d-none d-flex flex-wrap align-items-center justify-content-between gap-2 py-2 px-3 mb-3"
-         id="draftRestoreBanner" role="status">
-      <span class="small">
-        <i class="bi bi-clock-history me-1"></i>
-        Unsaved draft found from <span data-draft-age>a moment ago</span>.
-      </span>
-      <span class="d-flex gap-2">
-        <button type="button" class="btn btn-sm btn-primary" data-draft-restore>Restore</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-draft-discard>Discard</button>
-      </span>
-    </div>
-
     <div class="card entity-form__card border-0 shadow-sm">
       <div class="card-body">
         <div class="row entity-form__split g-3 gx-xl-4 gy-3">
@@ -919,35 +907,14 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
     } else {
       var draft = readDraft();
       if (draft && draft.data) {
-        if (hadError) {
-          // Same entry attempt that just failed — restore it automatically,
-          // since the server has no memory of what was typed.
-          writeForm(draft.data);
-          if (typeof syncStream === 'function') syncStream();
-          if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
-          setStatus('saved', 'Draft restored after the error above');
-        } else {
-          var banner = document.getElementById('draftRestoreBanner');
-          if (banner) {
-            banner.classList.remove('d-none');
-            var ago = Math.max(1, Math.round((Date.now() - draft.savedAt) / 60000));
-            var ageEl = banner.querySelector('[data-draft-age]');
-            if (ageEl) ageEl.textContent = ago + ' minute' + (ago === 1 ? '' : 's') + ' ago';
-            var restoreBtn = banner.querySelector('[data-draft-restore]');
-            var discardBtn = banner.querySelector('[data-draft-discard]');
-            if (restoreBtn) restoreBtn.addEventListener('click', function () {
-              writeForm(draft.data);
-              if (typeof syncStream === 'function') syncStream();
-              if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
-              banner.classList.add('d-none');
-              setStatus('saved', 'Draft restored');
-            });
-            if (discardBtn) discardBtn.addEventListener('click', function () {
-              clearDraft();
-              banner.classList.add('d-none');
-            });
-          }
-        }
+        // Whether this is the same entry attempt reloading after a
+        // validation error, or the admin just came back to a form they'd
+        // started earlier, the server has no memory of what was typed —
+        // so refill it quietly rather than asking first.
+        writeForm(draft.data);
+        if (typeof syncStream === 'function') syncStream();
+        if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
+        setStatus('saved', hadError ? 'Draft restored after the error above' : 'Draft restored');
       }
     }
   })();
