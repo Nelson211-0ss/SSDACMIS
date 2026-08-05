@@ -7,6 +7,10 @@ use App\Core\Auth;
  * school) and by that school's own school_admin (ownership is enforced in
  * IdCardController, not here).
  *
+ * The preview panel below carries its own #idCardPreview-prefixed copy of the
+ * .id-card* CSS used by students/id_card.php and students/id_cards_bulk.php —
+ * keep the three copies in sync so the preview matches what actually prints.
+ *
  * @var array $school  id, name, logo, id_card_theme
  * @var array $themes  Settings::THEMES catalogue
  */
@@ -85,11 +89,16 @@ $themesJson = json_encode(
           <span class="card-header-icon card-header-icon--teal me-2" aria-hidden="true"><i class="bi bi-eye"></i></span>
           <strong class="mb-0">Live preview</strong>
         </div>
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <div id="idCardPreview">
-            <?php include dirname(__DIR__) . '/students/_id_card_face.php'; ?>
+        <div class="card-body d-flex flex-column">
+          <div class="id-card-stage">
+            <div id="idCardPreview">
+              <?php include dirname(__DIR__) . '/students/_id_card_face.php'; ?>
+            </div>
           </div>
-          <p class="text-muted small mt-3 mb-0 text-center">Sample data shown &mdash; updates as you pick a color.</p>
+          <p class="id-card-stage__note mb-0">
+            Actual print size &mdash; 85.6 &times; 54 mm. Sample data shown;
+            the card updates as you pick a color.
+          </p>
         </div>
       </div>
     </div>
@@ -102,6 +111,8 @@ $themesJson = json_encode(
 </form>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 .theme-picker {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -138,119 +149,278 @@ $themesJson = json_encode(
 }
 .theme-swatch.is-selected .theme-swatch__check { opacity: 1; }
 
-/* ----- ID card face preview (same proportions as the printable cards) ----- */
+/* Neutral stage so the card's own white face reads correctly. */
+.id-card-stage {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background: #e4e9ef;
+  border: 1px solid #d7dee7;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+.id-card-stage .id-card { box-shadow: 0 10px 26px rgba(15, 23, 42, .16); }
+.id-card-stage__note {
+  margin-top: .75rem;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: var(--muted, #6b7280);
+  text-align: center;
+}
+
+/* ===== ID card face =========================================================
+   ID-1 / credit-card proportions (85.6 x 54mm). Restrained institutional
+   design language shared with the exam permit and admission letter: one
+   accent rule, hairline dividers, uppercase micro-labels above values,
+   a dominant name, and a faint diagonal security texture in the school's
+   own colour.
+
+   All colour is driven by the three custom properties set inline on .id-card
+   by students/_id_card_face.php (--ic-accent, --ic-accent-hover,
+   --ic-accent-soft), so every palette in Settings::THEMES works — and the
+   theme picker's live preview stays accurate, since those are exactly the
+   properties its applyTheme() swaps. Rule of thumb kept below: accent fills
+   and hairlines use --ic-accent, accent TEXT uses the darker
+   --ic-accent-hover (readable even for amber/lime/orange), and white text is
+   never placed on an accent. Tints come from element opacity rather than
+   rgba(), so no separate RGB channel variable is needed.
+
+   This block is duplicated verbatim in the three pages that render a card
+   face — keep them in sync:
+     app/Views/students/id_card.php
+     app/Views/students/id_cards_bulk.php
+     app/Views/schools/id_card_theme.php   (#idCardPreview-prefixed copy)
+   ========================================================================= */
 #idCardPreview .id-card {
+  --ic-accent: #2563eb;
+  --ic-accent-hover: #1d4ed8;
+  --ic-accent-soft: #eff4ff;
+  --ic-ink: #0f172a;
+  --ic-muted: #6b7280;
+  --ic-soft: #9ca3af;
+  --ic-hair: #e5e7eb;
+  position: relative;
   width: 85.6mm;
   height: 54mm;
-  border-radius: 3mm;
+  border-radius: 2.4mm;
   overflow: hidden;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, .14);
+  border: 0.2mm solid var(--ic-hair);
+  color: var(--ic-ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-feature-settings: "kern", "liga", "tnum";
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+#idCardPreview .id-card__rule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.2mm;
+  background: var(--ic-accent);
+}
+#idCardPreview .id-card__guard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ic-accent) 0,
+    var(--ic-accent) 0.28mm,
+    transparent 0.28mm,
+    transparent 2.2mm
+  );
+  opacity: .06;
+  pointer-events: none;
+}
+#idCardPreview .id-card__inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding-top: 1.2mm;
   display: flex;
   flex-direction: column;
 }
-#idCardPreview .id-card__band {
-  background: var(--ic-accent-hover);
-  color: #fff;
+#idCardPreview .id-card__head {
   display: flex;
   align-items: center;
-  gap: 2mm;
-  padding: 2mm 3mm;
+  gap: 2.2mm;
+  padding: 2.2mm 3.2mm 1.9mm;
+  border-bottom: 0.2mm solid var(--ic-hair);
 }
 #idCardPreview .id-card__logo {
-  width: 7mm; height: 7mm;
+  width: 7mm;
+  height: 7mm;
   object-fit: contain;
-  background: #fff;
-  border-radius: 1mm;
-  padding: 0.5mm;
   flex-shrink: 0;
 }
 #idCardPreview .id-card__logo--ph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 0.2mm solid var(--ic-hair);
+  border-radius: 1mm;
+  background: #fff;
   color: var(--ic-accent-hover);
-  font-size: 4mm;
+  font-size: 3.6mm;
+  line-height: 1;
 }
-#idCardPreview .id-card__school {
-  font-size: 2.6mm;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  line-height: 1.15;
+#idCardPreview .id-card__brand {
   flex: 1 1 auto;
   min-width: 0;
+}
+#idCardPreview .id-card__school {
+  font-size: 2.5mm;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.16;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 #idCardPreview .id-card__doctype {
-  font-size: 1.9mm;
+  display: block;
+  margin-top: 0.5mm;
+  font-size: 1.7mm;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  background: rgba(255, 255, 255, .18);
-  padding: 0.6mm 1.4mm;
-  border-radius: 1mm;
-  white-space: nowrap;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ic-accent-hover);
+  line-height: 1.3;
+}
+#idCardPreview .id-card__mark {
   flex-shrink: 0;
+  font-size: 4.8mm;
+  line-height: 1;
+  color: var(--ic-accent);
 }
 #idCardPreview .id-card__body {
   flex: 1 1 auto;
+  min-height: 0;
   display: flex;
-  gap: 2.5mm;
-  padding: 2.5mm 3mm;
-  background: var(--ic-accent-soft);
+  align-items: stretch;
+  gap: 3.2mm;
+  padding: 2.6mm 3.2mm 2.4mm;
 }
 #idCardPreview .id-card__photo {
-  width: 16mm; height: 20mm;
-  border-radius: 1.5mm;
-  overflow: hidden;
-  background: #fff;
-  border: 0.4mm solid var(--ic-accent);
+  width: 22.5mm;
+  min-height: 24mm;
+  align-self: stretch;
   flex-shrink: 0;
+  border-radius: 1.2mm;
+  overflow: hidden;
+  background: var(--ic-accent-soft);
+  border: 0.25mm solid var(--ic-accent);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-#idCardPreview .id-card__photo img { width: 100%; height: 100%; object-fit: cover; }
-#idCardPreview .id-card__initials { font-size: 6mm; font-weight: 700; color: var(--ic-accent); }
+#idCardPreview .id-card__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#idCardPreview .id-card__initials {
+  font-size: 7mm;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--ic-accent-hover);
+}
 #idCardPreview .id-card__info {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 1mm;
+  justify-content: space-between;
 }
 #idCardPreview .id-card__name {
-  font-size: 3.4mm;
+  font-size: 4mm;
   font-weight: 700;
-  color: #111827;
-  line-height: 1.15;
-  margin-bottom: 0.5mm;
+  letter-spacing: 0.005em;
+  line-height: 1.12;
+  text-transform: uppercase;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+#idCardPreview .id-card__field {
+  margin-top: 1.2mm;
+}
+#idCardPreview .id-card__lbl {
+  display: block;
+  font-size: 1.7mm;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ic-soft);
+  line-height: 1.4;
+}
+#idCardPreview .id-card__adm {
+  display: block;
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 2.9mm;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
-#idCardPreview .id-card__row { display: flex; gap: 1.5mm; font-size: 2.3mm; line-height: 1.3; }
-#idCardPreview .id-card__lbl {
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  width: 13mm;
+#idCardPreview .id-card__grid {
+  margin-top: 1.2mm;
+  padding-top: 1.7mm;
+  border-top: 0.2mm solid var(--ic-hair);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2.4mm;
+}
+#idCardPreview .id-card__cell {
+  min-width: 0;
+}
+#idCardPreview .id-card__val {
+  display: block;
+  font-size: 2.5mm;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#idCardPreview .id-card__foot {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2mm;
+  padding: 1.4mm 3.2mm;
+  background: var(--ic-accent-soft);
+  border-top: 0.2mm solid var(--ic-hair);
+  font-size: 1.7mm;
+  letter-spacing: 0.04em;
+  color: var(--ic-muted);
+}
+#idCardPreview .id-card__foot-own {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#idCardPreview .id-card__foot-note {
+  flex-shrink: 0;
+  color: var(--ic-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 1.5mm;
   font-weight: 600;
 }
-#idCardPreview .id-card__val { color: #111827; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#idCardPreview .id-card__foot {
-  background: var(--ic-accent);
-  color: #fff;
-  font-size: 1.7mm;
-  text-align: center;
-  padding: 1mm;
-  letter-spacing: 0.03em;
-}
+/* ===== end ID card face ================================================== */
 </style>
 
 <script>
