@@ -32,9 +32,13 @@ $dobMinAttr = date('Y-m-d', strtotime('-100 years'));
 $dobMaxAttr = date('Y-m-d');
 // Local draft key: on error, the server redirect back to this form doesn't
 // preserve anything that was typed, so a per-form local draft is what lets
-// it come back. Scoped per student when editing, per class when creating,
-// so switching between different students/classes never mixes drafts up.
-$draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('new:' . $currentClassId));
+// it come back. Scoped per student when editing. When creating, the school
+// and class the super admin picks are client-side-only selections (no page
+// reload), so the school/class ids can't be baked in here — a fixed
+// server-rendered id would collapse every school's blank "New Student" form
+// onto the same key and leak one school's draft into another's. The full
+// key is built in JS instead, from the live school/class select values.
+$draftKey = $editing ? ('studentDraft:edit:' . (int) $student['id']) : 'studentDraft:new';
 ?>
 <div class="entity-form<?= $partial ? ' entity-form--modal' : '' ?>">
   <?php if (!$partial): ?>
@@ -810,10 +814,22 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
    * ----------------------------------------------------------------- */
   (function () {
     if (!form) return;
-    var DRAFT_KEY = <?= json_encode($draftKey) ?>;
+    var DRAFT_KEY_BASE = <?= json_encode($draftKey) ?>;
+    var EDITING = <?= json_encode($editing) ?>;
     var DRAFT_FIELDS = ['school_id', 'class_id', 'section', 'stream', 'first_name', 'last_name', 'gender', 'dob', 'guardian_name', 'guardian_phone', 'address'];
     var statusEls = document.querySelectorAll('[data-draft-status]');
     var saveTimer = null;
+
+    // Editing always keys off the student id. Creating keys off the
+    // *current* school/class selection, read live at call time — the
+    // school/class selects change without a page reload, so a cached key
+    // would go stale the moment the admin picks a different school.
+    function draftKey() {
+      if (EDITING) return DRAFT_KEY_BASE;
+      var schoolPart = schoolSel ? (schoolSel.value || 'none') : 'none';
+      var classPart = sel ? (sel.value || 'none') : 'none';
+      return DRAFT_KEY_BASE + ':' + schoolPart + ':' + classPart;
+    }
 
     function setStatus(mode, text) {
       statusEls.forEach(function (el) {
@@ -864,20 +880,21 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
     function saveDraft() {
       try {
         var data = readForm();
-        if (!hasAnyValue(data)) { localStorage.removeItem(DRAFT_KEY); setStatus(null); return; }
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: Date.now(), data: data }));
+        var key = draftKey();
+        if (!hasAnyValue(data)) { localStorage.removeItem(key); setStatus(null); return; }
+        localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), data: data }));
         setStatus('saved', 'Draft saved locally · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       } catch (e) { /* storage unavailable/full — nothing lost server-side, just skip */ }
     }
 
     function clearDraft() {
-      try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ }
+      try { localStorage.removeItem(draftKey()); } catch (e) { /* ignore */ }
       setStatus(null);
     }
 
     function readDraft() {
       try {
-        var raw = localStorage.getItem(DRAFT_KEY);
+        var raw = localStorage.getItem(draftKey());
         return raw ? JSON.parse(raw) : null;
       } catch (e) { return null; }
     }
@@ -895,6 +912,20 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
       });
     });
 
+    function tryRestore(afterError) {
+      var draft = readDraft();
+      if (draft && draft.data) {
+        // Whether this is the same entry attempt reloading after a
+        // validation error, or the admin just came back to a form they'd
+        // started earlier, the server has no memory of what was typed —
+        // so refill it quietly rather than asking first.
+        writeForm(draft.data);
+        if (typeof syncStream === 'function') syncStream();
+        if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
+        setStatus('saved', afterError ? 'Draft restored after the error above' : 'Draft restored');
+      }
+    }
+
     // The layout renders success/info flashes as an auto-dismissing toast
     // (.toast.text-bg-success) and danger/warning as a persistent inline
     // alert (.alert-danger) — see layouts/app.php. Both stay in the DOM at
@@ -905,17 +936,16 @@ $draftKey = 'studentDraft:' . ($editing ? ('edit:' . (int) $student['id']) : ('n
     if (hadSuccess) {
       clearDraft();
     } else {
-      var draft = readDraft();
-      if (draft && draft.data) {
-        // Whether this is the same entry attempt reloading after a
-        // validation error, or the admin just came back to a form they'd
-        // started earlier, the server has no memory of what was typed —
-        // so refill it quietly rather than asking first.
-        writeForm(draft.data);
-        if (typeof syncStream === 'function') syncStream();
-        if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
-        setStatus('saved', hadError ? 'Draft restored after the error above' : 'Draft restored');
-      }
+      tryRestore(hadError);
+    }
+
+    // Super admin: the school/class selects change without a page reload,
+    // so re-check for a matching draft every time either one changes —
+    // otherwise a draft only ever gets picked up for whichever school/class
+    // happened to be selected at page load.
+    if (!EDITING) {
+      if (schoolSel) schoolSel.addEventListener('change', function () { tryRestore(false); });
+      if (sel) sel.addEventListener('change', function () { tryRestore(false); });
     }
   })();
 })();
