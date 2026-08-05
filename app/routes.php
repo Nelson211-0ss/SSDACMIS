@@ -54,6 +54,10 @@ $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrA
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.
 $router->get('/students/clear-all',    'StudentController@clearAllForm',    [$schoolAdminOrAdmin]);
 $router->post('/students/clear-all',  'StudentController@clearAllExecute', [$schoolAdminOrAdmin]);
+// Delete every student in one class (optionally one stream of it) — same
+// static-before-{id} ordering requirement as clear-all above.
+$router->get('/students/delete-by-class',  'StudentController@deleteByClassForm',    [$schoolAdminOrAdmin]);
+$router->post('/students/delete-by-class', 'StudentController@deleteByClassExecute', [$schoolAdminOrAdmin]);
 // Bulk CSV import — one whole class at a time.
 $router->get('/students/import',            'StudentController@importForm',     [$staffOrAdmin]);
 $router->get('/students/import/template',   'StudentController@importTemplate', [$staffOrAdmin]);

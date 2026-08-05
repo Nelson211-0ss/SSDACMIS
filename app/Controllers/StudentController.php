@@ -996,6 +996,151 @@ class StudentController extends Controller
         return '';
     }
 
+    /**
+     * GET /students/delete-by-class — pick a class (and, for Form 3/Form 4,
+     * optionally narrow to one stream) and preview how many students match
+     * before deleting them.
+     */
+    public function deleteByClassForm(): string
+    {
+        $isAdmin  = Auth::role() === 'admin';
+        $schoolId = Auth::schoolId();
+
+        $classId = (int) $this->input('class_id', 0);
+        $stream  = (string) $this->input('stream', 'all');
+        if (!in_array($stream, ['all', 'science', 'arts'], true)) $stream = 'all';
+
+        if ($isAdmin) {
+            $selectedSchoolId = (int) $this->input('school_id', 0) ?: null;
+            $sf = $selectedSchoolId !== null ? ' WHERE school_id = ?' : '';
+            $sp = $selectedSchoolId !== null ? [$selectedSchoolId] : [];
+            $classes = Database::query(
+                "SELECT id, name, level, school_id FROM classes{$sf} ORDER BY name",
+                $sp
+            )->fetchAll();
+            $schools = Database::query(
+                "SELECT id, name FROM schools WHERE status='active' ORDER BY name"
+            )->fetchAll();
+        } else {
+            $selectedSchoolId = $schoolId;
+            $ssf     = $schoolId !== null ? ' WHERE school_id = ?' : '';
+            $ssp     = $schoolId !== null ? [$schoolId] : [];
+            $classes = Database::query(
+                "SELECT id, name, level, school_id FROM classes{$ssf} ORDER BY name",
+                $ssp
+            )->fetchAll();
+            $schools = [];
+        }
+
+        $selectedClass  = null;
+        $isUpperLevel   = false;
+        $effectiveStream = 'all';
+        $studentCount   = 0;
+
+        if ($classId > 0) {
+            // Look the class up directly (not just in the filtered $classes
+            // list above) so a school admin's own class is always found even
+            // if a stray ?school_id= narrowed $classes to a different set.
+            $classRow = Database::query(
+                "SELECT id, name, level, school_id FROM classes WHERE id = ?",
+                [$classId]
+            )->fetch();
+            if ($classRow && ($schoolId === null || (int) $classRow['school_id'] === $schoolId)) {
+                $selectedClass   = $classRow;
+                $level           = trim((string) ($classRow['level'] ?? ''));
+                $isUpperLevel    = ($level === 'Form 3' || $level === 'Form 4');
+                $effectiveStream = $isUpperLevel ? $stream : 'all';
+                $studentCount    = Student::countByClass($classId, $schoolId, $effectiveStream);
+            }
+        }
+
+        return $this->view('students/delete_by_class', [
+            'classes'          => $classes,
+            'schools'          => $schools,
+            'isAdmin'          => $isAdmin,
+            'selectedSchoolId' => $selectedSchoolId,
+            'selectedClass'    => $selectedClass,
+            'stream'           => $stream,
+            'isUpperLevel'     => $isUpperLevel,
+            'effectiveStream'  => $effectiveStream,
+            'studentCount'     => $studentCount,
+        ]);
+    }
+
+    /**
+     * POST /students/delete-by-class — wipe every student in one class (or
+     * one stream of it). Requires typing the class's own name as a
+     * deliberate confirmation, since — unlike "clear all" — the wrong pick
+     * here is a wrong CLASS, not just a wrong moment, so the phrase needs to
+     * prove the admin has the right one open.
+     */
+    public function deleteByClassExecute(): string
+    {
+        $this->validateCsrf();
+
+        $classId = (int) $this->input('class_id', 0);
+        $stream  = (string) $this->input('stream', 'all');
+        if (!in_array($stream, ['all', 'science', 'arts'], true)) $stream = 'all';
+        $backTo = '/students/delete-by-class?class_id=' . $classId . ($stream !== 'all' ? '&stream=' . $stream : '');
+
+        if ($classId <= 0) {
+            Flash::set('danger', 'Choose a class first.');
+            $this->redirect('/students/delete-by-class');
+            return '';
+        }
+
+        $schoolId = Auth::schoolId();
+        $classRow = Database::query(
+            "SELECT id, name, level, school_id FROM classes WHERE id = ?",
+            [$classId]
+        )->fetch();
+        if (!$classRow || ($schoolId !== null && (int) $classRow['school_id'] !== $schoolId)) {
+            Flash::set('danger', 'That class does not exist or is not in your school.');
+            $this->redirect('/students/delete-by-class');
+            return '';
+        }
+
+        $level           = trim((string) ($classRow['level'] ?? ''));
+        $isUpperLevel    = ($level === 'Form 3' || $level === 'Form 4');
+        $effectiveStream = $isUpperLevel ? $stream : 'all';
+
+        $expected = mb_strtoupper(trim((string) $classRow['name']), 'UTF-8');
+        $typed    = mb_strtoupper(trim((string) $this->input('confirm_name', '')), 'UTF-8');
+        if (!hash_equals($expected, $typed)) {
+            Flash::set('danger', "Type the class name exactly to confirm: {$classRow['name']}.");
+            $this->redirect($backTo);
+            return '';
+        }
+
+        $studentCount = Student::countByClass($classId, $schoolId, $effectiveStream);
+        if ($studentCount === 0) {
+            Flash::set('warning', 'There are no matching students to remove.');
+            $this->redirect('/students/delete-by-class');
+            return '';
+        }
+
+        $result = Student::purgeByClass($classId, $schoolId, $effectiveStream);
+        foreach ($result['photo_paths'] as $rel) {
+            $this->deletePhotoFile((string) $rel);
+        }
+
+        $nStudents   = $result['student_rows'];
+        $nUsers      = $result['user_rows_deleted'];
+        $streamLabel = $effectiveStream === 'all' ? '' : ' (' . ucfirst($effectiveStream) . ')';
+
+        ActivityLog::record(
+            'delete', 'student', null,
+            "Deleted all students in class {$classRow['name']}{$streamLabel} ({$nStudents} removed, {$nUsers} logins removed)"
+        );
+        Flash::set(
+            'success',
+            "Deleted {$nStudents} student(s) from {$classRow['name']}{$streamLabel}. Related marks, attendance, "
+            . "fees, and results were cleared. Student login accounts removed: {$nUsers}."
+        );
+        $this->redirect('/students');
+        return '';
+    }
+
     private function payload(): array
     {
         // Names & addresses: always UPPERCASE in DB.

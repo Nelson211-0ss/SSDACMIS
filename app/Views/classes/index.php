@@ -142,6 +142,10 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
                        class="btn btn-sm btn-outline-secondary" title="Print ID cards for this class">
                       <i class="bi bi-person-vcard"></i>
                     </a>
+                    <a href="<?= $base ?>/students/delete-by-class?class_id=<?= (int) $c['id'] ?>"
+                       class="btn btn-sm btn-outline-danger" title="Delete every student in this class">
+                      <i class="bi bi-person-x"></i>
+                    </a>
                     <form method="post" action="<?= $base ?>/classes/<?= (int)$c['id'] ?>/delete" data-confirm="Delete this class?">
                       <input type="hidden" name="_csrf" value="<?= $csrf ?>">
                       <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>

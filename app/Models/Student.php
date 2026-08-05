@@ -187,6 +187,86 @@ class Student
     }
 
     /**
+     * Count students in one class, optionally narrowed to a single stream
+     * ('science'|'arts') — 'all' matches every stream. Used to preview a
+     * class-scoped delete before it runs.
+     */
+    public static function countByClass(int $classId, ?int $schoolId, string $stream = 'all'): int
+    {
+        $sql    = "SELECT COUNT(*) AS n FROM students WHERE class_id = ?";
+        $params = [$classId];
+        if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
+        if ($stream !== 'all')  { $sql .= ' AND stream = ?';    $params[] = $stream; }
+        $row = Database::query($sql, $params)->fetch();
+        return (int) ($row['n'] ?? 0);
+    }
+
+    /**
+     * Delete every student in one class — optionally narrowed to a single
+     * stream ('science'|'arts'; 'all' matches every stream, which is the
+     * only option that ever applies outside Form 3/Form 4) — and downstream
+     * rows (grades, attendance, fees, term results CASCADE in schema).
+     *
+     * Unlike purgeAll(), which deletes every student-role user in scope,
+     * this only removes the login accounts actually linked (via
+     * students.user_id) to the students being deleted here — deleting one
+     * class must never touch another class's student logins.
+     *
+     * When $schoolId is given the purge is scoped to that single school so a
+     * school administrator can only ever clear their own learners.
+     *
+     * @return array{student_rows: int, user_rows_deleted: int, photo_paths: list<string>}
+     */
+    public static function purgeByClass(int $classId, ?int $schoolId, string $stream = 'all'): array
+    {
+        $pdo = Database::connection();
+
+        $where  = 'class_id = ?';
+        $params = [$classId];
+        if ($schoolId !== null) { $where .= ' AND school_id = ?'; $params[] = $schoolId; }
+        if ($stream !== 'all')  { $where .= ' AND stream = ?';    $params[] = $stream; }
+
+        $rows = Database::query(
+            "SELECT user_id, photo_path FROM students WHERE {$where}",
+            $params
+        )->fetchAll();
+
+        $userIds = array_values(array_unique(array_filter(array_map(
+            static fn ($r) => $r['user_id'] !== null ? (int) $r['user_id'] : null,
+            $rows
+        ))));
+        $photos = array_values(array_unique(array_filter(array_map(
+            static fn ($r) => trim((string) ($r['photo_path'] ?? '')),
+            $rows
+        ))));
+
+        $pdo->beginTransaction();
+        try {
+            Database::query("DELETE FROM students WHERE {$where}", $params);
+
+            $userRowsDeleted = 0;
+            if (!empty($userIds)) {
+                $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+                Database::query(
+                    "DELETE FROM users WHERE role = 'student' AND id IN ({$placeholders})",
+                    $userIds
+                );
+                $userRowsDeleted = count($userIds);
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+
+        return [
+            'student_rows'      => count($rows),
+            'user_rows_deleted' => $userRowsDeleted,
+            'photo_paths'       => $photos,
+        ];
+    }
+
+    /**
      * Generate the next admission number for the given class.
      * Combines the class's admission_prefix with a zero-padded sequence
      * derived from the highest existing number that already uses that prefix.
