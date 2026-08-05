@@ -41,6 +41,7 @@ if ($isAdmin && $prefillClassId > 0) {
           <li>Download the template below and fill in one row per student — keep the first (header) row as it is.</li>
           <li>In Excel: <strong>File &rarr; Save As &rarr; CSV (Comma delimited) (*.csv)</strong>, then upload that .csv file here.</li>
           <li>Pick the class every student in the file belongs to — admission numbers are generated automatically from that class's prefix.</li>
+          <li>Form 3 and Form 4 classes are asked whether the whole file is Science or Arts, since the CSV itself no longer carries a stream column.</li>
         </ol>
         <div class="table-responsive">
           <table class="table table-sm small mb-3">
@@ -51,7 +52,6 @@ if ($isAdmin && $prefillClassId > 0) {
               <tr><td class="font-monospace">gender</td><td>No</td><td>male / female / other (default male)</td></tr>
               <tr><td class="font-monospace">dob</td><td>No</td><td>YYYY-MM-DD, not in the future</td></tr>
               <tr><td class="font-monospace">section</td><td>No</td><td>day / boarding (default day)</td></tr>
-              <tr><td class="font-monospace">stream</td><td>Form 3/4 only</td><td>science / arts</td></tr>
               <tr><td class="font-monospace">guardian_name</td><td>No</td><td>&mdash;</td></tr>
               <tr><td class="font-monospace">guardian_phone</td><td>No</td><td>&mdash;</td></tr>
               <tr><td class="font-monospace">address</td><td>No</td><td>&mdash;</td></tr>
@@ -88,12 +88,23 @@ if ($isAdmin && $prefillClassId > 0) {
               <?php foreach ($classes as $c): ?>
                 <option value="<?= (int) $c['id'] ?>"
                         data-school="<?= (int) ($c['school_id'] ?? 0) ?>"
+                        data-level="<?= View::e($c['level'] ?? '') ?>"
                         <?= $prefillClassId === (int) $c['id'] ? 'selected' : '' ?>>
                   <?= View::e(mb_strtoupper((string) ($c['name'] ?? ''), 'UTF-8')) ?><?php if (!empty($c['admission_prefix'])): ?> · <?= View::e(mb_strtoupper((string) $c['admission_prefix'], 'UTF-8')) ?><?php endif; ?>
                 </option>
               <?php endforeach; ?>
             </select>
             <p class="form-text mb-0">Every student in the file is admitted into this class.</p>
+          </div>
+
+          <div class="mb-3 d-none" id="importStreamWrap">
+            <label class="form-label fw-semibold" for="importStream">Stream <span class="text-danger">*</span></label>
+            <select name="stream" id="importStream" class="form-select">
+              <option value="">— Select stream —</option>
+              <option value="science">Science</option>
+              <option value="arts">Arts</option>
+            </select>
+            <p class="form-text mb-0">Form 3 and Form 4 classes must be all Science or all Arts — every student in this file is admitted into the stream you pick here.</p>
           </div>
 
           <div class="mb-3">
@@ -169,5 +180,28 @@ if ($isAdmin && $prefillClassId > 0) {
 
   classSel.addEventListener('change', syncFileEnabled);
   syncFileEnabled();
+})();
+</script>
+
+<script>
+(function () {
+  // Form 3/Form 4 classes must say up front whether the whole file is
+  // Science or Arts — mirrors the single-student form's stream requirement.
+  var classSel   = document.getElementById('importClass');
+  var streamWrap = document.getElementById('importStreamWrap');
+  var streamSel  = document.getElementById('importStream');
+  if (!classSel || !streamWrap || !streamSel) return;
+
+  function syncStream() {
+    var opt = classSel.options[classSel.selectedIndex];
+    var level = (opt && opt.dataset.level) || '';
+    var upper = (level === 'Form 3' || level === 'Form 4');
+    streamWrap.classList.toggle('d-none', !upper);
+    streamSel.required = upper;
+    if (!upper) streamSel.value = '';
+  }
+
+  classSel.addEventListener('change', syncStream);
+  syncStream();
 })();
 </script>

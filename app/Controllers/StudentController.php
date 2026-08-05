@@ -540,11 +540,11 @@ class StudentController extends Controller
         fwrite($out, "\xEF\xBB\xBF");
         fputcsv($out, [
             'first_name', 'last_name', 'gender', 'dob', 'section',
-            'stream', 'guardian_name', 'guardian_phone', 'address',
+            'guardian_name', 'guardian_phone', 'address',
         ], ',', '"', '');
         fputcsv($out, [
             'JOHN', 'DOE', 'male', '2010-05-14', 'day',
-            'none', 'JANE DOE', '0700000000', 'KAMPALA',
+            'JANE DOE', '0700000000', 'KAMPALA',
         ], ',', '"', '');
         fclose($out);
         return '';
@@ -571,7 +571,7 @@ class StudentController extends Controller
         }
 
         $classRow = Database::query(
-            "SELECT id, school_id FROM classes WHERE id = ?",
+            "SELECT id, school_id, level FROM classes WHERE id = ?",
             [$classId]
         )->fetch();
         if (!$classRow) {
@@ -579,6 +579,19 @@ class StudentController extends Controller
             $this->redirect('/students/import');
             return '';
         }
+
+        // Form 3/Form 4 classes are Science or Arts — asked once for the
+        // whole file rather than per row, since one CSV always admits into
+        // a single class (and in practice a single stream).
+        $classLevel   = trim((string) ($classRow['level'] ?? ''));
+        $isUpperLevel = ($classLevel === 'Form 3' || $classLevel === 'Form 4');
+        $batchStream  = strtolower(trim((string) $this->input('stream', '')));
+        if ($isUpperLevel && !in_array($batchStream, ['science', 'arts'], true)) {
+            Flash::set('danger', 'Select whether this class is Science or Arts before importing — required for Form 3 and Form 4.');
+            $this->redirect($backToImport);
+            return '';
+        }
+        $resolvedStream = $isUpperLevel ? $batchStream : 'none';
 
         // Same school resolution as store(): super admin picks the school
         // via the form (or inherits the class's own school), everyone else
@@ -686,16 +699,6 @@ class StudentController extends Controller
                 $reason = 'Invalid date of birth (use YYYY-MM-DD, not in the future).';
             }
 
-            $stream = 'none';
-            if ($reason === null) {
-                $resolved = $this->resolveStream($classId, strtolower($assoc['stream'] ?? 'none') ?: 'none');
-                if ($resolved === false) {
-                    $reason = 'Form 3/Form 4 students need stream = science or arts.';
-                } else {
-                    $stream = $resolved;
-                }
-            }
-
             if ($reason !== null) {
                 $errors[] = ['row' => $rowNum, 'name' => $name, 'reason' => $reason];
                 continue;
@@ -719,7 +722,7 @@ class StudentController extends Controller
                 'dob'            => $dob !== '' ? $dob : null,
                 'class_id'       => $classId,
                 'section'        => $section,
-                'stream'         => $stream,
+                'stream'         => $resolvedStream,
                 'guardian_name'  => mb_strtoupper($assoc['guardian_name'] ?? '', 'UTF-8'),
                 'guardian_phone' => $assoc['guardian_phone'] ?? '',
                 'address'        => mb_strtoupper($assoc['address'] ?? '', 'UTF-8'),
