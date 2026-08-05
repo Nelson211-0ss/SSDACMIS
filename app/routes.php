@@ -45,6 +45,10 @@ $router->get('/students',              'StudentController@index',  [$staffOrAdmi
 $router->get('/students/print',        'StudentController@printRoster', [$schoolAdminOrAdmin]);
 $router->get('/students/admission-letters',           'StudentController@admissionLetters', [$schoolAdminOrAdmin]);
 $router->get('/students/{id}/admission-letter',       'StudentController@admissionLetter',  [$schoolAdminOrAdmin]);
+// ID cards — bulk-by-class registered here (before /students/{id}); the
+// single-student route sits with the other /students/{id}/... routes below.
+$router->get('/students/id-cards',     'IdCardController@bulk',    [$schoolAdminOrAdmin]);
+$router->get('/students/{id}/id-card', 'IdCardController@show',    [$schoolAdminOrAdmin]);
 $router->get('/students/create',       'StudentController@create', [$staffOrAdmin]);
 $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrAdmin]);
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.
@@ -205,6 +209,10 @@ $router->post('/schools',                    'SchoolController@store',         [
 $router->get('/schools/{id}',                'SchoolController@show',          [$adminOnly]);
 $router->get('/schools/{id}/edit',           'SchoolController@edit',          [$adminOnly]);
 $router->post('/schools/{id}',               'SchoolController@update',        [$adminOnly]);
+// ID card theme — unlike the rest of /schools/*, a school_admin may manage
+// their OWN school's theme here (ownership checked inside the controller).
+$router->get('/schools/{id}/id-card-theme',  'IdCardController@themeForm',   [$schoolAdminOrAdmin]);
+$router->post('/schools/{id}/id-card-theme', 'IdCardController@themeUpdate', [$schoolAdminOrAdmin]);
 $router->post('/schools/{id}/admins',            'SchoolAdminController@store',       [$adminOnly]);
 $router->post('/school-admins/{id}/resend',      'SchoolAdminController@resend',      [$adminOnly]);
 $router->post('/school-admins/{id}/set-password','SchoolAdminController@setPassword', [$adminOnly]);

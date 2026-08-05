@@ -629,6 +629,18 @@ foreach ($schoolBrandingCols as $col => $sql) {
     }
 }
 
+/* -- Per-school ID card color theme ------------------------------------ */
+$schoolIdCardCols = [
+    'id_card_theme' => "ALTER TABLE schools ADD COLUMN id_card_theme VARCHAR(30) NULL AFTER headteacher_signature",
+];
+foreach ($schoolIdCardCols as $col => $sql) {
+    if (!$columnExists('schools', $col)) {
+        $run($sql, "schools.$col column added");
+    } else {
+        $out[] = "  --  schools.$col already present";
+    }
+}
+
 /* -- Activity log (audit trail) ---------------------------------------- */
 if (!$tableExists('activity_log')) {
     $run(

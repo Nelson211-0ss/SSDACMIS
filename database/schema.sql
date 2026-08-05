@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS schools (
     address    TEXT         NULL,
     status     ENUM('active','inactive') NOT NULL DEFAULT 'active',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_card_theme VARCHAR(30) NULL, -- key into App\Core\Settings::THEMES; NULL falls back to 'blue'
     PRIMARY KEY (id),
     UNIQUE KEY uniq_school_code (code)
 ) ENGINE=InnoDB;

@@ -189,4 +189,30 @@ final class SchoolIdentity
     {
         return self::all()['school_headteacher_signature'];
     }
+
+    /**
+     * The ID card color palette for a specific school, looked up by id
+     * rather than the viewer's own session — a super admin printing a
+     * card for School B must get School B's theme even though
+     * Auth::schoolId() is null for their own account. Falls back to the
+     * 'blue' palette when the school has never picked one, or picked a
+     * key that's since been removed from the catalogue.
+     *
+     * @return array{label:string,accent:string,accent_hover:string,accent_soft:string,accent_rgb:string}
+     */
+    public static function idCardTheme(int $schoolId): array
+    {
+        try {
+            $row = Database::query(
+                'SELECT id_card_theme FROM schools WHERE id = ? LIMIT 1',
+                [$schoolId]
+            )->fetch();
+            $key = trim((string) ($row['id_card_theme'] ?? ''));
+        } catch (Throwable $e) {
+            $key = '';
+        }
+
+        $themes = Settings::themes();
+        return $themes[$key] ?? $themes['blue'];
+    }
 }

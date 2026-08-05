@@ -68,6 +68,14 @@ $mainNav = [
     ['Activity Log',  'bi-clock-history',     '/activity-log',  ['admin','school_admin'],                   '/activity-log'],
 ];
 
+// school_admin has no /schools access (that's super-admin only), so their
+// own school's ID card theme needs a direct link rather than going through
+// the Schools list.
+if ($role === 'school_admin' && Auth::schoolId() !== null) {
+    $ownSchoolThemeHref = '/schools/' . Auth::schoolId() . '/id-card-theme';
+    $mainNav[] = ['ID Card Theme', 'bi-palette2', $ownSchoolThemeHref, ['school_admin'], $ownSchoolThemeHref];
+}
+
 $initial = strtoupper(mb_substr($auth['name'] ?? '?', 0, 1));
 $pageTitle = $title ?? $schoolName;
 // Super admin, school admin, Bursar Fees Module, and HOD portal share the enterprise shell.

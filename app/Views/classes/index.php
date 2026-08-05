@@ -137,6 +137,11 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
                        class="btn btn-sm btn-outline-secondary" title="Import students to this class from CSV">
                       <i class="bi bi-file-earmark-spreadsheet"></i>
                     </a>
+                    <a href="<?= $base ?>/students/id-cards?class_id=<?= (int) $c['id'] ?>"
+                       data-inline-print
+                       class="btn btn-sm btn-outline-secondary" title="Print ID cards for this class">
+                      <i class="bi bi-person-vcard"></i>
+                    </a>
                     <form method="post" action="<?= $base ?>/classes/<?= (int)$c['id'] ?>/delete" data-confirm="Delete this class?">
                       <input type="hidden" name="_csrf" value="<?= $csrf ?>">
                       <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>

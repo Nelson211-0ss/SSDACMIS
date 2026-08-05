@@ -53,6 +53,12 @@ if (empty($students)): ?>
                    title="Print admission letter">
                   <i class="bi bi-envelope-paper"></i>
                 </a>
+                <a class="btn btn-sm btn-outline-secondary"
+                   href="<?= $base ?>/students/<?= (int)$s['id'] ?>/id-card"
+                   data-inline-print
+                   title="Print ID card">
+                  <i class="bi bi-person-vcard"></i>
+                </a>
               <?php endif; ?>
               <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
                 <form class="d-inline" method="post" action="<?= $base ?>/students/<?= (int)$s['id'] ?>/delete" data-confirm="Delete <?= View::e($s['first_name'] . ' ' . $s['last_name']) ?>? This also removes their marks, attendance, and fees.">
