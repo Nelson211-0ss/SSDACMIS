@@ -7,6 +7,10 @@ $fmtPct = static function (?float $v): string {
     return $v === null ? '—' : number_format($v, 1) . '%';
 };
 
+$stage      = $stage ?? 'endterm';
+$stageLabel = $stageLabel ?? 'End of term';
+$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage=' . rawurlencode($stage);
+
 $boysTotal  = $totals['male'];
 $girlsTotal = $totals['female'];
 $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
@@ -16,7 +20,10 @@ $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
 <div class="results-landscape-root results-print-area report-page--print-landscape">
   <div class="results-toolbar d-print-none d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
-      <h4 class="mb-1"><i class="bi bi-bar-chart-steps"></i> Gender performance</h4>
+      <h4 class="mb-1">
+        <i class="bi bi-bar-chart-steps"></i> Gender performance
+        <span class="badge <?= $stage === 'midterm' ? 'text-bg-warning' : 'text-bg-primary' ?> align-middle ms-1"><?= View::e($stageLabel) ?></span>
+      </h4>
       <div class="small text-muted">
         <?= View::e($year) ?> · <?= View::e($term) ?> · Boys vs girls — students, average % and pass rate
       </div>
@@ -25,7 +32,7 @@ $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
       <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print this page">
         <i class="bi bi-printer"></i> Print
       </button>
-      <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
+      <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results?<?= View::e($qs) ?>">
         <i class="bi bi-arrow-left"></i> Back to results
       </a>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results">
@@ -36,7 +43,7 @@ $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
 
   <div class="results-print-brand border-bottom pb-2 mb-3 d-none d-print-block">
     <div class="fw-bold"><?= View::e($schoolName) ?></div>
-    <div class="small">Gender performance · <?= View::e($year) ?> · <?= View::e($term) ?></div>
+    <div class="small">Gender performance · <?= View::e($stageLabel) ?> · <?= View::e($year) ?> · <?= View::e($term) ?></div>
   </div>
 
   <?php if (empty($byClass)): ?>
@@ -183,7 +190,7 @@ $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
           ?>
             <tr>
               <td>
-                <a href="<?= $base ?><?= $portalPrefix ?>/results/class/<?= (int) $classId ?>?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
+                <a href="<?= $base ?><?= $portalPrefix ?>/results/class/<?= (int) $classId ?>?<?= View::e($qs) ?>">
                   <?= View::e($row['name']) ?>
                 </a>
                 <?php if (!empty($row['level'])): ?>

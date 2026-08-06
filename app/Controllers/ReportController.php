@@ -7,10 +7,15 @@ use App\Core\Database;
 use App\Services\AcademicMarking;
 
 /**
- * Report cards.
- *   GET /reports                          -> selector (year + term + class + student)
- *   GET /reports/student/{id}?year=&term= -> printable single-student report
- *   GET /reports/class/{id}?year=&term=   -> printable class-wide matrix
+ * Report cards, issued per assessment stage (`stage` query parameter):
+ *   - midterm — mid-term marks only, each subject out of 30
+ *   - endterm — mid + end combined, each subject out of 100 (default)
+ * A mid-term report card is a standalone document: it keeps showing the
+ * mid-term marks and their /30 grades even after end-of-term marks exist.
+ *
+ *   GET /reports                          -> selector (year + term + assessment + class + student)
+ *   GET /reports/student/{id}?year=&term=&stage= -> printable single-student report
+ *   GET /reports/class/{id}?year=&term=&stage=   -> printable class-wide matrix
  *
  * Authorization rules:
  *  - admin: everything
@@ -28,6 +33,12 @@ class ReportController extends Controller
         return (date('n') >= 9)
             ? date('Y') . '/' . (date('Y') + 1)
             : (date('Y') - 1) . '/' . date('Y');
+    }
+
+    /** Requested assessment stage, defaulting to the full end-of-term report. */
+    private function stage(): string
+    {
+        return AcademicMarking::normalizeStage((string) $this->input('stage', ''));
     }
 
     private function isAdmin(): bool   { return in_array(Auth::role(), ['admin', 'school_admin'], true); }
@@ -129,13 +140,19 @@ class ReportController extends Controller
 
     public function index(): string
     {
-        $year = (string) ($this->input('year') ?: self::defaultYear());
-        $term = (string) ($this->input('term') ?: 'Term 1');
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
+        $stageMeta = [
+            'stage'      => $stage,
+            'stages'     => AcademicMarking::stages(),
+            'stageLabel' => AcademicMarking::stageLabel($stage),
+        ];
 
         if ($this->isStudent()) {
             $u = Auth::user();
             $row = Database::query("SELECT id FROM students WHERE user_id = ? LIMIT 1", [(int) $u['id']])->fetch();
-            return $this->view('reports/index', [
+            return $this->view('reports/index', $stageMeta + [
                 'year'         => $year,
                 'term'         => $term,
                 'terms'        => self::TERMS,
@@ -148,7 +165,7 @@ class ReportController extends Controller
 
         $classIds = $this->visibleClassIds();
         if (empty($classIds)) {
-            return $this->view('reports/index', [
+            return $this->view('reports/index', $stageMeta + [
                 'year' => $year, 'term' => $term, 'terms' => self::TERMS,
                 'role' => Auth::role(), 'classes' => [], 'students' => [],
             ]);
@@ -169,7 +186,7 @@ class ReportController extends Controller
             $classIds
         )->fetchAll();
 
-        return $this->view('reports/index', [
+        return $this->view('reports/index', $stageMeta + [
             'year' => $year, 'term' => $term, 'terms' => self::TERMS,
             'role' => Auth::role(),
             'classes' => $classes, 'students' => $students,
@@ -209,16 +226,19 @@ class ReportController extends Controller
         return Database::query($sql, $params)->fetchAll();
     }
 
-    /** South Sudan ACMIS rules: Mid (×/30) + End (×/70); overall average = Σ totals ÷ subjects counted. */
-    private function studentScoreSheet(int $studentId, string $year, string $term): array
+    /**
+     * South Sudan ACMIS rules for the requested stage: mid-term marks alone
+     * (×/30), or mid + end combined (×/100) at end of term.
+     */
+    private function studentScoreSheet(int $studentId, string $year, string $term, string $stage): array
     {
-        return AcademicMarking::buildScoreSheet($studentId, $year, $term);
+        return AcademicMarking::buildScoreSheet($studentId, $year, $term, $stage);
     }
 
-    /** Competition ranking (1,2,2,4) on overall average within stream where applicable. */
-    private function classPosition(int $studentId, int $classId, string $year, string $term): array
+    /** Competition ranking (1,2,2,4) on the stage's average, within stream where applicable. */
+    private function classPosition(int $studentId, int $classId, string $year, string $term, string $stage): array
     {
-        return AcademicMarking::classPositionRow($studentId, $classId, $year, $term);
+        return AcademicMarking::classPositionRow($studentId, $classId, $year, $term, $stage);
     }
 
     /* -------------------------- per-student ----------------------- */
@@ -230,8 +250,9 @@ class ReportController extends Controller
             http_response_code(403); return $this->view('errors/403');
         }
 
-        $year = (string) ($this->input('year') ?: self::defaultYear());
-        $term = (string) ($this->input('term') ?: 'Term 1');
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) $term = 'Term 1';
 
         $student = Database::query(
@@ -246,9 +267,9 @@ class ReportController extends Controller
 
         if (!$student) { http_response_code(404); return $this->view('errors/404'); }
 
-        $sheet    = $this->studentScoreSheet($studentId, $year, $term);
+        $sheet    = $this->studentScoreSheet($studentId, $year, $term, $stage);
         $position = $student['class_id']
-            ? $this->classPosition($studentId, (int) $student['class_id'], $year, $term)
+            ? $this->classPosition($studentId, (int) $student['class_id'], $year, $term, $stage)
             : ['position' => null, 'cohort' => 0];
 
         $classId = isset($student['class_id']) ? (int) $student['class_id'] : 0;
@@ -297,6 +318,9 @@ class ReportController extends Controller
             'student' => $student, 'sheet' => $sheet, 'position' => $position,
             'year'    => $year,    'term'  => $term,
             'terms'   => self::TERMS,
+            'stage'      => $stage,
+            'stages'     => AcademicMarking::stages(),
+            'stageLabel' => AcademicMarking::stageLabel($stage),
             'reportPeersJson' => $reportPeersJson,
             'peerPosition'    => $peerPosition,
             'peerTotal'       => $peerTotal,
@@ -314,8 +338,9 @@ class ReportController extends Controller
             http_response_code(403); return $this->view('errors/403');
         }
 
-        $year = (string) ($this->input('year') ?: self::defaultYear());
-        $term = (string) ($this->input('term') ?: 'Term 1');
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) $term = 'Term 1';
 
         $class = Database::query(
@@ -379,13 +404,18 @@ class ReportController extends Controller
                     $end = $c['end'] ?? null;
                     $mid = $mid !== null ? (float) $mid : null;
                     $end = $end !== null ? (float) $end : null;
-                    $c['total'] = AcademicMarking::subjectTotal($mid, $end);
-                    $c['max']   = AcademicMarking::subjectMax($mid, $end);
+                    // A mid-term matrix drops the end-of-term column outright,
+                    // so the cell can't show a mark this report doesn't count.
+                    [$mid, $end] = AcademicMarking::componentsForStage($mid, $end, $stage);
+                    $c['mid']   = $mid;
+                    $c['end']   = $end;
+                    $c['total'] = AcademicMarking::subjectTotal($mid, $end, $stage);
+                    $c['max']   = AcademicMarking::subjectMax($mid, $end, $stage);
                     $c['avg']   = $c['total'];
                 }
                 unset($c);
 
-                $sheet = AcademicMarking::buildScoreSheet((int) $sid, $year, $term);
+                $sheet = AcademicMarking::buildScoreSheet((int) $sid, $year, $term, $stage);
                 $cells['_total'] = $sheet['total'];
                 $cells['_maxTotal'] = $sheet['maxTotal'];
                 $cells['_count'] = $sheet['count'];
@@ -409,7 +439,7 @@ class ReportController extends Controller
                     $members = [];
                     foreach ($memberStudents as $s) {
                         $stuId = (int) $s['id'];
-                        $sh = AcademicMarking::buildScoreSheet($stuId, $year, $term);
+                        $sh = AcademicMarking::buildScoreSheet($stuId, $year, $term, $stage);
                         $members[] = ['student_id' => $stuId, 'average' => $sh['average']];
                     }
                     $ranks = AcademicMarking::competitionRanksByAverage($members);
@@ -430,7 +460,7 @@ class ReportController extends Controller
                 $members = [];
                 foreach ($students as $s) {
                     $stuId = (int) $s['id'];
-                    $sh = AcademicMarking::buildScoreSheet($stuId, $year, $term);
+                    $sh = AcademicMarking::buildScoreSheet($stuId, $year, $term, $stage);
                     $members[] = ['student_id' => $stuId, 'average' => $sh['average']];
                 }
                 $ranks = AcademicMarking::competitionRanksByAverage($members);
@@ -469,6 +499,9 @@ class ReportController extends Controller
             'class' => $class, 'students' => $students, 'subjects' => $subjects,
             'matrix' => $matrix, 'year' => $year, 'term' => $term,
             'terms' => self::TERMS,
+            'stage'       => $stage,
+            'stages'      => AcademicMarking::stages(),
+            'stageLabel'  => AcademicMarking::stageLabel($stage),
             'isUpperForm' => $isUpperForm,
             'groups'      => $groups,
         ]);
@@ -487,8 +520,9 @@ class ReportController extends Controller
             return $this->view('errors/403');
         }
 
-        $year = (string) ($this->input('year') ?: self::defaultYear());
-        $term = (string) ($this->input('term') ?: 'Term 1');
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {
             $term = 'Term 1';
         }
@@ -520,8 +554,8 @@ class ReportController extends Controller
             $sid = (int) $student['id'];
             $booklet[] = [
                 'student'  => $student,
-                'sheet'    => $this->studentScoreSheet($sid, $year, $term),
-                'position' => $this->classPosition($sid, $classId, $year, $term),
+                'sheet'    => $this->studentScoreSheet($sid, $year, $term, $stage),
+                'position' => $this->classPosition($sid, $classId, $year, $term, $stage),
             ];
         }
 
@@ -531,6 +565,9 @@ class ReportController extends Controller
             'year'    => $year,
             'term'    => $term,
             'terms'   => self::TERMS,
+            'stage'      => $stage,
+            'stages'     => AcademicMarking::stages(),
+            'stageLabel' => AcademicMarking::stageLabel($stage),
         ]);
     }
 }

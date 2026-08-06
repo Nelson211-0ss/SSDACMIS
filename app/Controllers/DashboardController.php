@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
+use App\Services\AcademicMarking;
 
 class DashboardController extends Controller
 {
@@ -312,14 +313,18 @@ class DashboardController extends Controller
         $genderPerf         = null;
         $genderPerfBySchool = [];
 
+        // Results are published per assessment stage; this widget reports the
+        // end-of-term set (the full /100 result), never the two stages mixed.
+        $genderPerfStage = AcademicMarking::STAGE_END;
+
         if ($role === 'school_admin' && $schoolId !== null) {
             $period = Database::query(
                 "SELECT tsr.academic_year, tsr.term
                  FROM term_student_results tsr
                  JOIN students s ON s.id = tsr.student_id
-                 WHERE s.school_id = ?
+                 WHERE s.school_id = ? AND tsr.stage = ?
                  ORDER BY tsr.updated_at DESC LIMIT 1",
-                [$schoolId]
+                [$schoolId, $genderPerfStage]
             )->fetch();
 
             if ($period) {
@@ -330,10 +335,10 @@ class DashboardController extends Controller
                             SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
                      FROM term_student_results tsr
                      JOIN students s ON s.id = tsr.student_id
-                     WHERE s.school_id = ? AND tsr.academic_year = ? AND tsr.term = ?
+                     WHERE s.school_id = ? AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
                            AND s.gender IN ('male', 'female')
                      GROUP BY s.gender",
-                    [$schoolId, $genderPerfPeriod['year'], $genderPerfPeriod['term']]
+                    [$schoolId, $genderPerfPeriod['year'], $genderPerfPeriod['term'], $genderPerfStage]
                 )->fetchAll();
 
                 $genderPerf = ['male' => self::emptyGenderBucket(), 'female' => self::emptyGenderBucket()];
@@ -343,7 +348,9 @@ class DashboardController extends Controller
             }
         } elseif ($isAdmin) {
             $period = Database::query(
-                'SELECT academic_year, term FROM term_student_results ORDER BY updated_at DESC LIMIT 1'
+                'SELECT academic_year, term FROM term_student_results
+                 WHERE stage = ? ORDER BY updated_at DESC LIMIT 1',
+                [$genderPerfStage]
             )->fetch();
 
             if ($period) {
@@ -356,10 +363,11 @@ class DashboardController extends Controller
                      FROM term_student_results tsr
                      JOIN students s ON s.id = tsr.student_id
                      JOIN schools sch ON sch.id = s.school_id
-                     WHERE tsr.academic_year = ? AND tsr.term = ? AND s.gender IN ('male', 'female')
+                     WHERE tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
+                           AND s.gender IN ('male', 'female')
                      GROUP BY sch.id, sch.name, s.gender
                      ORDER BY sch.name",
-                    [$genderPerfPeriod['year'], $genderPerfPeriod['term']]
+                    [$genderPerfPeriod['year'], $genderPerfPeriod['term'], $genderPerfStage]
                 )->fetchAll();
 
                 foreach ($rows as $r) {

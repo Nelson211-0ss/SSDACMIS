@@ -370,7 +370,11 @@ CREATE TABLE IF NOT EXISTS activity_log (
     CONSTRAINT fk_activity_user   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- ---------- Term results (computed when marks are saved; Mid ×/30 + End ×/70) ----------
+-- ---------- Term results (computed when marks are saved) ----------
+-- Stored once per assessment stage:
+--   stage='midterm' -> mid-term marks only, each subject out of 30
+--   stage='endterm' -> mid + end combined, each subject out of 100
+-- so the mid-term result set stays fixed once end-of-term marks arrive.
 CREATE TABLE IF NOT EXISTS term_subject_results (
     id             INT UNSIGNED NOT NULL AUTO_INCREMENT,
     student_id     INT UNSIGNED NOT NULL,
@@ -378,14 +382,15 @@ CREATE TABLE IF NOT EXISTS term_subject_results (
     subject_id     INT UNSIGNED NOT NULL,
     academic_year  VARCHAR(9)   NOT NULL,
     term           VARCHAR(20)  NOT NULL,
+    stage          VARCHAR(10)  NOT NULL DEFAULT 'endterm',
     mid_marks      DECIMAL(5,2) NULL,
     end_marks      DECIMAL(5,2) NULL,
     total_marks    DECIMAL(5,2) NULL,
     letter_grade   VARCHAR(10)  NULL,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uniq_term_subject_student (student_id, subject_id, academic_year, term),
-    KEY idx_term_class_period (class_id, academic_year, term),
+    UNIQUE KEY uniq_term_subject_stage (student_id, subject_id, academic_year, term, stage),
+    KEY idx_term_class_period (class_id, academic_year, term, stage),
     CONSTRAINT fk_tsr_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsr_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsr_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
@@ -397,14 +402,15 @@ CREATE TABLE IF NOT EXISTS term_student_results (
     class_id             INT UNSIGNED NOT NULL,
     academic_year        VARCHAR(9)   NOT NULL,
     term                 VARCHAR(20)  NOT NULL,
+    stage                VARCHAR(10)  NOT NULL DEFAULT 'endterm',
     subjects_with_totals INT UNSIGNED NOT NULL DEFAULT 0,
     average_percentage   DECIMAL(6,2) NULL,
     class_position       INT UNSIGNED NULL,
     rank_cohort          VARCHAR(20) NOT NULL DEFAULT 'class',
     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uniq_term_student (student_id, academic_year, term),
-    KEY idx_tst_class_period (class_id, academic_year, term),
+    UNIQUE KEY uniq_term_student_stage (student_id, academic_year, term, stage),
+    KEY idx_tst_class_period (class_id, academic_year, term, stage),
     CONSTRAINT fk_tsi_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsi_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

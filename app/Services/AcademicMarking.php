@@ -8,6 +8,13 @@ use App\Core\Settings;
 /**
  * South Sudan–style ACMIS scoring: Mid-term (×/30) + End-of-term (×/70) = 100 max per subject.
  * Reusable validation, totals, letter grades (configurable), averages, competition ranking (1,2,2,4).
+ *
+ * Results and reports are published at two independent assessment stages:
+ *   - STAGE_MID ("Mid-term")   — mid-term marks only, each subject out of 30.
+ *   - STAGE_END ("End of term") — mid + end combined, each subject out of 100.
+ * Every figure below (totals, denominators, percentages, averages, positions)
+ * is derived for ONE stage at a time, so a mid-term result set never changes
+ * once end-of-term marks start coming in.
  */
 final class AcademicMarking
 {
@@ -15,10 +22,56 @@ final class AcademicMarking
     public const END_MAX  = 70.0;
     public const TOTAL_MAX = 100.0;
 
+    /** Mid-term assessment: mid marks only, subject max 30. */
+    public const STAGE_MID = 'midterm';
+    /** End-of-term assessment: mid + end, subject max 100. */
+    public const STAGE_END = 'endterm';
+
     public const ERR_MID_HIGH = 'Mid-term marks cannot exceed 30';
     public const ERR_MID_LOW  = 'Mid-term marks cannot be below 0';
     public const ERR_END_HIGH = 'End-of-term marks cannot exceed 70';
     public const ERR_END_LOW  = 'End-of-term marks cannot be below 0';
+
+    /** @return array<string,string> stage key => human label */
+    public static function stages(): array
+    {
+        return [
+            self::STAGE_MID => 'Mid-term',
+            self::STAGE_END => 'End of term',
+        ];
+    }
+
+    /** Anything that isn't an explicit mid-term request means the full end-of-term result. */
+    public static function normalizeStage(?string $stage): string
+    {
+        return ((string) $stage) === self::STAGE_MID ? self::STAGE_MID : self::STAGE_END;
+    }
+
+    public static function stageLabel(?string $stage): string
+    {
+        return self::stages()[self::normalizeStage($stage)];
+    }
+
+    /** Per-subject denominator the stage is published out of (30 mid-term, 100 end-of-term). */
+    public static function stageSubjectMax(?string $stage): int
+    {
+        return self::normalizeStage($stage) === self::STAGE_MID
+            ? (int) self::MID_MAX
+            : (int) self::TOTAL_MAX;
+    }
+
+    /**
+     * The mark components that count toward a stage. Mid-term results ignore
+     * end-of-term marks completely — that's what keeps the two result sets
+     * separate rather than the mid-term one silently turning into the final
+     * one as soon as end-of-term marks are entered.
+     *
+     * @return array{0:?float,1:?float}
+     */
+    public static function componentsForStage(?float $mid, ?float $end, ?string $stage): array
+    {
+        return self::normalizeStage($stage) === self::STAGE_MID ? [$mid, null] : [$mid, $end];
+    }
 
     /**
      * @return list<array{label:string,min:float,max:float}>
@@ -129,8 +182,9 @@ final class AcademicMarking
      * denominator and subjectPercentage() for anything that needs a
      * comparable 0–100 figure (grading, remarks, averages, ranking).
      */
-    public static function subjectTotal(?float $mid, ?float $end): ?float
+    public static function subjectTotal(?float $mid, ?float $end, ?string $stage = self::STAGE_END): ?float
     {
+        [$mid, $end] = self::componentsForStage($mid, $end, $stage);
         if ($mid !== null && $end !== null) {
             return round(min(self::TOTAL_MAX, $mid + $end), 2);
         }
@@ -144,8 +198,9 @@ final class AcademicMarking
     }
 
     /** The denominator subjectTotal() is out of, given which components exist. */
-    public static function subjectMax(?float $mid, ?float $end): ?int
+    public static function subjectMax(?float $mid, ?float $end, ?string $stage = self::STAGE_END): ?int
     {
+        [$mid, $end] = self::componentsForStage($mid, $end, $stage);
         if ($mid !== null && $end !== null) {
             return (int) self::TOTAL_MAX;
         }
@@ -165,10 +220,10 @@ final class AcademicMarking
      * complete). Grading tiers, remarks, and cross-subject averages must
      * always be computed from THIS, never from the raw total directly.
      */
-    public static function subjectPercentage(?float $mid, ?float $end): ?float
+    public static function subjectPercentage(?float $mid, ?float $end, ?string $stage = self::STAGE_END): ?float
     {
-        $total = self::subjectTotal($mid, $end);
-        $max   = self::subjectMax($mid, $end);
+        $total = self::subjectTotal($mid, $end, $stage);
+        $max   = self::subjectMax($mid, $end, $stage);
         if ($total === null || $max === null || $max <= 0) {
             return null;
         }
@@ -241,8 +296,13 @@ final class AcademicMarking
      *   grade: string
      * }
      */
-    public static function buildScoreSheet(int $studentId, string $year, string $term): array
-    {
+    public static function buildScoreSheet(
+        int $studentId,
+        string $year,
+        string $term,
+        ?string $stage = self::STAGE_END
+    ): array {
+        $stage = self::normalizeStage($stage);
         $subjects = self::offeredSubjectsForStudent($studentId);
         if ($subjects === []) {
             return [
@@ -251,6 +311,7 @@ final class AcademicMarking
                 'count'  => 0,
                 'average' => null,
                 'grade'  => '—',
+                'stage'  => $stage,
             ];
         }
 
@@ -277,6 +338,9 @@ final class AcademicMarking
         foreach ($grades as $g) {
             $mid = isset($g['midterm']) ? (float) $g['midterm'] : null;
             $end = isset($g['endterm']) ? (float) $g['endterm'] : null;
+            // On a mid-term sheet the end-of-term column is dropped here, so
+            // nothing downstream can accidentally fold it back in.
+            [$mid, $end] = self::componentsForStage($mid, $end, $stage);
             $byId[(int) $g['subject_id']] = [
                 'midterm' => $mid,
                 'endterm' => $end,
@@ -300,9 +364,9 @@ final class AcademicMarking
             $sid = (int) $sub['id'];
             $mid = $byId[$sid]['midterm'] ?? null;
             $end = $byId[$sid]['endterm'] ?? null;
-            $total = self::subjectTotal($mid, $end);
-            $max   = self::subjectMax($mid, $end);
-            $pct   = self::subjectPercentage($mid, $end);
+            $total = self::subjectTotal($mid, $end, $stage);
+            $max   = self::subjectMax($mid, $end, $stage);
+            $pct   = self::subjectPercentage($mid, $end, $stage);
 
             if ($total !== null && $pct !== null) {
                 $totalSum += $total;
@@ -357,6 +421,7 @@ final class AcademicMarking
             'count'    => $subjectCount,
             'average'  => $average,
             'grade'    => $average !== null ? self::letterGrade((float) $average) : '—',
+            'stage'    => $stage,
         ];
     }
 
@@ -404,8 +469,14 @@ final class AcademicMarking
      *
      * @return array{position:int|null,cohort:int,cohort_label:string,stream:string}
      */
-    public static function classPositionRow(int $studentId, int $classId, string $year, string $term): array
-    {
+    public static function classPositionRow(
+        int $studentId,
+        int $classId,
+        string $year,
+        string $term,
+        ?string $stage = self::STAGE_END
+    ): array {
+        $stage = self::normalizeStage($stage);
         $student = Database::query(
             'SELECT s.stream, c.level
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
@@ -431,7 +502,7 @@ final class AcademicMarking
         $members = [];
         foreach ($peerRows as $pr) {
             $sid = (int) $pr['id'];
-            $sheet = self::buildScoreSheet($sid, $year, $term);
+            $sheet = self::buildScoreSheet($sid, $year, $term, $stage);
             $avg = $sheet['average'];
             $members[] = ['student_id' => $sid, 'average' => $avg];
         }
@@ -447,6 +518,7 @@ final class AcademicMarking
             'cohort'        => count($peerRows),
             'cohort_label'  => $cohortLabel,
             'stream'        => $stream,
+            'stage'         => $stage,
         ];
     }
 }

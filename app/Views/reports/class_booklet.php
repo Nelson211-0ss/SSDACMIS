@@ -7,7 +7,9 @@ $schoolName  = SchoolIdentity::name();
 $schoolMotto = SchoolIdentity::motto();
 $schoolLogo  = SchoolIdentity::logoUrl();
 $n = count($booklet);
-$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term);
+$stage      = $stage ?? 'endterm';
+$stageLabel = $stageLabel ?? 'End of term';
+$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage=' . rawurlencode($stage);
 
 $peersJson = [];
 foreach ($booklet as $entry) {
@@ -44,6 +46,14 @@ $peersAttr = htmlspecialchars(json_encode($peersJson, JSON_HEX_TAG | JSON_HEX_AP
               <?php endforeach; ?>
             </select>
           </div>
+          <div>
+            <label class="form-label small mb-1">Assessment</label>
+            <select name="stage" class="form-select form-select-sm">
+              <?php foreach (($stages ?? []) as $key => $label): ?>
+                <option value="<?= View::e((string) $key) ?>" <?= $key === $stage ? 'selected' : '' ?>><?= View::e($label) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
           <button type="submit" class="btn btn-outline-primary btn-sm">Reload</button>
         </form>
         <?php if ($n > 0): ?>
@@ -75,7 +85,9 @@ $peersAttr = htmlspecialchars(json_encode($peersJson, JSON_HEX_TAG | JSON_HEX_AP
         <?php endif; ?>
       </div>
       <div class="d-flex flex-wrap gap-2 flex-shrink-0 ms-auto">
-        <span class="text-muted small d-none d-md-inline align-self-end pb-1 me-1"><?= View::e($class['name']) ?> · <?= $n ?> student<?= $n === 1 ? '' : 's' ?></span>
+        <span class="text-muted small d-none d-md-inline align-self-end pb-1 me-1">
+          <?= View::e($class['name']) ?> · <?= View::e($stageLabel) ?> · <?= $n ?> student<?= $n === 1 ? '' : 's' ?>
+        </span>
         <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" <?= $n === 0 ? 'disabled' : '' ?>>
           <i class="bi bi-printer"></i> Print all
         </button>

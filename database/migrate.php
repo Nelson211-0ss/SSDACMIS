@@ -409,14 +409,15 @@ if (!$tableExists('term_subject_results')) {
             subject_id     INT UNSIGNED NOT NULL,
             academic_year  VARCHAR(9)   NOT NULL,
             term           VARCHAR(20)  NOT NULL,
+            stage          VARCHAR(10)  NOT NULL DEFAULT 'endterm',
             mid_marks      DECIMAL(5,2) NULL,
             end_marks      DECIMAL(5,2) NULL,
             total_marks    DECIMAL(5,2) NULL,
             letter_grade   VARCHAR(10)  NULL,
             updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
-            UNIQUE KEY uniq_term_subject_student (student_id, subject_id, academic_year, term),
-            KEY idx_term_class_period (class_id, academic_year, term),
+            UNIQUE KEY uniq_term_subject_stage (student_id, subject_id, academic_year, term, stage),
+            KEY idx_term_class_period (class_id, academic_year, term, stage),
             CONSTRAINT fk_tsr_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
             CONSTRAINT fk_tsr_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
             CONSTRAINT fk_tsr_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
@@ -434,20 +435,60 @@ if (!$tableExists('term_student_results')) {
             class_id             INT UNSIGNED NOT NULL,
             academic_year        VARCHAR(9)   NOT NULL,
             term                 VARCHAR(20)  NOT NULL,
+            stage                VARCHAR(10)  NOT NULL DEFAULT 'endterm',
             subjects_with_totals INT UNSIGNED NOT NULL DEFAULT 0,
             average_percentage   DECIMAL(6,2) NULL,
             class_position       INT UNSIGNED NULL,
             rank_cohort          VARCHAR(20) NOT NULL DEFAULT 'class',
             updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
-            UNIQUE KEY uniq_term_student (student_id, academic_year, term),
-            KEY idx_tst_class_period (class_id, academic_year, term),
+            UNIQUE KEY uniq_term_student_stage (student_id, academic_year, term, stage),
+            KEY idx_tst_class_period (class_id, academic_year, term, stage),
             CONSTRAINT fk_tsi_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
             CONSTRAINT fk_tsi_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
         ) ENGINE=InnoDB
     ", 'term_student_results table created');
 } else {
     $out[] = '  --  term_student_results already exists';
+}
+
+/* -- results split per assessment stage (mid-term /30 vs end-of-term /100) --
+ * Older installs stored a single result set per (student, period). Existing
+ * rows were computed mid + end combined, which is exactly the end-of-term
+ * stage, so the new column defaults to 'endterm'. The old unique keys have to
+ * go: they'd reject the second stage's row for the same student and period.
+ * Mid-term rows appear the next time marks are saved for a class (or run
+ * scripts/resync_results.php to backfill every class at once).
+ */
+foreach ([
+    ['term_subject_results', 'uniq_term_subject_student', 'uniq_term_subject_stage', '(student_id, subject_id, academic_year, term, stage)'],
+    ['term_student_results', 'uniq_term_student',         'uniq_term_student_stage', '(student_id, academic_year, term, stage)'],
+] as [$stageTable, $oldKey, $newKey, $keyCols]) {
+    if (!$columnExists($stageTable, 'stage')) {
+        $run(
+            "ALTER TABLE {$stageTable} ADD COLUMN stage VARCHAR(10) NOT NULL DEFAULT 'endterm' AFTER term",
+            "{$stageTable}.stage column added (mid-term vs end-of-term results)"
+        );
+    } else {
+        $out[] = "  --  {$stageTable}.stage already present";
+    }
+    // Add the replacement before dropping the old key: both lead with
+    // student_id, and MySQL refuses to drop the last index a foreign key
+    // can use.
+    if (!$indexExists($stageTable, $newKey)) {
+        $run(
+            "ALTER TABLE {$stageTable} ADD UNIQUE KEY {$newKey} {$keyCols}",
+            "{$stageTable}: unique key {$newKey} added"
+        );
+    } else {
+        $out[] = "  --  {$stageTable}.{$newKey} already present";
+    }
+    if ($indexExists($stageTable, $oldKey)) {
+        $run(
+            "ALTER TABLE {$stageTable} DROP INDEX {$oldKey}",
+            "{$stageTable}: dropped pre-stage unique key {$oldKey}"
+        );
+    }
 }
 
 /* ============================================================

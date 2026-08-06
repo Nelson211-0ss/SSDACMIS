@@ -51,6 +51,26 @@ cd /var/www/SSDACMIS && git pull origin main \
   && sudo bash scripts/fix-permissions.sh
 ```
 
+## One-off steps for specific releases
+
+Run these **once**, after the normal pull + migrate above.
+
+### Separate mid-term / end-of-term results
+
+Results are now published per assessment stage. `migrate.php` adds the
+`stage` column and defaults every existing row to `endterm` (which is what
+those rows already were — mid + end combined). The **mid-term** set is only
+written when a class's marks are next saved, so backfill it for existing
+marks in one pass:
+
+```bash
+sudo -u www-data php scripts/resync_results.php
+```
+
+Until you run it, Results/Reports with **Assessment = Mid-term** will look
+empty for periods whose marks were entered before the upgrade. Safe to
+re-run at any time; it recomputes rather than duplicating.
+
 ## Uploads still failing after this?
 
 See the "Logo or student passport-photo upload fails" row in `DEPLOYMENT.md`

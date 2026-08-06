@@ -382,9 +382,12 @@ class StudentController extends Controller
         if (!in_array($resultsTerm, ['Term 1', 'Term 2', 'Term 3'], true)) {
             $resultsTerm = 'Term 1';
         }
-        $sheet    = AcademicMarking::buildScoreSheet($studentId, $resultsYear, $resultsTerm);
+        // Mid-term (marks out of 30) and end-of-term (mid + end, out of 100)
+        // are separate result sets; end-of-term is the default.
+        $resultsStage = AcademicMarking::normalizeStage((string) $this->input('stage', ''));
+        $sheet    = AcademicMarking::buildScoreSheet($studentId, $resultsYear, $resultsTerm, $resultsStage);
         $position = $classId > 0
-            ? AcademicMarking::classPositionRow($studentId, $classId, $resultsYear, $resultsTerm)
+            ? AcademicMarking::classPositionRow($studentId, $classId, $resultsYear, $resultsTerm, $resultsStage)
             : ['position' => null, 'cohort' => 0];
 
         /* --------------------------- Attendance --------------------------- */
@@ -410,8 +413,10 @@ class StudentController extends Controller
             'termBills'   => $termBills,
             'activeBill'  => $activeBill,
             'payments'    => $payments,
-            'resultsYear' => $resultsYear,
-            'resultsTerm' => $resultsTerm,
+            'resultsYear'  => $resultsYear,
+            'resultsTerm'  => $resultsTerm,
+            'resultsStage' => $resultsStage,
+            'stages'       => AcademicMarking::stages(),
             'sheet'       => $sheet,
             'position'    => $position,
             'attCounts'   => $attCounts,

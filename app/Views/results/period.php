@@ -6,7 +6,7 @@ $title = 'Results — Period';
 <div class="page-header">
   <div>
     <h2><i class="bi bi-graph-up-arrow"></i> Results</h2>
-    <p class="page-header__sub mb-0">Choose academic year and term to view published averages and positions.</p>
+    <p class="page-header__sub mb-0">Choose academic year, term and assessment to view published averages and positions.</p>
   </div>
 </div>
 
@@ -33,6 +33,19 @@ $title = 'Results — Period';
             <option <?= ($submittedTerm ?? '') === $t ? 'selected' : '' ?>><?= View::e($t) ?></option>
           <?php endforeach; ?>
         </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Assessment</label>
+        <select name="stage" class="form-select" required>
+          <?php foreach (($stages ?? []) as $key => $label): ?>
+            <option value="<?= View::e((string) $key) ?>" <?= ($submittedStage ?? '') === $key ? 'selected' : '' ?>>
+              <?= View::e($label) ?><?= $key === 'midterm' ? ' — each subject out of 30' : ' — mid + end, out of 100' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <div class="form-text">
+          Mid-term results are published on their own and stay unchanged once end-of-term marks are entered.
+        </div>
       </div>
       <div class="col-12">
         <button type="submit" class="btn btn-primary"><i class="bi bi-arrow-right-circle"></i> Continue</button>

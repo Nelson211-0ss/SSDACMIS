@@ -10,14 +10,24 @@ use App\Services\AcademicMarking;
 use App\Services\TermResultsService;
 
 /**
- * Published term results: averages and positions derived from Mid (×/30) + End (×/70).
+ * Published results, per assessment stage:
+ *   - Mid-term    — mid-term marks only, each subject out of 30
+ *   - End of term — mid + end combined, each subject out of 100
+ * Both are computed and stored separately, so picking Mid-term never shows
+ * end-of-term marks folded in.
  *
- * GET /results                   — pick year + term, list classes
+ * GET /results                  — pick year + term + assessment, list classes
  * GET /results/class/{id}       — class leaderboard + optional subject totals
  */
 class ResultsController extends Controller
 {
     private const TERMS = ['Term 1', 'Term 2', 'Term 3'];
+
+    /** Requested assessment stage, defaulting to the full end-of-term result. */
+    private function stage(): string
+    {
+        return AcademicMarking::normalizeStage((string) $this->input('stage', ''));
+    }
 
     private static function defaultYear(): string
     {
@@ -115,8 +125,9 @@ class ResultsController extends Controller
 
     public function index(): string
     {
-        $year = trim((string) $this->input('year', ''));
-        $term = trim((string) $this->input('term', ''));
+        $year  = trim((string) $this->input('year', ''));
+        $term  = trim((string) $this->input('term', ''));
+        $stage = $this->stage();
 
         $periodReady = ($year !== '' && $term !== ''
             && self::isValidYear($year)
@@ -124,12 +135,14 @@ class ResultsController extends Controller
 
         if (!$periodReady) {
             return $this->view('results/period', [
-                'years'         => self::selectableYears(),
-                'defaultYear'   => self::defaultYear(),
-                'terms'         => self::TERMS,
-                'submittedYear' => $year,
-                'submittedTerm' => $term,
-                'invalid'       => ($year !== '' || $term !== ''),
+                'years'          => self::selectableYears(),
+                'defaultYear'    => self::defaultYear(),
+                'terms'          => self::TERMS,
+                'stages'         => AcademicMarking::stages(),
+                'submittedYear'  => $year,
+                'submittedTerm'  => $term,
+                'submittedStage' => $stage,
+                'invalid'        => ($year !== '' || $term !== ''),
             ]);
         }
 
@@ -148,6 +161,10 @@ class ResultsController extends Controller
             'term'       => $term,
             'terms'      => self::TERMS,
             'years'      => self::selectableYears(),
+            'stage'      => $stage,
+            'stages'     => AcademicMarking::stages(),
+            'stageLabel' => AcademicMarking::stageLabel($stage),
+            'stageMax'   => AcademicMarking::stageSubjectMax($stage),
             'classes'    => $classes,
             'midMax'     => AcademicMarking::MID_MAX,
             'endMax'     => AcademicMarking::END_MAX,
@@ -164,8 +181,9 @@ class ResultsController extends Controller
             return $this->view('errors/403');
         }
 
-        $year = (string) ($this->input('year') ?: self::defaultYear());
-        $term = (string) ($this->input('term') ?: 'Term 1');
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {
             $term = 'Term 1';
         }
@@ -192,13 +210,13 @@ class ResultsController extends Controller
                     s.admission_no, s.first_name, s.last_name, s.stream
              FROM term_student_results tsr
              JOIN students s ON s.id = tsr.student_id
-             WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ?
+             WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
              ORDER BY
                CASE WHEN tsr.class_position IS NULL THEN 1 ELSE 0 END,
                tsr.class_position ASC,
                s.first_name,
                s.last_name",
-            [$classId, $year, $term]
+            [$classId, $year, $term, $stage]
         )->fetchAll();
 
         $subjectCols = AcademicMarking::offeredSubjectsForSchoolReport();
@@ -211,8 +229,10 @@ class ResultsController extends Controller
                  FROM term_subject_results tsr
                  INNER JOIN subjects sub ON sub.id = tsr.subject_id AND sub.is_offered = 1'
                  . ($schoolId !== null ? ' AND sub.school_id = ?' : '')
-                 . ' WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ?';
-            $srParams = $schoolId !== null ? [$schoolId, $classId, $year, $term] : [$classId, $year, $term];
+                 . ' WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?';
+            $srParams = $schoolId !== null
+                ? [$schoolId, $classId, $year, $term, $stage]
+                : [$classId, $year, $term, $stage];
             $sr = Database::query($srSql, $srParams)->fetchAll();
             foreach ($sr as $r) {
                 $sid = (int) $r['student_id'];
@@ -221,7 +241,7 @@ class ResultsController extends Controller
                 $end = $r['end_marks'] !== null ? (float) $r['end_marks'] : null;
                 $cells[$sid][$bid] = [
                     'total' => $r['total_marks'],
-                    'max'   => AcademicMarking::subjectMax($mid, $end),
+                    'max'   => AcademicMarking::subjectMax($mid, $end, $stage),
                     'grade' => $r['letter_grade'],
                 ];
             }
@@ -233,6 +253,10 @@ class ResultsController extends Controller
             'term'        => $term,
             'terms'       => self::TERMS,
             'years'       => self::selectableYears(),
+            'stage'       => $stage,
+            'stages'      => AcademicMarking::stages(),
+            'stageLabel'  => AcademicMarking::stageLabel($stage),
+            'stageMax'    => AcademicMarking::stageSubjectMax($stage),
             'rows'        => $rows,
             'subjectCols' => $subjectCols,
             'cells'       => $cells,
@@ -249,8 +273,9 @@ class ResultsController extends Controller
      */
     public function genderPerformance(): string
     {
-        $year = (string) ($this->input('year') ?: self::defaultYear());
-        $term = (string) ($this->input('term') ?: 'Term 1');
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {
             $term = 'Term 1';
         }
@@ -279,7 +304,7 @@ class ResultsController extends Controller
                 ];
             }
 
-            $params = array_merge($classIds, [$year, $term]);
+            $params = array_merge($classIds, [$year, $term, $stage]);
 
             $classGender = Database::query(
                 "SELECT tsr.class_id, s.gender,
@@ -288,7 +313,7 @@ class ResultsController extends Controller
                         SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
                  FROM term_student_results tsr
                  JOIN students s ON s.id = tsr.student_id
-                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
                        AND s.gender IN ('male','female')
                  GROUP BY tsr.class_id, s.gender",
                 $params
@@ -308,7 +333,7 @@ class ResultsController extends Controller
                         SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
                  FROM term_student_results tsr
                  JOIN students s ON s.id = tsr.student_id
-                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
                        AND s.gender IN ('male','female')
                  GROUP BY s.gender",
                 $params
@@ -321,7 +346,7 @@ class ResultsController extends Controller
                 "SELECT COUNT(*) AS n
                  FROM term_student_results tsr
                  JOIN students s ON s.id = tsr.student_id
-                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
                        AND s.gender = 'other'",
                 $params
             )->fetch()['n'] ?? 0);
@@ -338,7 +363,7 @@ class ResultsController extends Controller
                      FROM term_student_results tsr
                      JOIN students s ON s.id = tsr.student_id
                      JOIN schools sch ON sch.id = s.school_id
-                     WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ?
+                     WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
                            AND s.gender IN ('male','female')
                      GROUP BY sch.id, sch.name, s.gender
                      ORDER BY sch.name",
@@ -363,6 +388,9 @@ class ResultsController extends Controller
             'term'       => $term,
             'terms'      => self::TERMS,
             'years'      => self::selectableYears(),
+            'stage'      => $stage,
+            'stages'     => AcademicMarking::stages(),
+            'stageLabel' => AcademicMarking::stageLabel($stage),
             'byClass'    => $byClass,
             'bySchool'   => $bySchool,
             'totals'     => $totals,

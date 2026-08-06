@@ -54,6 +54,7 @@ SSD-ACMIS is designed around the **South Sudan secondary school structure**:
 - **Forms:** Form 1 through Form 4
 - **Terms:** 3 terms per academic year
 - **Exams:** Mid-term (maximum 30 marks) + End-of-term (maximum 70 marks) = **100 marks per subject**
+- **Results:** published separately for each assessment — **Mid-term** (each subject out of 30) and **End of term** (mid + end, out of 100)
 - **Streams:** Form 3 and Form 4 students may be in **Science** or **Arts** streams, which affects which subjects appear on their report cards
 - **Grading:** Letter grades A through F based on percentage scores
 
@@ -438,7 +439,20 @@ This is the core academic workflow of SSD-ACMIS.
 | End-of-term | 70 | 70% of subject total |
 | **Subject total** | **100** | Mid + End combined |
 
-A student's **term result** for a subject is only calculated when **both** mid-term and end-of-term marks have been entered.
+### Two separate result sets per term
+
+Results and report cards are published at **two assessment stages**, and every Results and
+Reports page has an **Assessment** selector for choosing between them:
+
+| Assessment | What it counts | Subject is out of |
+|------------|----------------|-------------------|
+| **Mid-term** | Mid-term marks only | **30** |
+| **End of term** | Mid-term + end-of-term combined | **100** |
+
+Each stage has its own averages, letter grades and class positions. The mid-term result set is
+complete as soon as mid-term marks are saved, and it **does not change** when end-of-term marks
+are entered later — a mid-term report card printed in week 6 still reads the same in week 12.
+End-of-term is the default selection everywhere.
 
 ### Step 1: Enter marks
 
@@ -461,11 +475,11 @@ A student's **term result** for a subject is only calculated when **both** mid-t
 ### Step 2: View results
 
 1. Go to **Results**.
-2. Select academic year and term.
+2. Select academic year, term, and **assessment** (Mid-term or End of term).
 3. Click a class to see:
-   - Subject totals and letter grades per student
+   - Subject totals and letter grades per student — out of 30 at mid-term, out of 100 at end of term
    - Class average
-   - Student positions (rankings use competition ranking: 1, 2, 2, 4…)
+   - Student positions (rankings use competition ranking: 1, 2, 2, 4…), ranked within the chosen assessment
 
 ### Step 3: Generate reports
 
@@ -478,10 +492,13 @@ A student's **term result** for a subject is only calculated when **both** mid-t
 | **Class report** | Matrix showing all students and subjects for a class |
 | **Class booklet** | Landscape A4 printable booklet for an entire class — ideal for parent meetings |
 
-3. Select the student or class, academic year, and term.
+3. Select the student or class, academic year, term, and **assessment**.
 4. Click to view or print.
 
-Report cards include: school logo, motto, head teacher name and signature, subject marks, grades, class position, and remarks.
+A **mid-term** report card shows one Mid column with each subject out of 30, and its reference
+code carries `/MID/`. An **end-of-term** card shows Mid, End and Total with each subject out of
+100, and carries `/END/`. Both include: school logo, motto, head teacher name and signature,
+subject marks, grades, class position, and remarks.
 
 ### Students viewing their own reports
 
@@ -647,16 +664,22 @@ When an administrator creates a staff, HOD, bursar, or school admin account:
 
 ### How subject totals are calculated
 
+Each assessment is scored on its own scale:
+
 ```
-Subject Total = Mid-term mark + End-of-term mark
-              (max 30)         (max 70)          = max 100
+Mid-term result:    Subject Total = Mid-term mark                     = max 30
+                                    (max 30)
+
+End-of-term result: Subject Total = Mid-term mark + End-of-term mark  = max 100
+                                    (max 30)        (max 70)
 ```
 
-A subject total is only shown when **both** exam marks have been entered.
+Grades and averages always come from the percentage of whichever scale applies, so a
+mid-term mark of 24/30 grades as 80% (A) on the mid-term report.
 
 ### Class positions
 
-Student rankings use **competition ranking** (1, 2, 2, 4…). Two students with the same average share the same position; the next position is skipped.
+Student rankings use **competition ranking** (1, 2, 2, 4…). Two students with the same average share the same position; the next position is skipped. Positions are computed per assessment, so a student can place differently at mid-term and at end of term.
 
 ### Form 3 & 4 stream filtering
 
@@ -677,7 +700,8 @@ Student rankings use **competition ranking** (1, 2, 2, 4…). Two students with 
 | Cannot sign in | Check email and password. Wait 5 minutes if locked out. Use Forgot Password or contact your admin. |
 | Page shows "Access denied" | Your role does not have permission for that page. Contact your school administrator. |
 | Marks not saving | Ensure you selected the correct year, term, and exam type. Check that you are assigned to that class/subject. |
-| Report card shows no grades | Both mid-term and end-of-term marks must be entered for grades to appear. |
+| Report card shows no grades | Check the **Assessment** selector. A mid-term card needs mid-term marks; an end-of-term card counts mid + end. |
+| End-of-term marks missing from a report | The report is set to **Mid-term**, which never counts end-of-term marks. Switch Assessment to **End of term**. |
 | Student not in fee list | Ensure the bursar has set the correct academic year/term and that fee structure exists for that form level. |
 | Email not received | SMTP may not be configured. Ask your IT administrator to check `.env` mail settings. |
 | Logo not appearing on reports | Upload the logo through your school branding settings. Ensure the file is a JPG or PNG under 2 MB. |

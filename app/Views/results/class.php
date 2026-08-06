@@ -2,9 +2,17 @@
 use App\Core\View;
 use App\Services\AcademicMarking;
 $layout = 'app';
-$title = 'Results — ' . ($class['name'] ?? '');
+$stage      = $stage ?? AcademicMarking::STAGE_END;
+$stageLabel = $stageLabel ?? AcademicMarking::stageLabel($stage);
+$isMid      = ($stage === AcademicMarking::STAGE_MID);
+$title = 'Results — ' . ($class['name'] ?? '') . ' · ' . $stageLabel;
 $schoolName = $schoolName ?? '';
 $classTeacherName = trim(($class['teacher_first'] ?? '') . ' ' . ($class['teacher_last'] ?? ''));
+$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage=' . rawurlencode($stage);
+/** How each subject cell is scored at this stage. */
+$scaleNote = $isMid
+    ? 'Mid-term only — each subject out of ' . (int) $midMax
+    : 'Mid-term ×' . (int) $midMax . ' + End-term ×' . (int) $endMax . ' = each subject out of 100';
 
 /** Short label for dense columns (code preferred). */
 $subLabel = static function (array $sub): string {
@@ -20,7 +28,7 @@ $subLabel = static function (array $sub): string {
   <div class="results-toolbar d-print-none mb-3">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
       <a class="btn btn-outline-secondary btn-sm"
-         href="<?= $base ?><?= $portalPrefix ?>/results?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
+         href="<?= $base ?><?= $portalPrefix ?>/results?<?= View::e($qs) ?>">
         <i class="bi bi-arrow-left"></i> Classes
       </a>
       <div class="d-flex flex-wrap gap-2 align-items-end justify-content-end flex-grow-1">
@@ -42,6 +50,14 @@ $subLabel = static function (array $sub): string {
               <?php endforeach; ?>
             </select>
           </div>
+          <div>
+            <label class="form-label small mb-1">Assessment</label>
+            <select name="stage" class="form-select form-select-sm">
+              <?php foreach (($stages ?? []) as $key => $label): ?>
+                <option value="<?= View::e((string) $key) ?>" <?= $key === $stage ? 'selected' : '' ?>><?= View::e($label) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
           <button type="submit" class="btn btn-outline-primary btn-sm">Reload</button>
         </form>
         <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print this results sheet">
@@ -54,23 +70,33 @@ $subLabel = static function (array $sub): string {
   <div class="results-print-brand border-bottom pb-2 mb-2 d-none d-print-block">
     <div class="fw-bold"><?= View::e($schoolName) ?></div>
     <div><?= View::e($class['name'] ?? '') ?><?php if (!empty($class['level'])): ?> · <?= View::e($class['level']) ?><?php endif; ?></div>
-    <div class="small"><?= View::e($year) ?> · <?= View::e($term) ?> · Competition ranking on average %</div>
+    <div class="small">
+      <?= View::e($stageLabel) ?> results · <?= View::e($year) ?> · <?= View::e($term) ?> · <?= View::e($scaleNote) ?> · Competition ranking on average %
+    </div>
     <div class="small">Class Teacher: <?= $classTeacherName !== '' ? View::e($classTeacherName) : '—' ?></div>
   </div>
 
   <div class="mb-2 d-print-none">
-    <h4 class="mb-1"><?= View::e($class['name']) ?></h4>
+    <h4 class="mb-1">
+      <?= View::e($class['name']) ?>
+      <span class="badge <?= $isMid ? 'text-bg-warning' : 'text-bg-primary' ?> align-middle ms-1"><?= View::e($stageLabel) ?></span>
+    </h4>
     <div class="small text-muted">
-      <?= View::e($year) ?> · <?= View::e($term) ?> · Class Teacher: <?= $classTeacherName !== '' ? View::e($classTeacherName) : '—' ?> ·
-      Wide landscape layout fits columns without horizontal scrollbar where possible (subject codes shorten headers).
+      <?= View::e($year) ?> · <?= View::e($term) ?> · <?= View::e($scaleNote) ?> ·
+      Class Teacher: <?= $classTeacherName !== '' ? View::e($classTeacherName) : '—' ?>
     </div>
   </div>
 
   <?php if (empty($rows)): ?>
     <div class="alert alert-warning border-0 shadow-sm d-print-none">
-      No computed results for this class and period yet. Enter <strong>Mid-term</strong> (max <?= (int) $midMax ?>)
-      and/or <strong>End-of-term</strong> (max <?= (int) $endMax ?>) marks — averages and positions update automatically
-      as soon as marks are saved, even before both are entered.
+      <?php if ($isMid): ?>
+        No mid-term results for this class and period yet. Enter <strong>Mid-term</strong> marks (max <?= (int) $midMax ?>) —
+        mid-term averages and positions are published as soon as marks are saved, and stay put once end-of-term marks arrive.
+      <?php else: ?>
+        No end-of-term results for this class and period yet. Enter <strong>Mid-term</strong> (max <?= (int) $midMax ?>)
+        and <strong>End-of-term</strong> (max <?= (int) $endMax ?>) marks — averages and positions update automatically
+        as soon as marks are saved, even before both are entered.
+      <?php endif; ?>
     </div>
   <?php else: ?>
     <?php if (!empty($subjectCols)): ?>

@@ -3,6 +3,9 @@ use App\Core\View;
 $layout = 'app';
 $title = 'Reports';
 $isHodPortal = ($portalPrefix ?? '') === '/hod';
+$stage      = $stage ?? 'endterm';
+$stageLabel = $stageLabel ?? 'End of term';
+$isMid      = ($stage === 'midterm');
 ?>
 <div class="reports-page">
   <!-- Hero -->
@@ -23,9 +26,9 @@ $isHodPortal = ($portalPrefix ?? '') === '/hod';
           </p>
         </div>
       </div>
-      <div class="reports-page__period-chip" title="Reports use this period">
+      <div class="reports-page__period-chip" title="Reports use this period and assessment">
         <i class="bi bi-calendar3"></i>
-        <span><strong><?= View::e($year) ?></strong> · <?= View::e($term) ?></span>
+        <span><strong><?= View::e($year) ?></strong> · <?= View::e($term) ?> · <?= View::e($stageLabel) ?></span>
       </div>
     </div>
   </section>
@@ -38,17 +41,19 @@ $isHodPortal = ($portalPrefix ?? '') === '/hod';
         <div>
           <div class="reports-page__filters-title">Reporting period</div>
           <p class="reports-page__filters-hint mb-0 text-muted small">
-            Year and term apply to every class and student link below.
+            Year, term and assessment apply to every class and student link below.
+            Mid-term cards show mid-term marks only (each subject out of 30); end-of-term cards
+            combine mid + end for a mark out of 100.
           </p>
         </div>
       </div>
       <div class="row g-3 align-items-end">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="form-label">Academic year</label>
           <input name="year" class="form-control shadow-sm" value="<?= View::e($year) ?>"
                  placeholder="e.g. <?= View::e(date('n') >= 9 ? date('Y') . '/' . (date('Y') + 1) : (date('Y') - 1) . '/' . date('Y')) ?>">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="form-label">Term</label>
           <select name="term" class="form-select shadow-sm">
             <?php foreach ($terms as $t): ?>
@@ -56,7 +61,15 @@ $isHodPortal = ($portalPrefix ?? '') === '/hod';
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+          <label class="form-label">Assessment</label>
+          <select name="stage" class="form-select shadow-sm">
+            <?php foreach (($stages ?? []) as $key => $label): ?>
+              <option value="<?= View::e((string) $key) ?>" <?= $key === $stage ? 'selected' : '' ?>><?= View::e($label) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-md-3">
           <button type="submit" class="btn btn-primary w-100 shadow-sm">
             <i class="bi bi-check2-circle me-1"></i> Apply period
           </button>
@@ -70,9 +83,12 @@ $isHodPortal = ($portalPrefix ?? '') === '/hod';
     <div class="card-body text-center py-5 px-3">
       <?php if (!empty($studentId)): ?>
         <div class="reports-page__solo-icon mb-3"><i class="bi bi-person-badge"></i></div>
-        <p class="text-muted mb-3">Your report card for <strong><?= View::e($year) ?></strong> · <?= View::e($term) ?></p>
+        <p class="text-muted mb-3">
+          Your <?= View::e(strtolower($stageLabel)) ?> report card for
+          <strong><?= View::e($year) ?></strong> · <?= View::e($term) ?>
+        </p>
         <a class="btn btn-primary btn-lg px-4 shadow-sm"
-           href="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $studentId ?>?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
+           href="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $studentId ?>?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>&stage=<?= rawurlencode($stage) ?>">
           <i class="bi bi-file-earmark-arrow-down"></i> View my report card
         </a>
       <?php else: ?>
@@ -111,7 +127,7 @@ $isHodPortal = ($portalPrefix ?? '') === '/hod';
       $studentsByClass[$cid][] = $s;
   }
   ksort($studentsByClass);
-  $reportQs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term);
+  $reportQs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage=' . rawurlencode($stage);
 ?>
 
   <div class="row g-4 reports-page__grid">
@@ -242,7 +258,8 @@ $isHodPortal = ($portalPrefix ?? '') === '/hod';
       if (!id) return false;
       var u = <?= json_encode(rtrim($base, '/') . $portalPrefix . '/reports/student/', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) ?> + id
             + '?year=' + encodeURIComponent(<?= json_encode((string) $year, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)
-            + '&term=' + encodeURIComponent(<?= json_encode((string) $term, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+            + '&term=' + encodeURIComponent(<?= json_encode((string) $term, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>)
+            + '&stage=' + encodeURIComponent(<?= json_encode((string) $stage, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
       window.location.href = u;
       return false;
     }

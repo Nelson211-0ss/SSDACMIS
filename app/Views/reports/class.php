@@ -13,7 +13,14 @@ function letter_for($score) {
     return AcademicMarking::letterGrade((float) $score);
 }
 
-$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term);
+$stage      = $stage ?? AcademicMarking::STAGE_END;
+$stageLabel = $stageLabel ?? AcademicMarking::stageLabel($stage);
+$isMid      = ($stage === AcademicMarking::STAGE_MID);
+// A mid-term matrix has nothing to put in an End column, and its Total would
+// only repeat the Mid column — so each subject gets one column instead of three.
+$subCols    = $isMid ? ['M'] : ['M', 'E', 'T'];
+
+$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage=' . rawurlencode($stage);
 $matrixPeers = [];
 foreach (($students ?? []) as $s) {
     $matrixPeers[] = [
@@ -47,6 +54,14 @@ $nMatrix = count($matrixPeers);
           <select name="term" class="form-select form-select-sm">
             <?php foreach ($terms as $t): ?>
               <option <?= $t === $term ? 'selected' : '' ?>><?= View::e($t) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div>
+          <label class="form-label small mb-1">Assessment</label>
+          <select name="stage" class="form-select form-select-sm">
+            <?php foreach (($stages ?? []) as $key => $label): ?>
+              <option value="<?= View::e((string) $key) ?>" <?= $key === $stage ? 'selected' : '' ?>><?= View::e($label) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -99,13 +114,14 @@ $nMatrix = count($matrixPeers);
           <div class="report-head__motto fst-italic"><?= View::e($schoolMotto) ?></div>
         <?php endif; ?>
         <div class="report-head__sub">
-          Class Report &middot; <?= View::e($class['name']) ?>
+          <?= View::e($stageLabel) ?> Class Report &middot; <?= View::e($class['name']) ?>
         </div>
       </div>
     </div>
     <div class="report-head__period">
       <div><strong>Year:</strong> <?= View::e($year) ?></div>
       <div><strong>Term:</strong> <?= View::e($term) ?></div>
+      <div><strong>Assessment:</strong> <?= View::e($stageLabel) ?></div>
       <div><strong>Class Teacher:</strong>
         <?= View::e(trim(($class['teacher_first'] ?? '').' '.($class['teacher_last'] ?? ''))) ?: '—' ?>
       </div>
@@ -149,7 +165,7 @@ $nMatrix = count($matrixPeers);
             <th rowspan="2" class="t-pos">Pos</th>
             <th rowspan="2" class="t-name">Student</th>
             <?php foreach ($sectionSubjects as $sub): ?>
-              <th colspan="3" class="t-subject-group">
+              <th colspan="<?= count($subCols) ?>" class="t-subject-group">
                 <?= View::e($sub['code'] ?: substr($sub['name'], 0, 4)) ?>
               </th>
             <?php endforeach; ?>
@@ -159,9 +175,9 @@ $nMatrix = count($matrixPeers);
           </tr>
           <tr>
             <?php foreach ($sectionSubjects as $sub): ?>
-              <th class="t-num small">M</th>
-              <th class="t-num small">E</th>
-              <th class="t-num small">T</th>
+              <?php foreach ($subCols as $colKey): ?>
+                <th class="t-num small"><?= View::e($colKey) ?></th>
+              <?php endforeach; ?>
             <?php endforeach; ?>
           </tr>
         </thead>
@@ -187,10 +203,12 @@ $nMatrix = count($matrixPeers);
                 $cell = $row[(int) $sub['id']] ?? ['mid' => null, 'end' => null, 'total' => null, 'max' => null];
               ?>
                 <td class="t-num"><?= $cell['mid'] !== null ? number_format($cell['mid'], 0) : '—' ?></td>
-                <td class="t-num"><?= $cell['end'] !== null ? number_format($cell['end'], 0) : '—' ?></td>
-                <td class="t-num"><?= isset($cell['total']) && $cell['total'] !== null
-                    ? number_format((float) $cell['total'], 0) . (!empty($cell['max']) ? '/' . (int) $cell['max'] : '')
-                    : '—' ?></td>
+                <?php if (!$isMid): ?>
+                  <td class="t-num"><?= $cell['end'] !== null ? number_format($cell['end'], 0) : '—' ?></td>
+                  <td class="t-num"><?= isset($cell['total']) && $cell['total'] !== null
+                      ? number_format((float) $cell['total'], 0) . (!empty($cell['max']) ? '/' . (int) $cell['max'] : '')
+                      : '—' ?></td>
+                <?php endif; ?>
               <?php endforeach; ?>
               <td class="t-num"><strong><?= number_format($row['_total'] ?? 0, 0) ?><?php if (!empty($row['_maxTotal'])): ?><span class="text-muted">/<?= (int) $row['_maxTotal'] ?></span><?php endif; ?></strong></td>
               <td class="t-num"><?= isset($row['_average']) && $row['_average'] !== null ? number_format($row['_average'], 1) : '—' ?></td>
@@ -203,7 +221,15 @@ $nMatrix = count($matrixPeers);
     <?php endforeach; ?>
 
     <div class="small text-muted mt-2">
-      M = Mid-term (×/30) · E = End-term (×/70) · T = Subject total so far, out of 30/70/100 depending on which components are entered · Σ Tot = sum of subject totals, out of the combined max · Avg % = sum of each graded subject's percentage ÷ the student's full subject count, so an ungraded subject counts as 0 rather than being left out · Position uses competition ranking on average %.
+      <?php if ($isMid): ?>
+        Mid-term report — end-of-term marks are not counted here.
+        M = Mid-term mark, out of <?= (int) AcademicMarking::MID_MAX ?> ·
+        Σ Tot = sum of mid-term marks, out of the combined max ·
+      <?php else: ?>
+        M = Mid-term (×/30) · E = End-term (×/70) · T = Subject total so far, out of 30/70/100 depending on which components are entered ·
+        Σ Tot = sum of subject totals, out of the combined max ·
+      <?php endif; ?>
+      Avg % = sum of each graded subject's percentage ÷ the student's full subject count, so an ungraded subject counts as 0 rather than being left out · Position uses competition ranking on average %.
       <?php if (!empty($isUpperForm)): ?>
         Form 3 &amp; Form 4 students are ranked within their stream.
       <?php endif; ?>

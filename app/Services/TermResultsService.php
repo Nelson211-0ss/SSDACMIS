@@ -7,9 +7,20 @@ use PDO;
 
 /**
  * Persists per-subject totals/grades and per-student averages/class positions after marks change.
+ *
+ * Everything is stored twice — once per assessment stage (`stage` column):
+ *   - 'midterm' — mid-term marks only, subjects out of 30
+ *   - 'endterm' — mid + end combined, subjects out of 100
+ * so a published mid-term result set keeps its own averages and positions
+ * even after end-of-term marks are entered.
  */
 final class TermResultsService
 {
+    /** Both published result sets, recomputed together whenever marks change. */
+    private const STAGES = [AcademicMarking::STAGE_MID, AcademicMarking::STAGE_END];
+
+    private static bool $stageUpgradeChecked = false;
+
     public static function ensureTables(): void
     {
         try {
@@ -21,14 +32,15 @@ final class TermResultsService
                     subject_id     INT UNSIGNED NOT NULL,
                     academic_year  VARCHAR(9)   NOT NULL,
                     term           VARCHAR(20)  NOT NULL,
+                    stage          VARCHAR(10)  NOT NULL DEFAULT \'endterm\',
                     mid_marks      DECIMAL(5,2) NULL,
                     end_marks      DECIMAL(5,2) NULL,
                     total_marks    DECIMAL(5,2) NULL,
                     letter_grade   VARCHAR(10)  NULL,
                     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    UNIQUE KEY uniq_term_subject_student (student_id, subject_id, academic_year, term),
-                    KEY idx_term_class_period (class_id, academic_year, term),
+                    UNIQUE KEY uniq_term_subject_stage (student_id, subject_id, academic_year, term, stage),
+                    KEY idx_term_class_period (class_id, academic_year, term, stage),
                     CONSTRAINT fk_tsr_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                     CONSTRAINT fk_tsr_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
                     CONSTRAINT fk_tsr_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
@@ -41,27 +53,111 @@ final class TermResultsService
                     class_id             INT UNSIGNED NOT NULL,
                     academic_year        VARCHAR(9)   NOT NULL,
                     term                 VARCHAR(20)  NOT NULL,
+                    stage                VARCHAR(10)  NOT NULL DEFAULT \'endterm\',
                     subjects_with_totals INT UNSIGNED NOT NULL DEFAULT 0,
                     average_percentage   DECIMAL(6,2) NULL,
                     class_position       INT UNSIGNED NULL,
                     rank_cohort          VARCHAR(20) NOT NULL DEFAULT \'class\',
                     updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    UNIQUE KEY uniq_term_student (student_id, academic_year, term),
-                    KEY idx_tst_class_period (class_id, academic_year, term),
+                    UNIQUE KEY uniq_term_student_stage (student_id, academic_year, term, stage),
+                    KEY idx_tst_class_period (class_id, academic_year, term, stage),
                     CONSTRAINT fk_tsi_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                     CONSTRAINT fk_tsi_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB'
             );
+            self::ensureStageColumns();
         } catch (\Throwable $e) {
             // migrations handle installs
         }
     }
 
-    /** Recompute aggregates for everyone in the class + period (positions within stream for Form 3/4). */
+    /**
+     * Bring pre-stage installs up to date: tables created before results were
+     * split per stage hold one row per (student, period) and a unique key that
+     * would reject the second stage's row. Idempotent; runs at most once per
+     * request. `database/migrate.php` does the same thing for deployments that
+     * migrate explicitly.
+     */
+    private static function ensureStageColumns(): void
+    {
+        if (self::$stageUpgradeChecked) {
+            return;
+        }
+        self::$stageUpgradeChecked = true;
+
+        $pdo = Database::connection();
+        $db  = (string) $pdo->query('SELECT DATABASE()')->fetchColumn();
+
+        $hasColumn = static function (string $table, string $column) use ($pdo, $db): bool {
+            $st = $pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$db, $table, $column]);
+            return (bool) $st->fetchColumn();
+        };
+        $hasIndex = static function (string $table, string $index) use ($pdo, $db): bool {
+            $st = $pdo->prepare(
+                'SELECT 1 FROM information_schema.STATISTICS
+                 WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1'
+            );
+            $st->execute([$db, $table, $index]);
+            return (bool) $st->fetchColumn();
+        };
+
+        // (table, legacy unique key, new unique key, new key columns)
+        $upgrades = [
+            [
+                'term_subject_results',
+                'uniq_term_subject_student',
+                'uniq_term_subject_stage',
+                '(student_id, subject_id, academic_year, term, stage)',
+            ],
+            [
+                'term_student_results',
+                'uniq_term_student',
+                'uniq_term_student_stage',
+                '(student_id, academic_year, term, stage)',
+            ],
+        ];
+
+        foreach ($upgrades as [$table, $oldKey, $newKey, $cols]) {
+            if (!$hasColumn($table, 'stage')) {
+                // Existing rows were computed the old way — mid + end combined —
+                // which is exactly what the end-of-term stage means.
+                $pdo->exec(
+                    "ALTER TABLE {$table} ADD COLUMN stage VARCHAR(10) NOT NULL DEFAULT 'endterm' AFTER term"
+                );
+            }
+            // Add before dropping: both keys lead with student_id, and MySQL
+            // refuses to drop the last index a foreign key can use.
+            if (!$hasIndex($table, $newKey)) {
+                $pdo->exec("ALTER TABLE {$table} ADD UNIQUE KEY {$newKey} {$cols}");
+            }
+            if ($hasIndex($table, $oldKey)) {
+                $pdo->exec("ALTER TABLE {$table} DROP INDEX {$oldKey}");
+            }
+        }
+    }
+
+    /**
+     * Recompute both published result sets (mid-term and end-of-term) for
+     * everyone in the class + period. Positions are ranked within stream for
+     * Form 3/4, per stage.
+     */
     public static function syncClass(int $classId, string $year, string $term): void
     {
         self::ensureTables();
+        foreach (self::STAGES as $stage) {
+            self::syncClassStage($classId, $year, $term, $stage);
+        }
+    }
+
+    /** One stage's aggregates for one class + period. */
+    private static function syncClassStage(int $classId, string $year, string $term, string $stage): void
+    {
+        $stage = AcademicMarking::normalizeStage($stage);
 
         $class = Database::query('SELECT level FROM classes WHERE id = ?', [$classId])->fetch();
         $level = trim((string) ($class['level'] ?? ''));
@@ -73,7 +169,7 @@ final class TermResultsService
         )->fetchAll();
 
         if (!$students) {
-            self::purgeClassPeriod($classId, $year, $term);
+            self::purgeClassPeriod($classId, $year, $term, $stage);
             return;
         }
 
@@ -85,12 +181,12 @@ final class TermResultsService
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
-            self::purgeClassPeriodScoped($pdo, $classId, $year, $term);
+            self::purgeClassPeriodScoped($pdo, $classId, $year, $term, $stage);
 
             $stmtInsSub = $pdo->prepare(
                 'INSERT INTO term_subject_results
-                    (student_id, class_id, subject_id, academic_year, term, mid_marks, end_marks, total_marks, letter_grade)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    (student_id, class_id, subject_id, academic_year, term, stage, mid_marks, end_marks, total_marks, letter_grade)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
 
             $membersByGroup = [];
@@ -138,6 +234,9 @@ final class TermResultsService
                     $bid = (int) $sub['id'];
                     $mid = isset($bySub[$bid]['midterm']) ? (float) $bySub[$bid]['midterm'] : null;
                     $end = isset($bySub[$bid]['endterm']) ? (float) $bySub[$bid]['endterm'] : null;
+                    // Mid-term rows carry no end-of-term mark at all, so this
+                    // stage's stored totals never move once end-term marks land.
+                    [$mid, $end] = AcademicMarking::componentsForStage($mid, $end, $stage);
 
                     if ($mid === null && $end === null) {
                         continue;
@@ -145,11 +244,11 @@ final class TermResultsService
 
                     $midSql = $mid !== null ? round($mid, 2) : null;
                     $endSql = $end !== null ? round($end, 2) : null;
-                    $total = AcademicMarking::subjectTotal($mid, $end);
+                    $total = AcademicMarking::subjectTotal($mid, $end, $stage);
                     // Grade off the percentage (not the raw total) so a mid-only
                     // subject — stored and shown out of 30 — is graded exactly as
                     // if it were graded out of 30, not misread against a /100 scale.
-                    $pct = AcademicMarking::subjectPercentage($mid, $end);
+                    $pct = AcademicMarking::subjectPercentage($mid, $end, $stage);
                     $letter = $pct !== null ? AcademicMarking::letterGrade($pct) : null;
 
                     $stmtInsSub->execute([
@@ -158,6 +257,7 @@ final class TermResultsService
                         $bid,
                         $year,
                         $term,
+                        $stage,
                         $midSql,
                         $endSql,
                         $total !== null ? round($total, 2) : null,
@@ -168,8 +268,8 @@ final class TermResultsService
 
             $stmtInsSt = $pdo->prepare(
                 'INSERT INTO term_student_results
-                    (student_id, class_id, academic_year, term, subjects_with_totals, average_percentage, class_position, rank_cohort)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                    (student_id, class_id, academic_year, term, stage, subjects_with_totals, average_percentage, class_position, rank_cohort)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
 
             foreach ($membersByGroup as $cohortKey => $memberRows) {
@@ -192,9 +292,9 @@ final class TermResultsService
                             END
                          ), 0) AS s
                          FROM term_subject_results
-                         WHERE student_id = ? AND academic_year = ? AND term = ?
+                         WHERE student_id = ? AND academic_year = ? AND term = ? AND stage = ?
                            AND total_marks IS NOT NULL',
-                        [$sid, $year, $term]
+                        [$sid, $year, $term, $stage]
                     )->fetch();
                     $gradedCount = (int) ($sumRow['n'] ?? 0);
                     $pctSum = (float) ($sumRow['s'] ?? 0);
@@ -225,8 +325,9 @@ final class TermResultsService
                     $avg = $averages[$sid];
                     $n = Database::query(
                         'SELECT COUNT(*) FROM term_subject_results
-                         WHERE student_id = ? AND academic_year = ? AND term = ? AND total_marks IS NOT NULL',
-                        [$sid, $year, $term]
+                         WHERE student_id = ? AND academic_year = ? AND term = ? AND stage = ?
+                           AND total_marks IS NOT NULL',
+                        [$sid, $year, $term, $stage]
                     )->fetchColumn();
                     $cnt = (int) $n;
                     $pos = $ranks[$sid] ?? null;
@@ -239,6 +340,7 @@ final class TermResultsService
                         $classId,
                         $year,
                         $term,
+                        $stage,
                         $cnt,
                         $avg,
                         $pos,
@@ -254,19 +356,24 @@ final class TermResultsService
         }
     }
 
-    private static function purgeClassPeriodScoped(PDO $pdo, int $classId, string $year, string $term): void
-    {
+    private static function purgeClassPeriodScoped(
+        PDO $pdo,
+        int $classId,
+        string $year,
+        string $term,
+        string $stage
+    ): void {
         $pdo->prepare(
-            'DELETE FROM term_subject_results WHERE class_id = ? AND academic_year = ? AND term = ?'
-        )->execute([$classId, $year, $term]);
+            'DELETE FROM term_subject_results WHERE class_id = ? AND academic_year = ? AND term = ? AND stage = ?'
+        )->execute([$classId, $year, $term, $stage]);
         $pdo->prepare(
-            'DELETE FROM term_student_results WHERE class_id = ? AND academic_year = ? AND term = ?'
-        )->execute([$classId, $year, $term]);
+            'DELETE FROM term_student_results WHERE class_id = ? AND academic_year = ? AND term = ? AND stage = ?'
+        )->execute([$classId, $year, $term, $stage]);
     }
 
-    private static function purgeClassPeriod(int $classId, string $year, string $term): void
+    private static function purgeClassPeriod(int $classId, string $year, string $term, string $stage): void
     {
         $pdo = Database::connection();
-        self::purgeClassPeriodScoped($pdo, $classId, $year, $term);
+        self::purgeClassPeriodScoped($pdo, $classId, $year, $term, $stage);
     }
 }

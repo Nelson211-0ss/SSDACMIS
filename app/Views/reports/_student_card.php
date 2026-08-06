@@ -5,13 +5,25 @@
  *
  * Expects: $student, $sheet, $position, $year, $term, $base,
  *          $schoolName, $schoolMotto, $schoolLogo
+ * Optional: $stage / $stageLabel — 'midterm' prints a mid-term card (marks
+ *           out of 30, no End column), otherwise the end-of-term card.
  */
 use App\Core\View;
 use App\Core\SchoolIdentity;
+use App\Services\AcademicMarking;
 
 // Head-teacher details for the signature slot on each report card.
 $htSignature = SchoolIdentity::headteacherSignatureUrl();
 $htName      = SchoolIdentity::headteacherName();
+
+// The sheet already knows which stage it was built for; the view variable is
+// only a fallback for callers that render a card without one.
+$cardStage  = (string) ($sheet['stage'] ?? $stage ?? AcademicMarking::STAGE_END);
+$cardIsMid  = ($cardStage === AcademicMarking::STAGE_MID);
+$cardStageLabel = AcademicMarking::stageLabel($cardStage);
+// Mid-term cards drop the End column entirely — nothing on this report is
+// scored out of 70 or 100.
+$markCols   = $cardIsMid ? 5 : 6;
 
 $rows = [];
 foreach (($sheet['groups'] ?? []) as $grp) {
@@ -26,7 +38,10 @@ $fullName      = trim(($student['first_name'] ?? '') . ' ' . ($student['last_nam
 $teacherName   = trim(($student['teacher_first'] ?? '') . ' ' . ($student['teacher_last'] ?? ''));
 $termCode = preg_match('/(\d+)/', (string) $term, $m) ? 'T' . $m[1] : (string) $term;
 $yearCode = preg_replace('/[^0-9\/\-]/', '', (string) $year);
-$refCode  = strtoupper(($student['admission_no'] ?? '—') . '/' . $termCode . '/' . $yearCode);
+// The stage is part of the reference so a mid-term card and an end-of-term
+// card for the same student and term are never mistaken for each other.
+$stageCode = $cardIsMid ? 'MID' : 'END';
+$refCode  = strtoupper(($student['admission_no'] ?? '—') . '/' . $stageCode . '/' . $termCode . '/' . $yearCode);
 $sectionDisplay = trim((string) ($student['section'] ?? '')) !== ''
     ? View::studentEnumUpper('section', $student['section'])
     : '';
@@ -48,13 +63,14 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
           <div class="report-head__motto fst-italic"><?= View::e($schoolMotto) ?></div>
         <?php endif; ?>
         <div class="report-head__sub">
-          Student report card &middot; REF: <?= View::e($refCode) ?>
+          <?= View::e($cardStageLabel) ?> report card &middot; REF: <?= View::e($refCode) ?>
         </div>
       </div>
     </div>
     <div class="report-head__period">
       <div><strong>Year:</strong> <?= View::e($year) ?: '—' ?></div>
       <div><strong>Term:</strong> <?= View::e($term) ?: '—' ?></div>
+      <div><strong>Assessment:</strong> <?= View::e($cardStageLabel) ?></div>
       <div><strong>Class teacher:</strong> <?= View::e($teacherName) ?: '—' ?></div>
     </div>
   </header>
@@ -114,13 +130,21 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
     </div>
   </div>
 
-  <h3 class="report-student__section-h">Subject performance</h3>
+  <h3 class="report-student__section-h">
+    Subject performance
+    <span class="text-muted fw-normal">
+      — <?= $cardIsMid
+        ? 'mid-term, each subject out of ' . (int) AcademicMarking::MID_MAX
+        : 'mid-term (' . (int) AcademicMarking::MID_MAX . ') + end-of-term ('
+          . (int) AcademicMarking::END_MAX . '), each subject out of ' . (int) AcademicMarking::TOTAL_MAX ?>
+    </span>
+  </h3>
   <table class="report-table report-student__marks">
     <thead>
       <tr>
         <th>Subject</th>
         <th class="t-num">Mid</th>
-        <th class="t-num">End</th>
+        <?php if (!$cardIsMid): ?><th class="t-num">End</th><?php endif; ?>
         <th class="t-num">Total</th>
         <th class="t-grade">Gr</th>
         <th class="t-remark">Remark</th>
@@ -129,7 +153,9 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
     <tbody>
       <?php if (empty($rows)): ?>
         <tr class="report-student__marks-row report-student__marks-row--empty">
-          <td colspan="6" class="text-center text-muted">No marks recorded for this period yet.</td>
+          <td colspan="<?= (int) $markCols ?>" class="text-center text-muted">
+            No <?= $cardIsMid ? 'mid-term ' : '' ?>marks recorded for this period yet.
+          </td>
         </tr>
       <?php else: foreach ($rows as $r):
         $grade = (string) ($r['grade'] ?? '');
@@ -141,7 +167,9 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
         <tr class="report-student__marks-row">
           <td><?= View::e($r['subject']) ?></td>
           <td class="t-num"><?= $r['midterm'] !== null ? number_format((float) $r['midterm'], 1) : '—' ?></td>
-          <td class="t-num"><?= $r['endterm'] !== null ? number_format((float) $r['endterm'], 1) : '—' ?></td>
+          <?php if (!$cardIsMid): ?>
+            <td class="t-num"><?= $r['endterm'] !== null ? number_format((float) $r['endterm'], 1) : '—' ?></td>
+          <?php endif; ?>
           <td class="t-num">
             <?php if ($r['average'] !== null): ?>
               <strong><?= number_format((float) $r['average'], 1) ?></strong><?php if (!empty($r['max'])): ?><span class="text-muted">/<?= (int) $r['max'] ?></span><?php endif; ?>

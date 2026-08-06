@@ -225,7 +225,7 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
         <label class="form-label small mb-1">Academic year</label>
         <input type="text" name="year" value="<?= View::e($resultsYear) ?>" class="form-control form-control-sm" placeholder="2025/2026">
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-2">
         <label class="form-label small mb-1">Term</label>
         <select name="term" class="form-select form-select-sm">
           <?php foreach (['Term 1', 'Term 2', 'Term 3'] as $t): ?>
@@ -233,17 +233,29 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
           <?php endforeach; ?>
         </select>
       </div>
-      <div class="col-6 col-md-3 d-flex gap-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label small mb-1">Assessment</label>
+        <select name="stage" class="form-select form-select-sm">
+          <?php foreach (($stages ?? []) as $key => $label): ?>
+            <option value="<?= View::e((string) $key) ?>" <?= ($resultsStage ?? '') === $key ? 'selected' : '' ?>><?= View::e($label) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="col-6 col-md-2 d-flex gap-2">
         <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> View period</button>
       </div>
       <div class="col-6 col-md-3 text-md-end">
-        <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/reports/student/<?= (int) $student['id'] ?>"><i class="bi bi-file-earmark-text"></i> Full report card</a>
+        <a class="btn btn-outline-secondary btn-sm"
+           href="<?= $base ?>/reports/student/<?= (int) $student['id'] ?>?year=<?= rawurlencode($resultsYear) ?>&term=<?= rawurlencode($resultsTerm) ?>&stage=<?= rawurlencode($resultsStage ?? 'endterm') ?>">
+          <i class="bi bi-file-earmark-text"></i> Full report card
+        </a>
       </div>
     </form>
 
     <?php
       $year = $resultsYear;
       $term = $resultsTerm;
+      $stage = $resultsStage ?? 'endterm';
       $schoolName  = \App\Core\SchoolIdentity::name();
       $schoolMotto = \App\Core\SchoolIdentity::motto();
       $schoolLogo  = \App\Core\SchoolIdentity::logoUrl();

@@ -7,7 +7,9 @@ $schoolName  = SchoolIdentity::name();
 $schoolMotto = SchoolIdentity::motto();
 $schoolLogo  = SchoolIdentity::logoUrl();
 
-$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term);
+$stage      = $stage ?? 'endterm';
+$stageLabel = $stageLabel ?? 'End of term';
+$qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage=' . rawurlencode($stage);
 $studentReportHref = function (int $sid) use ($base, $portalPrefix, $qs): string {
     return $base . $portalPrefix . '/reports/student/' . $sid . '?' . $qs;
 };
@@ -36,6 +38,14 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
             <select name="term" class="form-select form-select-sm">
               <?php foreach ($terms as $t): ?>
                 <option <?= $t === $term ? 'selected' : '' ?>><?= View::e($t) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label small mb-1">Assessment</label>
+            <select name="stage" class="form-select form-select-sm">
+              <?php foreach (($stages ?? []) as $key => $label): ?>
+                <option value="<?= View::e((string) $key) ?>" <?= $key === $stage ? 'selected' : '' ?>><?= View::e($label) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
