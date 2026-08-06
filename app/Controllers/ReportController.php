@@ -508,6 +508,134 @@ class ReportController extends Controller
     }
 
     /**
+     * School-wide printable booklet: every student's report card, one per
+     * A4 sheet — the report-card equivalent of the bulk admission letters.
+     * Optionally narrowed to a single class.
+     *   GET /reports/booklet?class_id=&year=&term=&stage=
+     *
+     * Rendered as a standalone print document (no app chrome) with
+     * fixed-size sheets, so pagination is deterministic no matter how tall
+     * an individual card is.
+     */
+    public function booklet(): string
+    {
+        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
+        if (!in_array($term, self::TERMS, true)) {
+            $term = 'Term 1';
+        }
+
+        $classId = (int) $this->input('class_id', 0);
+        $visible = $this->visibleClassIds();
+
+        if ($classId > 0) {
+            if (!in_array($classId, $visible, true)) {
+                http_response_code(403);
+                return $this->view('errors/403');
+            }
+            $scopeIds = [$classId];
+        } else {
+            $scopeIds = $visible;
+        }
+
+        $students = [];
+        if ($scopeIds !== []) {
+            $ph = implode(',', array_fill(0, count($scopeIds), '?'));
+            $students = Database::query(
+                "SELECT s.*, c.name AS class_name, c.level AS class_level, c.id AS class_id,
+                        t.first_name AS teacher_first, t.last_name AS teacher_last
+                 FROM students s
+                 LEFT JOIN classes c ON c.id = s.class_id
+                 LEFT JOIN staff   t ON t.id = c.class_teacher_id
+                 WHERE s.class_id IN ($ph)
+                 ORDER BY c.level, c.name, s.first_name, s.last_name",
+                $scopeIds
+            )->fetchAll();
+        }
+
+        // Build every card's score sheet ONCE, then rank inside each cohort
+        // from those same sheets. Calling classPositionRow() per student
+        // would rebuild every peer's sheet for every student — fine for one
+        // class, quadratic for a whole school.
+        $sheets  = [];
+        $cohorts = [];
+        foreach ($students as $s) {
+            $sid = (int) $s['id'];
+            $sheets[$sid] = AcademicMarking::buildScoreSheet($sid, $year, $term, $stage);
+
+            $level   = trim((string) ($s['class_level'] ?? ''));
+            $stream  = (string) ($s['stream'] ?? 'none');
+            $isUpper = ($level === 'Form 3' || $level === 'Form 4');
+            $key = ((int) $s['class_id'])
+                . '|' . (($isUpper && in_array($stream, ['science', 'arts'], true)) ? $stream : 'class');
+            $cohorts[$key][] = $sid;
+        }
+
+        $positions = [];
+        foreach ($cohorts as $key => $memberIds) {
+            $cohortLabel = explode('|', $key)[1];
+            $members = [];
+            foreach ($memberIds as $sid) {
+                $members[] = ['student_id' => $sid, 'average' => $sheets[$sid]['average'] ?? null];
+            }
+            $ranks = AcademicMarking::competitionRanksByAverage($members);
+            foreach ($memberIds as $sid) {
+                $rank = $ranks[$sid] ?? 0;
+                $positions[$sid] = [
+                    'position'     => $rank > 0 ? $rank : null,
+                    'cohort'       => count($memberIds),
+                    'cohort_label' => $cohortLabel === 'class' ? 'class' : (ucfirst($cohortLabel) . ' stream'),
+                    'stream'       => $cohortLabel,
+                    'stage'        => $stage,
+                ];
+            }
+        }
+
+        $booklet = [];
+        foreach ($students as $s) {
+            $sid = (int) $s['id'];
+            $booklet[] = [
+                'student'  => $s,
+                'sheet'    => $sheets[$sid],
+                'position' => $positions[$sid] ?? ['position' => null, 'cohort' => 0, 'cohort_label' => 'class'],
+            ];
+        }
+
+        $classes = [];
+        if ($visible !== []) {
+            $ph = implode(',', array_fill(0, count($visible), '?'));
+            $classes = Database::query(
+                "SELECT id, name, level FROM classes WHERE id IN ($ph) ORDER BY level, name",
+                $visible
+            )->fetchAll();
+        }
+
+        $scopeLabel = 'All classes';
+        if ($classId > 0) {
+            foreach ($classes as $c) {
+                if ((int) $c['id'] === $classId) {
+                    $scopeLabel = (string) $c['name'] . (!empty($c['level']) ? ' · ' . $c['level'] : '');
+                    break;
+                }
+            }
+        }
+
+        return $this->view('reports/booklet_print', [
+            'booklet'    => $booklet,
+            'classes'    => $classes,
+            'classId'    => $classId,
+            'scopeLabel' => $scopeLabel,
+            'year'       => $year,
+            'term'       => $term,
+            'terms'      => self::TERMS,
+            'stage'      => $stage,
+            'stages'     => AcademicMarking::stages(),
+            'stageLabel' => AcademicMarking::stageLabel($stage),
+        ]);
+    }
+
+    /**
      * Vertical A4 report card for every student in a class, stacked for
      * printing (one student per page).
      *   GET /reports/class/{id}/booklet?year=&term=

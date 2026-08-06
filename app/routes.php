@@ -148,11 +148,14 @@ $router->get('/hod/results/gender', 'ResultsController@genderPerformance', [$sta
 
 // Reports (printable mid-term & end-term report cards)
 $router->get('/reports',                'ReportController@index',       [$auth]);
+// Registered before /reports/student/{id} etc. so the static path wins.
+$router->get('/reports/booklet',        'ReportController@booklet',     [$staffAdminOrHod]);
 $router->get('/reports/student/{id}',   'ReportController@student',     [$auth]);
 $router->get('/reports/class/{id}/booklet', 'ReportController@classBooklet', [$staffAdminOrHod]);
 $router->get('/reports/class/{id}',     'ReportController@classReport', [$staffAdminOrHod]);
 //   HOD-portal aliases (same handlers, /hod/* URLs).
 $router->get('/hod/reports',                    'ReportController@index',       [$staffAdminOrHod]);
+$router->get('/hod/reports/booklet',            'ReportController@booklet',     [$staffAdminOrHod]);
 $router->get('/hod/reports/student/{id}',       'ReportController@student',     [$staffAdminOrHod]);
 $router->get('/hod/reports/class/{id}/booklet', 'ReportController@classBooklet',[$staffAdminOrHod]);
 $router->get('/hod/reports/class/{id}',         'ReportController@classReport', [$staffAdminOrHod]);

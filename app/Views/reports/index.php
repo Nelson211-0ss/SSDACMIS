@@ -75,6 +75,19 @@ $isMid      = ($stage === 'midterm');
           </button>
         </div>
       </div>
+      <?php if ($role !== 'student' && !empty($classes)): ?>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">
+          <span class="small text-muted flex-grow-1">
+            <i class="bi bi-collection"></i>
+            Print every student's report card in one go — one A4 sheet per student.
+          </span>
+          <a class="btn btn-outline-primary btn-sm"
+             href="<?= $base ?><?= $portalPrefix ?>/reports/booklet?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>&stage=<?= rawurlencode($stage) ?>"
+             target="_blank" rel="noopener">
+            <i class="bi bi-printer"></i> Print all report cards
+          </a>
+        </div>
+      <?php endif; ?>
     </div>
   </form>
 
