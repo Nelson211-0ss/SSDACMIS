@@ -92,6 +92,38 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
        height it never has on paper. */
     .rc-sheet .report-page--student { zoom: var(--rc-zoom, 1); }
 
+    /* ...and fill the sheet when there's room to spare. Rather than scaling
+       the type up (which quickly looks cartoonish on a short curriculum),
+       the subject table breathes out: the leftover height is divided evenly
+       across its rows. The card then reaches the foot of the page as an
+       official document should, at unchanged font sizes. Specificity beats
+       app.css's own print padding, and this style block loads after it. */
+    .rc-sheet .report-page--student .report-student__marks tbody tr.report-student__marks-row td {
+      padding-top: calc(3px + var(--rc-row-extra, 0px));
+      padding-bottom: calc(3px + var(--rc-row-extra, 0px));
+    }
+    /* Any remainder is taken up between the summary and the signatures, so
+       the signing block sits at the foot of the page instead of leaving a
+       dead band beneath it. This needs the card stretched to the full sheet
+       height, which is what the flex chain below does. */
+    .rc-sheet { display: flex; flex-direction: column; }
+    .rc-sheet .report-page--student {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      /* Explicit, not left to flex stretch: as a flex item the card was
+         shrink-wrapping to its content (544px inside a 704px sheet), which
+         printed a card floating in the left two-thirds of the page. */
+      width: 100%;
+      align-self: stretch;
+    }
+    /* A table as a flex item sizes to its CONTENT, not the container — so
+       without this a short curriculum (or short subject names) prints a
+       card that only occupies part of the page width. */
+    .rc-sheet .report-page--student > *,
+    .rc-sheet .report-page--student .report-table { width: 100%; }
+    .rc-sheet .report-page--student .report-signature-row { margin-top: auto; }
+
     .rc-empty { max-width: 40rem; margin: 3rem auto; padding: 1.25rem 1.5rem; background: #fff; border-radius: .5rem; }
 
     @media print {
@@ -101,7 +133,13 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
         margin: 0;
         box-shadow: none;
         width: auto;
-        min-height: 0;
+        /* In paged media `vh` resolves against the PAGE box, so this tracks
+           whatever sheet the print dialog actually produces — including the
+           margins the user picked there, which override the @page margins
+           above. A fixed 297mm would overflow by exactly those margins and
+           push a near-blank second sheet after every card. 99 rather than
+           100 leaves a hair of slack for sub-pixel rounding. */
+        min-height: 99vh;
       }
     }
   </style>
@@ -186,11 +224,28 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
         $rowCount += count($g['rows'] ?? []);
     }
     $estimatedHeight = 385 + ($rowCount * 23);
-    $zoom = $estimatedHeight > 980
-        ? max(0.55, round(980 / $estimatedHeight, 3))
-        : 1;
+
+    $zoom = 1;
+    $rowExtra = 0;
+    if ($estimatedHeight > 980) {
+        $zoom = max(0.55, round(980 / $estimatedHeight, 3));
+    } elseif ($rowCount > 0) {
+        // Spare height goes into the subject rows — half above, half below
+        // the text — so a short curriculum reads as a full, deliberately
+        // spaced table rather than a small one adrift at the top of the
+        // sheet. Capped at roughly a 55px row: past that the bands start to
+        // look like a spreadsheet with the wrong line height, and it is
+        // better to leave the remainder as breathing space above the
+        // signature block, which the flex rule pins to the foot of the page.
+        $rowExtra = min(16.0, round((980 - $estimatedHeight) / $rowCount / 2, 2));
+        $rowExtra = max(0.0, $rowExtra);
+    }
+
+    $sheetStyle = [];
+    if ($zoom < 1)    { $sheetStyle[] = '--rc-zoom: ' . $zoom; }
+    if ($rowExtra > 0) { $sheetStyle[] = '--rc-row-extra: ' . $rowExtra . 'px'; }
   ?>
-    <section class="rc-sheet"<?= $zoom < 1 ? ' style="--rc-zoom: ' . $zoom . '"' : '' ?>>
+    <section class="rc-sheet"<?= $sheetStyle ? ' style="' . View::e(implode('; ', $sheetStyle)) . '"' : '' ?>>
       <?php include __DIR__ . '/_student_card.php'; ?>
     </section>
   <?php endforeach; ?>
