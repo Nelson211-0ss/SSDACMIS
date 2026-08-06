@@ -599,6 +599,11 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
 .roster-letterhead { margin-bottom: 1rem; }
 .roster-letterhead .report-head__period { font-size: .8rem; }
 
+/* Repeated per-sheet caption. Lives inside <thead> so the browser reprints
+   it at the top of every printed page; hidden on screen, where the
+   letterhead sits directly above the table. */
+.roster-print-caption { display: none; }
+
 /* Class-group divider row: replaces the old per-row "Class" column when the
    roster spans more than one class — grouping reads far better on a printed
    multi-class list than a repeated column value on every row. */
@@ -2860,6 +2865,22 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
     padding: 0 !important;
     max-width: none !important;
   }
+  /* The app shell's tinted page background covers the whole printable area
+     on EVERY sheet — invisible behind a white card, but printed as a full
+     page of pale ink wherever the content is shorter than the sheet (and
+     as a slab under the last card of a booklet). Paper is white. */
+  .app-shell,
+  .app-main,
+  .app-page,
+  .report-student-layout,
+  .report-booklet-layout,
+  .report-student-viewport,
+  .report-booklet-viewport,
+  .report-student-viewport__slot,
+  .report-student-viewport__sheet {
+    background: #fff !important;
+    box-shadow: none !important;
+  }
 
   /* Print a clean white card */
   .report-page {
@@ -2877,24 +2898,63 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .report-page--student .report-head__school { font-size: 13pt; }
-  .report-page--student .report-head__motto  { font-size: 8.5pt; }
-  .report-page--student .report-head__sub    { font-size: 8.5pt; }
-  .report-page--student .report-head__brand img { width: 44px; height: 44px; }
+  /* ---- Card height budget -------------------------------------------
+     One student card must fit ONE A4 sheet: at 12mm margins that's 273mm
+     ≈ 1032px of printable height. A card that overflows even slightly is
+     the worst outcome — the fragmentation engine drops the unsatisfiable
+     `break-inside: avoid` and splits wherever it likes, which is what put
+     the summary and signatures on a second, header-less sheet.
+
+     The subject table is the variable part (one row per offered subject),
+     so it gets the tightest treatment: a school offering a full 21-subject
+     curriculum is the realistic worst case, and the sizes below leave
+     enough headroom for roughly 25 rows before anything has to split. */
+  .report-page--student .report-head { padding-bottom: 8px; margin-bottom: 9px; }
+  .report-page--student .report-head__school { font-size: 12.5pt; }
+  .report-page--student .report-head__motto  { font-size: 8pt; }
+  .report-page--student .report-head__sub    { font-size: 8pt; }
+  .report-page--student .report-head__period { font-size: 8pt; line-height: 1.35; }
+  .report-page--student .report-head__brand img { width: 38px; height: 38px; }
+  .report-page--student .report-head__brand i { font-size: 1.5rem; }
   .report-page--student .report-table { font-size: 9.5pt; }
   .report-page--student .report-table th,
-  .report-page--student .report-table td { padding: 3px 6px; }
+  .report-page--student .report-table td { padding: 2px 6px; }
   .report-page--student .report-student__marks tbody tr.report-student__marks-row td,
   .report-page--student .report-student__summary tbody tr.report-student__summary-row td {
-    padding: 5px 8px;
+    padding: 3px 8px;
+    line-height: 1.3;
   }
   .report-page--student .report-student__marks thead th,
   .report-page--student .report-student__summary thead th {
-    padding: 5px 8px;
+    padding: 3px 8px;
   }
-  .report-page--student .report-student__section-h { font-size: 9pt; }
+  /* The grade pill sets the row height on every marks row — 21 rows means
+     a few px here is worth ~40px of page. */
+  .report-page--student .report-grade-pill {
+    font-size: 7.5pt;
+    padding: 0 4px;
+    min-width: 16px;
+    border-width: 0.5px;
+  }
+  .report-page--student .report-grade-pill--large { font-size: 8.5pt; padding: 0 6px; }
+  .report-page--student .report-meta--student { margin-bottom: 9px; }
+  /* Passport photo is sized by an inline style on the element. */
+  .report-page--student .report-student__photo > img,
+  .report-page--student .report-student__photo > div {
+    width: 72px !important;
+    height: 92px !important;
+  }
+  .report-page--student .report-meta__fields { gap: 3px 16px !important; }
+  .report-page--student .report-student__section-h { font-size: 8.5pt; margin-bottom: 4px; }
+  .report-page--student .report-student__marks { margin-bottom: 9px; }
+  .report-page--student .report-student__summary { margin-bottom: 8px; }
+  .report-page--student .report-signature-row { margin-top: .45rem; margin-bottom: .2rem; }
   .report-page--student .report-signature-line,
-  .report-page--student .report-signature-img { height: 22px; }
+  .report-page--student .report-signature-img { height: 18px; }
+  .report-page--student .report-signature-lbl { font-size: 7.5pt; }
+  .report-page--student .report-student__foot-block { padding: 6px 12px 7px; margin-top: 8px; }
+  .report-page--student .report-student__foot-block .report-footer { margin-bottom: 3px; font-size: 7.5pt; }
+  .report-page--student .report-student__foot-block .report-credit { padding-top: 4px; }
   .report-student__foot-block { background: #e2e8f0 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .report-page--student .report-student__marks thead th,
   .report-page--student .report-student__summary thead th {
@@ -2926,24 +2986,48 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
     background: #fff !important;
     /* Both legacy and modern fragmentation properties so every browser
        (Chrome, Safari, Firefox, Edge) starts the next student on a
-       fresh sheet and never splits one card across two pages. */
-    break-before: page;
+       fresh sheet and never splits one card across two pages.
+
+       Only `break-after` separates the cards — pairing it with
+       `break-before` on the same elements asks for two breaks between
+       consecutive cards, which some engines honour literally and emit a
+       blank sheet between students. */
     break-after: page;
     break-inside: avoid;
-    page-break-before: always;
     page-break-after: always;
     page-break-inside: avoid;
-  }
-  /* The very first card doesn't need a leading break (would emit a
-     blank first sheet in some browsers). */
-  .report-booklet__page:first-child {
-    break-before: auto;
-    page-break-before: auto;
   }
   /* The last card mustn't emit a trailing blank page. */
   .report-booklet__page:last-child {
     break-after: auto;
     page-break-after: auto;
+  }
+  /* If a card ever DOES outgrow the sheet (a school offering an unusually
+     large curriculum), `break-inside: avoid` above becomes unsatisfiable
+     and the engine ignores it — so the split has to be survivable rather
+     than merely forbidden. Keeping each block atomic means the break can
+     only land BETWEEN blocks, never inside the letterhead or the summary,
+     and the marks table repeats its header row on the continuation sheet.
+     Worst case is then a clean 2-sheet card, not an orphaned header. */
+  .report-page--student .report-head,
+  .report-page--student .report-meta,
+  .report-page--student .report-student__summary,
+  .report-page--student .report-signature-row,
+  .report-page--student .report-student__foot-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Never leave a section heading stranded at the foot of a sheet. */
+  .report-page--student .report-student__section-h {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .report-page--student .report-student__marks thead {
+    display: table-header-group;
+  }
+  .report-page--student .report-student__marks tbody tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   /* Strip the on-screen card chrome so the printed sheet is clean. */
   .report-booklet__page > .report-page {
@@ -3023,14 +3107,143 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .student-roster-sheet > p.d-print-none {
     display: none !important;
   }
+  /* The on-screen table sits in a rounded, clipped panel. `overflow: hidden`
+     on an ancestor makes the fragmentation engine give up on the table it
+     wraps — rows stop flowing evenly onto later sheets and the page ends
+     early with white space. Flatten the panel for paper. */
+  .student-roster-print .table-edge,
+  .results-print-area .table-edge {
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
   .student-roster-print .results-density-table,
   .student-roster-print .student-roster-table {
-    font-size: 7.5pt !important;
+    font-size: 8pt !important;
   }
   .student-roster-print .student-roster-table th,
   .student-roster-print .student-roster-table td {
-    padding: 2px 4px !important;
+    padding: 2.5px 5px !important;
   }
+  /* Per-sheet caption (see .roster-print-caption above). */
+  .roster-print-caption { display: table-row !important; }
+  .student-roster-print .student-roster-table .roster-print-caption th {
+    background: #fff !important;
+    border: 0 !important;
+    border-bottom: 1.5px solid #111 !important;
+    padding: 0 0 3px !important;
+    text-align: left;
+    white-space: normal;
+  }
+  .roster-print-caption__school {
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+  .roster-print-caption__meta {
+    font-weight: 400;
+    font-size: 7.5pt;
+    color: #333;
+    margin-left: .5rem;
+  }
+
+  /* The roster borrows `.results-density-table` for its compact look, but
+     that class also brings `table-layout: fixed` plus column widths sized
+     for the results MATRIX (narrow per-subject columns). Applied to roster
+     columns it squeezed Guardian and Phone into two lines, so every row
+     printed at double height — 14 rows to a sheet instead of ~25. Let the
+     roster size its own columns to their content. */
+  .student-roster-print .student-roster-table {
+    table-layout: auto !important;
+  }
+  .student-roster-print .student-roster-table .rd-pos {
+    width: 2.2rem !important;
+  }
+  /* Keep the identity columns on one line; only free text may wrap. */
+  .student-roster-print .student-roster-table td,
+  .student-roster-print .student-roster-table th {
+    white-space: nowrap;
+  }
+  .student-roster-print .student-roster-table td:nth-child(3),
+  .student-roster-print .student-roster-table td:nth-child(8) {
+    white-space: normal;
+  }
+
+  /* ---- Long list tables across many sheets --------------------------
+     A roster or results list is one table that legitimately spans pages,
+     so the goal here is the opposite of the report card: not "never
+     split", but "split predictably and stay readable on every sheet".
+        - the column header repeats at the top of each sheet
+        - a row is never sliced in half across the fold
+        - a class/school group heading never prints as the last thing on
+          a sheet with its students overleaf
+        - hairline rules and flat badges: crisp on paper, light on ink */
+  .print-list-table,
+  .student-roster-table,
+  .results-density-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  .print-list-table thead,
+  .student-roster-table thead,
+  .results-density-table thead {
+    display: table-header-group;
+  }
+  .print-list-table tfoot,
+  .student-roster-table tfoot,
+  .results-density-table tfoot {
+    display: table-footer-group;
+  }
+  .print-list-table tr,
+  .student-roster-table tr,
+  .results-density-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Group heading sticks to the rows it introduces. */
+  .roster-group-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .print-list-table thead th,
+  .student-roster-table thead th,
+  .results-density-table thead th {
+    background: #e9edf2 !important;
+    color: #111 !important;
+    border-bottom: 1px solid #4b5563 !important;
+    font-weight: 700;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-list-table th,
+  .print-list-table td,
+  .student-roster-table th,
+  .student-roster-table td {
+    border-color: #b9c0c8 !important;
+  }
+  /* Zebra banding earns its keep on a wide roster — it stops the eye
+     sliding to the wrong row — but only at a tint that survives a cheap
+     laser printer without greying the text. */
+  .print-list-table tbody tr:nth-child(even) td,
+  .student-roster-table tbody tr:nth-child(even):not(.roster-group-row) td {
+    background: #f5f7f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .student-roster-table .badge,
+  .print-list-table .badge {
+    background: transparent !important;
+    border: 0 !important;
+    color: #111 !important;
+    padding: 0 !important;
+    font-weight: 600;
+    font-size: inherit !important;
+  }
+  .roster-signature-row { break-inside: avoid; page-break-inside: avoid; }
+  .roster-print-footer  { break-inside: avoid; page-break-inside: avoid; }
 }
 
 /* ============================================================
@@ -6129,7 +6342,11 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .app-main > * { animation: none !important; }
   .app-main > div.hod-overview-page > *,
   .app-main > div.bursar-dash > * { animation: none !important; }
-  .app-main { background: var(--bg) !important; }
+  /* White, not var(--bg): the shell's tinted background otherwise prints as
+     a full page of pale ink on every sheet (and as a slab below any content
+     shorter than the page). This block loads after the main print rules, so
+     it has the last word — keep them in agreement. */
+  .app-main { background: #fff !important; }
   .card { box-shadow: none !important; }
   /* The mark-entry sheet's bounded scroll box is a screen-only affordance —
      on paper every row should print, not just the ~70vh that's on-screen. */
@@ -7098,8 +7315,14 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .app-page .table-hover tbody tr:hover td {
   background: color-mix(in srgb, var(--accent-soft) 35%, transparent);
 }
+/* Empty-state ("No records yet") cell. `:only-child` is what keeps this
+   scoped to a genuine empty state — one full-width td spanning the table —
+   instead of any centred, muted DATA cell. Without it this rule matched
+   things like the roster's centred "#" column and forced 2rem of padding
+   on every row (86px tall rows, ~7 to a printed page), and its !important
+   plus higher specificity beat the compact print rules trying to fix it. */
 .app-page .sa-empty,
-.app-page .table tbody td.text-center.text-muted {
+.app-page .table tbody td.text-center.text-muted:only-child {
   text-align: center;
   padding: 2rem 1rem !important;
   color: var(--text-muted);

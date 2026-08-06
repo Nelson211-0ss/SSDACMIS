@@ -143,8 +143,28 @@ $htTitle = trim((string) ($letterhead['headteacher_title'] ?? '')) ?: 'Head Teac
       <div class="table-edge rounded-2 border overflow-hidden">
         <table class="table table-sm table-bordered align-middle results-density-table student-roster-table mb-0">
           <thead class="table-light">
+            <?php
+              // Printed rosters are handed round as loose sheets, and only
+              // page 1 carries the letterhead. Everything in <thead> repeats
+              // at the top of every printed page, so this caption row makes
+              // each sheet self-identifying. Print-only — on screen the
+              // letterhead is right there above the table.
+              $scopeLabel = !empty($filterClass)
+                  ? ($filterClass['name'] ?? '') . (!empty($filterClass['level']) ? ' · ' . $filterClass['level'] : '')
+                  : 'All classes';
+            ?>
+            <tr class="roster-print-caption">
+              <th colspan="9">
+                <span class="roster-print-caption__school"><?= View::e($schoolName ?? '') ?></span>
+                <span class="roster-print-caption__meta">
+                  Student Enrollment Roster &middot; <?= View::e($scopeLabel) ?>
+                  &middot; <?= (int) $total ?> student<?= $total === 1 ? '' : 's' ?>
+                  &middot; <?= View::e($printedAt ?? '') ?>
+                </span>
+              </th>
+            </tr>
             <tr>
-              <th class="text-center rd-pos text-muted">#</th>
+              <th class="text-center rd-pos">#</th>
               <th scope="col">Admission no.</th>
               <th scope="col">Student name</th>
               <th class="text-center">Gender</th>
