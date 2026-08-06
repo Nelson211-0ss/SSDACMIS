@@ -83,6 +83,15 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
     .rc-sheet:last-of-type { break-after: auto; page-break-after: auto; }
     .rc-sheet .report-page { border: 0; box-shadow: none; padding: 0; max-width: none; }
 
+    /* Guarantee one sheet per student even for an unusually large
+       curriculum. `zoom` (not `transform`) because it reflows, so the card
+       genuinely occupies less height rather than being painted smaller over
+       the same box. The factor is computed server-side from the subject
+       count — measuring in JS cannot work here, since on screen app.css has
+       not applied its print metrics and every card would be shrunk to fit a
+       height it never has on paper. */
+    .rc-sheet .report-page--student { zoom: var(--rc-zoom, 1); }
+
     .rc-empty { max-width: 40rem; margin: 3rem auto; padding: 1.25rem 1.5rem; background: #fff; border-radius: .5rem; }
 
     @media print {
@@ -159,8 +168,29 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
     $student  = $entry['student'];
     $sheet    = $entry['sheet'];
     $position = $entry['position'];
+
+    /**
+     * Shrink-to-fit factor for this card.
+     *
+     * Measured against Chromium with app.css's print metrics: a card costs
+     * roughly 385px of fixed furniture (letterhead, student meta, summary,
+     * signatures, footer) plus ~23px per subject row. The budget is held
+     * at 980px rather than the ~1040px an A4 sheet actually offers at 12mm
+     * margins, because the browser's print dialog overrides the page
+     * margins and a user may pick wider ones — the slack absorbs that.
+     * Anything at or under the budget prints at full size; only genuinely
+     * oversized curricula are scaled, and only as far as they need.
+     */
+    $rowCount = 0;
+    foreach (($sheet['groups'] ?? []) as $g) {
+        $rowCount += count($g['rows'] ?? []);
+    }
+    $estimatedHeight = 385 + ($rowCount * 23);
+    $zoom = $estimatedHeight > 980
+        ? max(0.55, round(980 / $estimatedHeight, 3))
+        : 1;
   ?>
-    <section class="rc-sheet">
+    <section class="rc-sheet"<?= $zoom < 1 ? ' style="--rc-zoom: ' . $zoom . '"' : '' ?>>
       <?php include __DIR__ . '/_student_card.php'; ?>
     </section>
   <?php endforeach; ?>
