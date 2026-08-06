@@ -88,9 +88,27 @@ $peersAttr = htmlspecialchars(json_encode($peersJson, JSON_HEX_TAG | JSON_HEX_AP
         <span class="text-muted small d-none d-md-inline align-self-end pb-1 me-1">
           <?= View::e($class['name']) ?> · <?= View::e($stageLabel) ?> · <?= $n ?> student<?= $n === 1 ? '' : 's' ?>
         </span>
-        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" <?= $n === 0 ? 'disabled' : '' ?>>
+<?php
+          // "Print all" hands off to the standalone booklet document rather
+          // than printing THIS page. Printing from inside the app shell has
+          // to fight a flex/grid layout, a tinted page background and an
+          // overflow-clipped main column; any one of those can silently
+          // disable page breaks and tear cards across sheets. The standalone
+          // document has none of that, and shrinks an oversized card to fit
+          // rather than letting it spill.
+          $printAllUrl = $base . $portalPrefix . '/reports/booklet?'
+              . http_build_query([
+                  'class_id' => (int) $class['id'],
+                  'year'     => $year,
+                  'term'     => $term,
+                  'stage'    => $stage,
+              ]);
+        ?>
+        <a class="btn btn-primary btn-sm <?= $n === 0 ? 'disabled' : '' ?>"
+           href="<?= View::e($printAllUrl) ?>" target="_blank" rel="noopener"
+           title="Opens a print-ready document — one A4 sheet per student">
           <i class="bi bi-printer"></i> Print all
-        </button>
+        </a>
       </div>
     </div>
   </div>

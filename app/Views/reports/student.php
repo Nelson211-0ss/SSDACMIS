@@ -93,7 +93,12 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
       <div class="d-flex flex-wrap gap-2 flex-shrink-0 ms-auto">
         <?php if (!empty($student['class_id'])): ?>
           <a class="btn btn-outline-primary btn-sm"
-             href="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $student['class_id'] ?>/booklet?<?= View::e($qs) ?>">
+             href="<?= $base ?><?= $portalPrefix ?>/reports/booklet?<?= View::e(http_build_query([
+                 'class_id' => (int) $student['class_id'],
+                 'year' => $year, 'term' => $term, 'stage' => $stage,
+             ])) ?>"
+             target="_blank" rel="noopener"
+             title="Opens a print-ready document — one A4 sheet per student">
             <i class="bi bi-printer"></i> Print whole class
           </a>
         <?php endif; ?>
