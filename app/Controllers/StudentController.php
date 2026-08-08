@@ -454,19 +454,20 @@ class StudentController extends Controller
             return '';
         }
 
-        $generated = Student::nextAdmissionNo((int) $data['class_id']);
-        if (!$generated) {
-            Flash::set('danger', 'The selected class has no admission prefix configured. Set one on the Classes page first.');
-            $this->redirect($backToCreate);
-            return '';
-        }
-        $data['admission_no'] = $generated;
         // Super admin picks the school via the form; all others are scoped to their own school.
         if (Auth::role() === 'admin') {
             $data['school_id'] = (int) $this->input('school_id', 1) ?: 1;
         } else {
             $data['school_id'] = Auth::schoolId() ?? 1;
         }
+
+        $generated = Student::nextAdmissionNo((int) $data['class_id'], (int) $data['school_id']);
+        if (!$generated) {
+            Flash::set('danger', 'The selected class has no admission prefix configured. Set one on the Classes page first.');
+            $this->redirect($backToCreate);
+            return '';
+        }
+        $data['admission_no'] = $generated;
 
         $studentId = Student::create($data);
         ActivityLog::record('create', 'student', $studentId, "Admitted student {$generated}");
@@ -709,7 +710,7 @@ class StudentController extends Controller
                 continue;
             }
 
-            $admissionNo = Student::nextAdmissionNo($classId);
+            $admissionNo = Student::nextAdmissionNo($classId, $schoolId ?: 1);
             if (!$admissionNo) {
                 $errors[] = [
                     'row' => $rowNum, 'name' => $name,

@@ -267,12 +267,16 @@ class Student
     }
 
     /**
-     * Generate the next admission number for the given class.
-     * Combines the class's admission_prefix with a zero-padded sequence
-     * derived from the highest existing number that already uses that prefix.
+     * Generate the next admission number for the given class, unique within
+     * the given school. Combines the class's admission_prefix with a
+     * zero-padded sequence derived from the highest existing number that
+     * already uses that prefix ANYWHERE in the school — not just this class —
+     * since admission_no is only unique per (school_id, admission_no), and
+     * multiple classes commonly share the same prefix. Scoping the max by
+     * class_id alone let two classes both compute "next = 1" and collide.
      * Returns null if the class has no admission_prefix set.
      */
-    public static function nextAdmissionNo(int $classId): ?string
+    public static function nextAdmissionNo(int $classId, int $schoolId): ?string
     {
         $row = Database::query(
             "SELECT admission_prefix FROM classes WHERE id = ?",
@@ -285,8 +289,8 @@ class Student
         $max = Database::query(
             "SELECT COALESCE(MAX(CAST(SUBSTRING(admission_no, ?) AS UNSIGNED)), 0) AS n
              FROM students
-             WHERE class_id = ? AND admission_no LIKE ?",
-            [strlen($prefix) + 1, $classId, $like]
+             WHERE school_id = ? AND admission_no LIKE ?",
+            [strlen($prefix) + 1, $schoolId, $like]
         )->fetch();
         $next = ((int) ($max['n'] ?? 0)) + 1;
         return $prefix . str_pad((string) $next, 3, '0', STR_PAD_LEFT);
