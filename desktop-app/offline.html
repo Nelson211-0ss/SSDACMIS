@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SSD-ACMIS</title>
+<style>
+  :root{ color-scheme: light dark; }
+  html,body{ height:100%; margin:0; }
+  body{
+    display:flex; align-items:center; justify-content:center;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background:#131a15; color:#e9ece2;
+  }
+  .card{ text-align:center; max-width:420px; padding:32px; }
+  h1{ font-size:1.3rem; margin:0 0 10px; }
+  p{ color:#a7b2a0; line-height:1.5; margin:0 0 22px; font-size:.95rem; }
+  button{
+    font:inherit; font-weight:600; font-size:.9rem;
+    background:#a8432e; color:#fff; border:none; border-radius:4px;
+    padding:10px 20px; cursor:pointer;
+  }
+  button:hover{ background:#8f3623; }
+  code{ background:#1a231d; padding:2px 6px; border-radius:3px; font-size:.85em; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Can't reach the server</h1>
+    <p>SSD-ACMIS couldn't connect to <code id="target"></code>. Check that this computer is on the school network, then try again.</p>
+    <button id="retry">Retry</button>
+  </div>
+  <script>
+    var params = new URLSearchParams(location.search);
+    var target = params.get('target') || '';
+    document.getElementById('target').textContent = target;
+    document.getElementById('retry').addEventListener('click', function () {
+      location.href = target;
+    });
+  </script>
+</body>
+</html>

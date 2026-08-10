@@ -1,0 +1,29 @@
+{
+  "name": "ssdacmis-desktop",
+  "version": "1.0.0",
+  "description": "Desktop shortcut app for SSD-ACMIS — opens the school's SSD-ACMIS server in its own window instead of a browser tab.",
+  "main": "main.js",
+  "private": true,
+  "author": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "org.jdiobestem.ssdacmis.desktop",
+    "productName": "SSD-ACMIS",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["main.js", "offline.html", "config.json", "build/**/*"],
+    "win": { "target": "nsis", "icon": "build/icon-180.png" },
+    "mac": { "target": "dmg", "icon": "build/icon-180.png" },
+    "linux": { "target": "AppImage", "icon": "build/icon-180.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallDir": true, "createDesktopShortcut": true }
+  }
+}
