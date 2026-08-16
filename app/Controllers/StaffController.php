@@ -179,6 +179,7 @@ class StaffController extends Controller
             'hire_date'   => $this->input('hire_date'),
             'role'        => in_array($this->input('role'), ['admin','school_admin','staff'], true) ? $this->input('role') : 'staff',
             'subject_ids' => $subjectIds,
+            'password'    => trim((string) $this->input('password', '')),
         ];
     }
 
