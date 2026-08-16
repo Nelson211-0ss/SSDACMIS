@@ -164,10 +164,10 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           <i class="bi bi-megaphone"></i> Announce
         </a>
       <?php else: ?>
-      <a href="<?= $base ?>/students/create" class="btn btn-primary btn-sm">
-        <i class="bi bi-person-plus"></i> Add student
-      </a>
       <?php if ($isSchoolAdmin): ?>
+        <a href="<?= $base ?>/students/create" class="btn btn-primary btn-sm">
+          <i class="bi bi-person-plus"></i> Add student
+        </a>
         <a href="<?= $base ?>/teaching" class="btn btn-sm dash-hero__btn dash-hero__btn--attendance">
           <i class="bi bi-diagram-3"></i> Teaching
         </a>
@@ -839,10 +839,12 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
           <div class="card-body">
             <div class="empty-state py-4">
               <i class="bi bi-person-plus d-block"></i>
-              <div>No students yet. Add your first student to see them here.</div>
-              <a href="<?= $base ?>/students/create" class="btn btn-sm btn-outline-primary mt-3">
-                <i class="bi bi-person-plus"></i> Add student
-              </a>
+              <div>No students yet<?= $isSchoolAdmin ? '. Add your first student to see them here.' : '.' ?></div>
+              <?php if ($isSchoolAdmin): ?>
+                <a href="<?= $base ?>/students/create" class="btn btn-sm btn-outline-primary mt-3">
+                  <i class="bi bi-person-plus"></i> Add student
+                </a>
+              <?php endif; ?>
             </div>
           </div>
         <?php else: ?>

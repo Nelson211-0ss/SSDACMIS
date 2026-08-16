@@ -9,7 +9,9 @@ $studentsEmptyMessage = empty($students)
 ?>
 <?php
 $pageTitle = 'Students';
-$pageSubtitle = 'Search, edit, or register learners. Admission numbers follow each class prefix.';
+$pageSubtitle = in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)
+    ? 'Search, edit, or register learners. Admission numbers follow each class prefix.'
+    : 'Search and view learners.';
 $pageIcon = 'bi-people';
 ob_start();
 ?>
@@ -33,11 +35,13 @@ ob_start();
         <i class="bi bi-envelope-paper"></i> Admission letters
       </a>
     <?php endif; ?>
-    <a class="btn btn-outline-primary" href="<?= $base ?>/students/import" title="Add many students at once from a CSV file">
-      <i class="bi bi-file-earmark-spreadsheet"></i> Import CSV
-    </a>
-    <a class="btn btn-primary" href="<?= $base ?>/students/create"
-       data-entity-modal data-modal-title="Add student" data-modal-size="entity-modal--student"><i class="bi bi-plus-lg"></i> Add student</a>
+    <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
+      <a class="btn btn-outline-primary" href="<?= $base ?>/students/import" title="Add many students at once from a CSV file">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Import CSV
+      </a>
+      <a class="btn btn-primary" href="<?= $base ?>/students/create"
+         data-entity-modal data-modal-title="Add student" data-modal-size="entity-modal--student"><i class="bi bi-plus-lg"></i> Add student</a>
+    <?php endif; ?>
 <?php
 $pageActionsHtml = ob_get_clean();
 include dirname(__DIR__) . '/_partials/app_page_header.php';

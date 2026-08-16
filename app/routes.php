@@ -49,7 +49,7 @@ $router->get('/students/{id}/admission-letter',       'StudentController@admissi
 // single-student route sits with the other /students/{id}/... routes below.
 $router->get('/students/id-cards',     'IdCardController@bulk',    [$schoolAdminOrAdmin]);
 $router->get('/students/{id}/id-card', 'IdCardController@show',    [$schoolAdminOrAdmin]);
-$router->get('/students/create',       'StudentController@create', [$staffOrAdmin]);
+$router->get('/students/create',       'StudentController@create', [$schoolAdminOrAdmin]);
 $router->get('/students/table-rows',   'StudentController@tableRows', [$staffOrAdmin]);
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.
 $router->get('/students/clear-all',    'StudentController@clearAllForm',    [$schoolAdminOrAdmin]);
@@ -58,18 +58,20 @@ $router->post('/students/clear-all',  'StudentController@clearAllExecute', [$sch
 // static-before-{id} ordering requirement as clear-all above.
 $router->get('/students/delete-by-class',  'StudentController@deleteByClassForm',    [$schoolAdminOrAdmin]);
 $router->post('/students/delete-by-class', 'StudentController@deleteByClassExecute', [$schoolAdminOrAdmin]);
-// Bulk CSV import — one whole class at a time.
-$router->get('/students/import',            'StudentController@importForm',     [$staffOrAdmin]);
-$router->get('/students/import/template',   'StudentController@importTemplate', [$staffOrAdmin]);
-$router->post('/students/import',           'StudentController@importStore',    [$staffOrAdmin]);
-$router->post('/students',             'StudentController@store',  [$staffOrAdmin]);
+// Bulk CSV import — one whole class at a time. Admission/records editing is
+// school-admin territory; staff and HODs enter marks and view students, but
+// do not create, import, or modify student records.
+$router->get('/students/import',            'StudentController@importForm',     [$schoolAdminOrAdmin]);
+$router->get('/students/import/template',   'StudentController@importTemplate', [$schoolAdminOrAdmin]);
+$router->post('/students/import',           'StudentController@importStore',    [$schoolAdminOrAdmin]);
+$router->post('/students',             'StudentController@store',  [$schoolAdminOrAdmin]);
 // Registered after all the static /students/... GET routes above so it
 // doesn't swallow them (Router matches GET routes in insertion order).
 $router->get('/students/{id}',         'StudentController@show',   [$staffOrAdmin]);
-$router->get('/students/{id}/edit',    'StudentController@edit',   [$staffOrAdmin]);
-$router->post('/students/{id}',        'StudentController@update', [$staffOrAdmin]);
+$router->get('/students/{id}/edit',    'StudentController@edit',   [$schoolAdminOrAdmin]);
+$router->post('/students/{id}',        'StudentController@update', [$schoolAdminOrAdmin]);
 $router->post('/students/{id}/delete', 'StudentController@destroy',[$schoolAdminOrAdmin]);
-$router->post('/students/{id}/photo/delete', 'StudentController@deletePhoto', [$staffOrAdmin]);
+$router->post('/students/{id}/photo/delete', 'StudentController@deletePhoto', [$schoolAdminOrAdmin]);
 
 // Staff
 $router->get('/staff',              'StaffController@index',  [$schoolAdminOrAdmin]);

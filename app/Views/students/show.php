@@ -48,7 +48,9 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/students"><i class="bi bi-arrow-left"></i> Back to students</a>
-    <a class="btn btn-outline-primary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/edit"><i class="bi bi-pencil"></i> Edit</a>
+    <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
+      <a class="btn btn-outline-primary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/edit"><i class="bi bi-pencil"></i> Edit</a>
+    <?php endif; ?>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/admission-letter" data-inline-print><i class="bi bi-envelope-paper"></i> Admission letter</a>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/id-card" data-inline-print><i class="bi bi-person-vcard"></i> Print ID card</a>
   </div>

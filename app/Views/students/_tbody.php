@@ -45,7 +45,9 @@ if (empty($students)): ?>
             <td class="d-none d-xl-table-cell font-monospace small"><?= View::e($s['guardian_phone'] ?: '—') ?></td>
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-outline-secondary" href="<?= $base ?>/students/<?= (int)$s['id'] ?>" title="View profile"><i class="bi bi-eye"></i></a>
-              <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/students/<?= (int)$s['id'] ?>/edit" title="Edit"><i class="bi bi-pencil"></i></a>
+              <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
+                <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/students/<?= (int)$s['id'] ?>/edit" title="Edit"><i class="bi bi-pencil"></i></a>
+              <?php endif; ?>
               <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
                 <a class="btn btn-sm btn-outline-secondary"
                    href="<?= $base ?>/students/<?= (int)$s['id'] ?>/admission-letter"
