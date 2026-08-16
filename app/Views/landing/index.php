@@ -13,6 +13,7 @@ $year = date('Y');
       <i class="bi bi-list"></i>
     </button>
     <nav class="lp-nav__links" id="lpNavLinks" aria-label="Primary">
+      <a href="#gallery">Life at school</a>
       <a href="#modules">What it does</a>
       <a class="lp-btn lp-btn--primary lp-btn--sm" href="<?= $base ?>/login">Sign In</a>
     </nav>
@@ -39,7 +40,40 @@ $year = date('Y');
     </div>
   </section>
 
-  <section class="lp-section" id="modules">
+  <section class="lp-section" id="gallery">
+    <div class="lp-container reveal">
+      <h2 class="lp-section__title">Life at school</h2>
+      <div class="lp-slider" data-slider>
+        <div class="lp-slider__track">
+          <?php
+          $slides = [
+            ['login-slide-1.jpg', 'Classroom learning'],
+            ['login-slide-2.jpg', 'Hands-on lessons'],
+            ['login-slide-3.jpg', 'Focused study'],
+            ['login-slide-4.jpg', 'Graduation day'],
+          ];
+          foreach ($slides as $i => $s): ?>
+          <div class="lp-slider__slide<?= $i === 0 ? ' is-active' : '' ?>" style="background-image:url('<?= $base ?>/assets/img/<?= $s[0] ?>')">
+            <span class="lp-slider__caption"><?= View::e($s[1]) ?></span>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <button type="button" class="lp-slider__arrow lp-slider__arrow--prev" data-slider-prev aria-label="Previous photo">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <button type="button" class="lp-slider__arrow lp-slider__arrow--next" data-slider-next aria-label="Next photo">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <div class="lp-slider__dots" data-slider-dots>
+          <?php foreach ($slides as $i => $s): ?>
+            <button type="button" class="lp-slider__dot<?= $i === 0 ? ' is-active' : '' ?>" data-slider-goto="<?= $i ?>" aria-label="Show photo <?= $i + 1 ?>"></button>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-section lp-section--alt" id="modules">
     <div class="lp-container">
       <h2 class="lp-section__title">What it does</h2>
       <div class="lp-features">
