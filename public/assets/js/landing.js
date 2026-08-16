@@ -45,10 +45,11 @@
 
   var slider = document.querySelector('[data-slider]');
   if (slider) {
-    var slides = Array.prototype.slice.call(slider.querySelectorAll('.lp-slider__slide'));
+    var slides = Array.prototype.slice.call(slider.querySelectorAll('.lp-gallery__slide'));
     var dots = Array.prototype.slice.call(slider.querySelectorAll('[data-slider-goto]'));
     var prevBtn = slider.querySelector('[data-slider-prev]');
     var nextBtn = slider.querySelector('[data-slider-next]');
+    var captionEl = slider.querySelector('[data-slider-caption]');
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var current = 0;
     var timer = null;
@@ -57,6 +58,7 @@
       current = (i + slides.length) % slides.length;
       slides.forEach(function (s, idx) { s.classList.toggle('is-active', idx === current); });
       dots.forEach(function (d, idx) { d.classList.toggle('is-active', idx === current); });
+      if (captionEl && dots[current]) captionEl.textContent = dots[current].dataset.sliderCaptionText || '';
     }
 
     function start() {

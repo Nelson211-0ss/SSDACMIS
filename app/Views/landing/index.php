@@ -40,36 +40,35 @@ $year = date('Y');
     </div>
   </section>
 
-  <section class="lp-section" id="gallery">
-    <div class="lp-container reveal">
-      <h2 class="lp-section__title">Life at school</h2>
-      <div class="lp-slider" data-slider>
-        <div class="lp-slider__track">
-          <?php
-          $slides = [
-            ['login-slide-1.jpg', 'Classroom learning'],
-            ['login-slide-2.jpg', 'Hands-on lessons'],
-            ['login-slide-3.jpg', 'Focused study'],
-            ['login-slide-4.jpg', 'Graduation day'],
-          ];
-          foreach ($slides as $i => $s): ?>
-          <div class="lp-slider__slide<?= $i === 0 ? ' is-active' : '' ?>" style="background-image:url('<?= $base ?>/assets/img/<?= $s[0] ?>')">
-            <span class="lp-slider__caption"><?= View::e($s[1]) ?></span>
-          </div>
-          <?php endforeach; ?>
-        </div>
-        <button type="button" class="lp-slider__arrow lp-slider__arrow--prev" data-slider-prev aria-label="Previous photo">
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <button type="button" class="lp-slider__arrow lp-slider__arrow--next" data-slider-next aria-label="Next photo">
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <div class="lp-slider__dots" data-slider-dots>
-          <?php foreach ($slides as $i => $s): ?>
-            <button type="button" class="lp-slider__dot<?= $i === 0 ? ' is-active' : '' ?>" data-slider-goto="<?= $i ?>" aria-label="Show photo <?= $i + 1 ?>"></button>
-          <?php endforeach; ?>
-        </div>
-      </div>
+  <section class="lp-gallery" id="gallery" data-slider>
+    <div class="lp-gallery__slides">
+      <?php
+      $slides = [
+        ['login-slide-1.jpg', 'Classroom learning'],
+        ['login-slide-2.jpg', 'Hands-on lessons'],
+        ['login-slide-3.jpg', 'Focused study'],
+        ['login-slide-4.jpg', 'Graduation day'],
+      ];
+      foreach ($slides as $i => $s): ?>
+      <div class="lp-gallery__slide<?= $i === 0 ? ' is-active' : '' ?>" style="background-image:url('<?= $base ?>/assets/img/<?= $s[0] ?>')"></div>
+      <?php endforeach; ?>
+    </div>
+    <div class="lp-gallery__overlay"></div>
+    <div class="lp-container lp-gallery__content reveal">
+      <p class="lp-eyebrow lp-eyebrow--on-dark">Life at school</p>
+      <h2 class="lp-gallery__title">Every stage, one system</h2>
+      <p class="lp-gallery__caption" data-slider-caption><?= View::e($slides[0][1]) ?></p>
+    </div>
+    <button type="button" class="lp-gallery__arrow lp-gallery__arrow--prev" data-slider-prev aria-label="Previous photo">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <button type="button" class="lp-gallery__arrow lp-gallery__arrow--next" data-slider-next aria-label="Next photo">
+      <i class="bi bi-chevron-right"></i>
+    </button>
+    <div class="lp-gallery__dots" data-slider-dots>
+      <?php foreach ($slides as $i => $s): ?>
+        <button type="button" class="lp-gallery__dot<?= $i === 0 ? ' is-active' : '' ?>" data-slider-goto="<?= $i ?>" data-slider-caption-text="<?= View::e($s[1]) ?>" aria-label="Show photo <?= $i + 1 ?>"></button>
+      <?php endforeach; ?>
     </div>
   </section>
 

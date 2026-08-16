@@ -167,80 +167,100 @@ body.landing-page {
   text-align: center;
 }
 
-/* Photo slider — flat chrome (no gradient scrims); the photos carry the
-   visual interest here, not another glow. */
-.lp-slider {
+/* Photo gallery — full-bleed background slideshow, same recipe as the
+   login page: photos behind a dark gradient overlay with text on top. */
+.lp-gallery {
   position: relative;
-  max-width: 640px;
-  margin-inline: auto;
-  aspect-ratio: 16 / 10;
-  border-radius: var(--lp-radius);
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
   overflow: hidden;
-  box-shadow: 0 12px 32px -12px rgba(16, 24, 40, 0.22);
+  isolation: isolate;
 }
-.lp-slider__track { position: relative; width: 100%; height: 100%; }
-.lp-slider__slide {
+.lp-gallery__slides { position: absolute; inset: 0; z-index: 0; }
+.lp-gallery__slide {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
   opacity: 0;
-  transition: opacity 0.8s ease;
-  display: flex;
-  align-items: flex-end;
+  transition: opacity 1.2s ease;
 }
-.lp-slider__slide.is-active { opacity: 1; }
-.lp-slider__caption {
-  margin: 0 0 1rem 1rem;
-  padding: 0.4rem 0.85rem;
-  border-radius: 999px;
-  background: rgba(16, 24, 40, 0.62);
+.lp-gallery__slide.is-active { opacity: 1; }
+.lp-gallery__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(11, 18, 36, 0.55) 0%, rgba(11, 18, 36, 0.72) 100%);
+}
+.lp-gallery__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 3.5rem 0;
+}
+.lp-eyebrow--on-dark { color: #93c5fd; }
+.lp-gallery__title {
+  margin: 0 0 0.6rem;
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  font-weight: 800;
+  color: #fff;
+  text-wrap: balance;
+}
+.lp-gallery__caption {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.95rem;
+}
+.lp-gallery__arrow {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #fff;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-.lp-slider__arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--lp-ink);
   display: grid;
   place-items: center;
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.lp-slider__arrow:hover { background: #fff; }
-.lp-slider__arrow--prev { left: 0.6rem; }
-.lp-slider__arrow--next { right: 0.6rem; }
-.lp-slider__dots {
+.lp-gallery__arrow:hover { background: rgba(255, 255, 255, 0.24); }
+.lp-gallery__arrow--prev { left: 1rem; }
+.lp-gallery__arrow--next { right: 1rem; }
+.lp-gallery__dots {
+  position: absolute;
+  z-index: 2;
+  bottom: 1.25rem;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
   gap: 0.5rem;
-  margin-top: 1rem;
 }
-.lp-slider__dot {
+.lp-gallery__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   padding: 0;
-  background: var(--lp-border);
+  background: transparent;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
-.lp-slider__dot.is-active { background: var(--lp-accent); transform: scale(1.25); }
+.lp-gallery__dot.is-active { background: #fff; transform: scale(1.25); }
 @media (prefers-reduced-motion: reduce) {
-  .lp-slider__slide { transition: none; }
+  .lp-gallery__slide { transition: none; }
 }
-@media (max-width: 480px) {
-  .lp-slider { aspect-ratio: 4 / 5; }
+@media (max-width: 640px) {
+  .lp-gallery { min-height: 48vh; }
+  .lp-gallery__arrow { width: 34px; height: 34px; }
 }
 .lp-features {
   display: grid;
