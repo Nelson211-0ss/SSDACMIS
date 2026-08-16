@@ -8,7 +8,7 @@ class LandingController extends Controller
     public function index(): string
     {
         return $this->view('landing/index', [
-            'title' => 'SSDACMIS — Student Management Information System',
+            'title' => 'SSD-ACMIS — School Management System',
         ]);
     }
 }
