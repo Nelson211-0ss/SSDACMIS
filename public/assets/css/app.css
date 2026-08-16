@@ -6324,6 +6324,68 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   margin-bottom: .75rem;
 }
 
+/* ---------- Marks entry sheet: compact header + period strip ----------
+   The class/subject title, the year/term/exam picker and the toolbar used
+   to each read as their own full-width card, stacked three deep before you
+   reached a single row of students. Demoting the picker to a slim inline
+   strip (no card, no shadow) and folding "fill blank cells" into the
+   footer — instead of a second toolbar row — gets back to one line of
+   chrome above the sheet and one below it. */
+.msheet-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  margin-bottom: .6rem;
+}
+.msheet-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: .5rem .75rem;
+  margin-bottom: .75rem;
+}
+.msheet-period__field {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.msheet-period__field .form-select { width: auto; }
+.msheet-period__reload { flex-shrink: 0; margin-left: auto; }
+
+.marks-sheet-footer {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.marks-sheet-footer__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem 1rem;
+}
+.marks-sheet-footer__row--hint {
+  border-top: 1px dashed var(--border);
+  padding-top: .5rem;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 575.98px) {
+  .msheet-period { justify-content: space-between; }
+  .msheet-period__reload { margin-left: 0; }
+  .marks-sheet-footer__row { justify-content: space-between; }
+  .marks-sheet-footer__row .btn.ms-auto { margin-left: 0 !important; width: 100%; }
+}
+
 @media (max-width: 575.98px) {
   .marks-sheet-toolbar__row { flex-direction: column; align-items: stretch; }
   .marks-sheet-fill { justify-content: space-between; }
