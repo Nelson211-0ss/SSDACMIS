@@ -25,38 +25,7 @@ $schoolName  = $schoolNameSetting;
     <a class="auth-login__nav-link" href="<?= $base ?>/"><i class="bi bi-arrow-left"></i> Back to website</a>
   </header>
 
-  <div class="auth-login__grid">
-    <aside class="auth-login__aside" aria-hidden="true">
-      <div class="auth-login__slides" data-slideshow>
-        <?php foreach ([1, 2, 3, 4] as $i): ?>
-        <div class="auth-login__slide<?= $i === 1 ? ' is-active' : '' ?>" style="background-image:url('<?= $base ?>/assets/img/login-slide-<?= $i ?>.jpg')"></div>
-        <?php endforeach; ?>
-      </div>
-      <div class="auth-login__aside-overlay"></div>
-      <div class="auth-login__aside-glow"></div>
-      <a class="auth-login__aside-logo" href="<?= $base ?>/">
-        <span class="auth-login__logo-mark"><i class="bi bi-mortarboard-fill"></i></span>
-        <span class="auth-login__logo-text">SSDA<span class="auth-login__logo-accent">CMIS</span></span>
-      </a>
-      <div class="auth-login__aside-body">
-        <p class="auth-login__aside-eyebrow">Academic Management Portal</p>
-        <h2 class="auth-login__aside-title">Run your entire institution from one dashboard.</h2>
-        <ul class="auth-login__aside-checks">
-          <li><i class="bi bi-check2-circle"></i> Student &amp; staff records</li>
-          <li><i class="bi bi-check2-circle"></i> Attendance, marks &amp; report cards</li>
-          <li><i class="bi bi-check2-circle"></i> Fees, payments &amp; balances</li>
-          <li><i class="bi bi-check2-circle"></i> Role-based secure access</li>
-        </ul>
-        <blockquote class="auth-login__aside-quote">
-          <i class="bi bi-quote"></i>
-          <p>SSDACMIS has completely transformed our academic administration.</p>
-          <footer>&mdash; School Administrator</footer>
-        </blockquote>
-      </div>
-      <a class="auth-login__aside-back" href="<?= $base ?>/"><i class="bi bi-arrow-left"></i> Back to website</a>
-    </aside>
-
-    <main class="auth-login__main">
+  <main class="auth-login__main">
     <div class="auth-login__card">
       <div class="auth-login__card-head">
         <?php if ($schoolLogo): ?>
@@ -64,7 +33,6 @@ $schoolName  = $schoolNameSetting;
         <?php else: ?>
           <span class="auth-login__card-icon" aria-hidden="true"><i class="bi bi-shield-lock-fill"></i></span>
         <?php endif; ?>
-        <p class="auth-login__eyebrow">Academic Management Portal</p>
         <h1 class="auth-login__title" id="login-title">Sign in</h1>
         <?php if ($schoolMotto !== '' || $schoolName !== ''): ?>
           <p class="auth-login__sub">
@@ -116,7 +84,7 @@ $schoolName  = $schoolNameSetting;
                      type="password"
                      name="password"
                      class="auth-login__input"
-                     placeholder="Enter your password"
+                     placeholder="••••••••"
                      required
                      autocomplete="current-password">
               <button type="button"
@@ -134,7 +102,7 @@ $schoolName  = $schoolNameSetting;
         <div class="auth-login__row">
           <label class="auth-login__remember">
             <input type="checkbox" name="remember" value="1" id="auth-remember" <?= !empty($old['remember'] ?? null) ? 'checked' : '' ?>>
-            <span>Remember me on this device</span>
+            <span>Remember me</span>
           </label>
         </div>
 
@@ -145,17 +113,15 @@ $schoolName  = $schoolNameSetting;
       </form>
 
       <p class="auth-login__help">
-        <i class="bi bi-life-preserver" aria-hidden="true"></i>
         Need help? <a href="mailto:support@ssd-acmis.local">Contact your administrator</a>
       </p>
     </div>
 
-      <footer class="auth-login__footer" role="contentinfo">
-        &copy; <?= date('Y') ?><?= $schoolName !== '' ? ' ' . View::e($schoolName) . ' &middot;' : '' ?>
-        <strong>SSDACMIS</strong> by SSD IT Solutions
-      </footer>
-    </main>
-  </div>
+    <footer class="auth-login__footer" role="contentinfo">
+      &copy; <?= date('Y') ?><?= $schoolName !== '' ? ' ' . View::e($schoolName) . ' &middot;' : '' ?>
+      <strong>SSD-ACMIS</strong> by Nelson O. Ochan
+    </footer>
+  </main>
 </div>
 <script>
 (function () {
@@ -176,20 +142,5 @@ $schoolName  = $schoolNameSetting;
     }
     input.focus();
   });
-})();
-</script>
-<script>
-(function () {
-  var track = document.querySelector('[data-slideshow]');
-  if (!track) return;
-  var slides = track.querySelectorAll('.auth-login__slide');
-  if (slides.length < 2) return;
-
-  var current = 0;
-  setInterval(function () {
-    slides[current].classList.remove('is-active');
-    current = (current + 1) % slides.length;
-    slides[current].classList.add('is-active');
-  }, 5000);
 })();
 </script>
