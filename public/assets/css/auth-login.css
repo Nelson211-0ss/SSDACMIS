@@ -473,7 +473,10 @@ body.auth-page--login .auth-credit {
   border: none;
   background: transparent;
   padding: 0.45rem 0;
-  font-size: 0.8125rem;
+  /* iOS Safari auto-zooms the whole page on focus for any text input under
+     16px — at the old 13px that read as the layout "jumping"/overlapping
+     the moment you tapped a field. 1rem is the minimum that keeps it still. */
+  font-size: 1rem;
   color: var(--lp-text);
   outline: none;
   min-width: 0;

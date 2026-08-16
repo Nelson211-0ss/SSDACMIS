@@ -109,14 +109,16 @@ body.landing-page {
 .lp-btn--ghost:hover { border-color: var(--lp-accent); color: var(--lp-accent); }
 .lp-btn--sm { padding: 0.45rem 1rem; font-size: 0.88rem; }
 
-/* Hero — the one deliberate gradient on the page: a soft accent glow
-   behind the headline, fading into the flat page background below. */
+/* Hero — the one deliberate gradient on the page, matching the login
+   page's glow recipe: two off-center radial highlights (sky + accent
+   blue) over a soft linear base, fading into the flat page below. */
 .lp-hero {
   padding: 5rem 0 4rem;
   text-align: center;
   background:
-    radial-gradient(ellipse 65% 55% at 50% -15%, rgba(37, 84, 199, 0.16), transparent 65%),
-    linear-gradient(180deg, #eef2fb 0%, var(--lp-bg) 100%);
+    radial-gradient(ellipse 70% 55% at 18% -10%, rgba(56, 189, 248, 0.22), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 85% -5%, rgba(37, 84, 199, 0.16), transparent 55%),
+    linear-gradient(180deg, #eef6fd 0%, var(--lp-bg) 100%);
 }
 .lp-eyebrow {
   margin: 0 0 0.75rem;

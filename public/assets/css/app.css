@@ -832,11 +832,15 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   padding: .5rem .75rem;
-  font-size: .875rem;
+  /* 16px, not Bootstrap's smaller default — anything under that makes
+     mobile Safari/Chrome auto-zoom the page on focus, which reads as the
+     layout suddenly overlapping/expanding the moment you tap a field. */
+  font-size: 1rem;
   color: var(--text);
   box-shadow: none;
   transition: border-color .12s ease, box-shadow .12s ease;
 }
+.form-control-sm, .form-select-sm { font-size: 1rem; }
 .form-control:focus, .form-select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .15);
@@ -5666,7 +5670,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .reports-student-select {
   border-radius: var(--radius);
-  font-size: 0.88rem;
+  font-size: 1rem;
   line-height: 1.35;
 }
 
@@ -6288,7 +6292,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  font-size: .9rem;
+  font-size: 1rem;
   transition: box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
 }
 .msheet-input:focus {
