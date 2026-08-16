@@ -2,15 +2,9 @@
 use App\Core\View;
 $layout = 'landing';
 $year = date('Y');
-$slides = ['login-slide-1.jpg', 'login-slide-2.jpg', 'login-slide-3.jpg', 'login-slide-4.jpg'];
 ?>
 <div class="lp-screen">
-  <div class="lp-screen__bg" aria-hidden="true">
-    <?php foreach ($slides as $i => $s): ?>
-    <div class="lp-screen__slide<?= $i === 0 ? ' is-active' : '' ?>" style="background-image:url('<?= $base ?>/assets/img/<?= $s ?>')"></div>
-    <?php endforeach; ?>
-    <div class="lp-screen__overlay"></div>
-  </div>
+  <div class="lp-screen__bg" aria-hidden="true"></div>
 
   <header class="lp-nav">
     <div class="lp-container lp-nav__inner">

@@ -18,6 +18,5 @@ $pageTitle = $title ?? 'SSDACMIS';
 </head>
 <body class="landing-page">
   <?= $content ?>
-  <script src="<?= View::asset($base, 'assets/js/landing.js') ?>" defer></script>
 </body>
 </html>

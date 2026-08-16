@@ -19,8 +19,7 @@ body.landing-page {
 
 .lp-container { width: min(880px, 92vw); margin-inline: auto; }
 
-/* The whole page is one screen: photo background, nav, hero, footer —
-   nothing to scroll to. */
+/* The whole page is one screen: nav, hero, footer — nothing to scroll to. */
 .lp-screen {
   position: relative;
   height: 100dvh;
@@ -28,20 +27,14 @@ body.landing-page {
   flex-direction: column;
   overflow: hidden;
 }
-.lp-screen__bg { position: absolute; inset: 0; z-index: 0; }
-.lp-screen__slide {
+.lp-screen__bg {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 1.4s ease;
-}
-.lp-screen__slide.is-active { opacity: 1; }
-.lp-screen__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(9, 15, 30, 0.4) 0%, rgba(9, 15, 30, 0.58) 100%);
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 90% 70% at 15% 0%, rgba(56, 189, 248, 0.28), transparent 60%),
+    radial-gradient(ellipse 70% 60% at 90% 100%, rgba(37, 99, 235, 0.24), transparent 55%),
+    linear-gradient(160deg, #0b1224 0%, #0f172a 50%, #13224a 100%);
 }
 
 /* Nav */
@@ -156,10 +149,6 @@ body.landing-page {
   padding: 0.85rem 0;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.6);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-screen__slide { transition: none; }
 }
 
 /* Compact down before content would ever need to scroll */
