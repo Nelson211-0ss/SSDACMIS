@@ -109,8 +109,15 @@ body.landing-page {
 .lp-btn--ghost:hover { border-color: var(--lp-accent); color: var(--lp-accent); }
 .lp-btn--sm { padding: 0.45rem 1rem; font-size: 0.88rem; }
 
-/* Hero */
-.lp-hero { padding: 5rem 0 4rem; text-align: center; }
+/* Hero — the one deliberate gradient on the page: a soft accent glow
+   behind the headline, fading into the flat page background below. */
+.lp-hero {
+  padding: 5rem 0 4rem;
+  text-align: center;
+  background:
+    radial-gradient(ellipse 65% 55% at 50% -15%, rgba(37, 84, 199, 0.16), transparent 65%),
+    linear-gradient(180deg, #eef2fb 0%, var(--lp-bg) 100%);
+}
 .lp-eyebrow {
   margin: 0 0 0.75rem;
   font-size: 0.8rem;
