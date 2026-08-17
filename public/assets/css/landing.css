@@ -80,7 +80,8 @@ body.landing-page {
 .lp-btn--primary:hover { background: #1e42a0; }
 .lp-btn--sm { padding: 0.45rem 1rem; font-size: 0.88rem; }
 
-/* Hero */
+/* Hero — vertical rhythm comes from one owl-selector margin per group
+   (.lp-hero, .lp-hero__lede), not each child's own ad-hoc margin. */
 .lp-screen__main {
   position: relative;
   z-index: 2;
@@ -89,12 +90,15 @@ body.landing-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
   overflow: hidden;
   padding: 0.5rem 1.25rem;
 }
+.lp-hero { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.lp-hero > * + * { margin-top: 1.1rem; }
+.lp-hero__lede { display: flex; flex-direction: column; align-items: center; }
+.lp-hero__lede > * + * { margin-top: 0.5rem; }
 .lp-eyebrow {
-  margin: 0 0 0.6rem;
+  margin: 0;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -102,7 +106,7 @@ body.landing-page {
   color: #93c5fd;
 }
 .lp-screen__title {
-  margin: 0 0 0.6rem;
+  margin: 0;
   font-size: clamp(2rem, 6vw, 3.2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -115,30 +119,43 @@ body.landing-page {
   font-size: clamp(0.95rem, 1.6vw, 1.08rem);
   color: rgba(255, 255, 255, 0.85);
 }
-.lp-hero__cta { display: flex; justify-content: center; margin-top: 1.5rem; }
-.lp-hero__portals { margin: 1rem 0 0; font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); }
+.lp-hero__cta { display: flex; justify-content: center; }
+.lp-hero__portals { margin: 0; font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); }
 .lp-hero__portals a { color: #fff; text-decoration: none; font-weight: 600; }
 .lp-hero__portals a:hover { text-decoration: underline; }
 
-/* Capability strip — icon + one word, no descriptions */
-.lp-strip {
-  list-style: none;
-  margin: 1.75rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem 1.5rem;
+/* "What it is" cards — brief, flat glass surfaces on the dark background */
+.lp-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  width: 100%;
 }
-.lp-strip li {
+.lp-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
   gap: 0.4rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
+  padding: 1.1rem 0.9rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
-.lp-strip i { color: #93c5fd; font-size: 0.95rem; }
+.lp-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(147, 197, 253, 0.16);
+  color: #93c5fd;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+}
+.lp-card__title { margin: 0; font-size: 0.92rem; font-weight: 700; color: #fff; }
+.lp-card__brief { margin: 0; font-size: 0.78rem; line-height: 1.4; color: rgba(255, 255, 255, 0.72); }
 
 /* Footer */
 .lp-screen__footer {
@@ -155,13 +172,11 @@ body.landing-page {
 @media (max-height: 700px) {
   .lp-nav { padding: 0.7rem 0; }
   .lp-screen__tagline { display: none; }
-  .lp-strip { margin-top: 1.1rem; }
 }
 @media (max-height: 520px) {
-  .lp-strip { display: none; }
-  .lp-hero__portals { margin-top: 0.6rem; }
+  .lp-cards { display: none; }
+  .lp-hero > * + * { margin-top: 0.7rem; }
 }
-@media (max-width: 480px) {
-  .lp-strip { gap: 0.5rem 1rem; }
-  .lp-strip li { font-size: 0.8rem; }
+@media (max-width: 640px) {
+  .lp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

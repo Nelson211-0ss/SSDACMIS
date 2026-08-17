@@ -17,10 +17,12 @@ $year = date('Y');
   </header>
 
   <main class="lp-screen__main">
-    <div class="lp-container">
-      <p class="lp-eyebrow">School Management System</p>
-      <h1 class="lp-screen__title">SSD-ACMIS</h1>
-      <p class="lp-screen__tagline">Admissions, academics, exams, and fees — in one place.</p>
+    <div class="lp-container lp-hero">
+      <div class="lp-hero__lede">
+        <p class="lp-eyebrow">School Management System</p>
+        <h1 class="lp-screen__title">SSD-ACMIS</h1>
+        <p class="lp-screen__tagline">Admissions, academics, exams, and fees — in one place.</p>
+      </div>
       <div class="lp-hero__cta">
         <a class="lp-btn lp-btn--primary" href="<?= $base ?>/login"><i class="bi bi-box-arrow-in-right"></i> Sign In</a>
       </div>
@@ -28,14 +30,22 @@ $year = date('Y');
         <a href="<?= $base ?>/hod/login">HOD sign in</a> &middot; <a href="<?= $base ?>/bursar/login">Bursar sign in</a>
       </p>
 
-      <ul class="lp-strip">
-        <li><i class="bi bi-people-fill"></i> Students</li>
-        <li><i class="bi bi-calendar-check-fill"></i> Attendance</li>
-        <li><i class="bi bi-pencil-square"></i> Marks</li>
-        <li><i class="bi bi-file-earmark-text-fill"></i> Reports</li>
-        <li><i class="bi bi-cash-stack"></i> Fees</li>
-        <li><i class="bi bi-shield-lock-fill"></i> Access Control</li>
-      </ul>
+      <div class="lp-cards">
+        <?php
+        $cards = [
+          ['bi-mortarboard-fill', 'Academics', 'Attendance, marks & report cards.'],
+          ['bi-people-fill', 'Admissions', 'Add students one by one, or a class at once from CSV.'],
+          ['bi-cash-stack', 'Finance', 'Fee structures, payments & balances.'],
+          ['bi-shield-lock-fill', 'Access Control', 'Every role sees only its own tools.'],
+        ];
+        foreach ($cards as $c): ?>
+        <article class="lp-card">
+          <div class="lp-card__icon"><i class="bi <?= $c[0] ?>"></i></div>
+          <h3 class="lp-card__title"><?= View::e($c[1]) ?></h3>
+          <p class="lp-card__brief"><?= View::e($c[2]) ?></p>
+        </article>
+        <?php endforeach; ?>
+      </div>
     </div>
   </main>
 
