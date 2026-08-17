@@ -17,7 +17,7 @@ body.landing-page {
   color: #fff;
 }
 
-.lp-container { width: min(880px, 92vw); margin-inline: auto; }
+.lp-container { width: min(1120px, 92vw); margin-inline: auto; }
 
 /* The whole page is one screen: nav, hero, footer — nothing to scroll to. */
 .lp-screen {
@@ -31,10 +31,22 @@ body.landing-page {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(ellipse 90% 70% at 15% 0%, rgba(56, 189, 248, 0.28), transparent 60%),
-    radial-gradient(ellipse 70% 60% at 90% 100%, rgba(37, 99, 235, 0.24), transparent 55%),
-    linear-gradient(160deg, #0b1224 0%, #0f172a 50%, #13224a 100%);
+  background: linear-gradient(135deg, #2f7dfa 0%, #1750c9 55%, #0c2d7a 100%);
+}
+/* Dot-pattern accent, top-left corner only — fades out, doesn't tile
+   the whole page. */
+.lp-screen__dots {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 240px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1.5px, transparent 1.5px);
+  background-size: 16px 16px;
+  -webkit-mask-image: radial-gradient(circle at 0% 0%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(circle at 0% 0%, #000 55%, transparent 100%);
+  pointer-events: none;
 }
 
 /* Nav */
@@ -76,8 +88,8 @@ body.landing-page {
   border: 1px solid transparent;
   transition: background 0.15s ease;
 }
-.lp-btn--primary { background: var(--lp-accent); color: var(--lp-accent-ink); }
-.lp-btn--primary:hover { background: #1e42a0; }
+.lp-btn--white { background: #fff; color: var(--lp-accent); font-weight: 700; }
+.lp-btn--white:hover { background: #eef2ff; }
 .lp-btn--sm { padding: 0.45rem 1rem; font-size: 0.88rem; }
 
 /* Hero — vertical rhythm comes from one owl-selector margin per group
@@ -93,9 +105,18 @@ body.landing-page {
   overflow: hidden;
   padding: 0.5rem 1.25rem;
 }
-.lp-hero { display: flex; flex-direction: column; align-items: center; text-align: center; }
+/* Split hero: content left, decorative visual right — mirrors the
+   two-column reference, minus the lead-capture form (there's nothing
+   to "enquire" about here, so Sign In is the one CTA). */
+.lp-split {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  align-items: center;
+  gap: 2.5rem;
+}
+.lp-hero { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
 .lp-hero > * + * { margin-top: 1.1rem; }
-.lp-hero__lede { display: flex; flex-direction: column; align-items: center; }
+.lp-hero__lede { display: flex; flex-direction: column; align-items: flex-start; }
 .lp-hero__lede > * + * { margin-top: 0.5rem; }
 .lp-eyebrow {
   margin: 0;
@@ -103,31 +124,72 @@ body.landing-page {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #93c5fd;
+  color: rgba(255, 255, 255, 0.85);
 }
 .lp-screen__title {
   margin: 0;
-  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #fff;
   text-wrap: balance;
 }
 .lp-screen__tagline {
-  margin: 0 auto;
-  max-width: 42ch;
+  margin: 0;
+  max-width: 38ch;
   font-size: clamp(0.95rem, 1.6vw, 1.08rem);
   color: rgba(255, 255, 255, 0.85);
 }
-.lp-hero__cta { display: flex; justify-content: center; }
+.lp-hero__cta { display: flex; justify-content: flex-start; }
 .lp-hero__portals { margin: 0; font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); }
 .lp-hero__portals a { color: #fff; text-decoration: none; font-weight: 600; }
 .lp-hero__portals a:hover { text-decoration: underline; }
 
+/* Decorative visual — a glass "orb" with floating module chips around
+   it, standing in for the reference's photo without using one. */
+.lp-split__visual {
+  position: relative;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lp-orb {
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 3.2rem;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 24px 60px -20px rgba(6, 12, 30, 0.55);
+}
+.lp-chip {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--lp-accent);
+  font-size: 1.15rem;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 26px -8px rgba(6, 12, 30, 0.4);
+}
+.lp-chip--1 { top: 4%;  left: 8%;   transform: rotate(-8deg); }
+.lp-chip--2 { top: 10%; right: 6%;  transform: rotate(7deg); }
+.lp-chip--3 { bottom: 14%; left: 0%; transform: rotate(6deg); }
+.lp-chip--4 { bottom: 2%; right: 16%; transform: rotate(-5deg); }
+.lp-chip--5 { top: 46%; right: -4%; transform: rotate(10deg); }
+
 /* "What it is" cards — brief, flat glass surfaces on the dark background */
 .lp-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
   width: 100%;
 }
@@ -168,6 +230,17 @@ body.landing-page {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Below desktop width the split layout would get cramped before it
+   would ever need to scroll — drop to one centered column instead,
+   same as before the visual was added. */
+@media (max-width: 991.98px) {
+  .lp-split { grid-template-columns: 1fr; }
+  .lp-split__visual { display: none; }
+  .lp-hero, .lp-hero__lede { align-items: center; text-align: center; }
+  .lp-screen__tagline { margin-inline: auto; }
+  .lp-hero__cta { justify-content: center; }
+}
+
 /* Compact down before content would ever need to scroll */
 @media (max-height: 700px) {
   .lp-nav { padding: 0.7rem 0; }
@@ -176,7 +249,4 @@ body.landing-page {
 @media (max-height: 520px) {
   .lp-cards { display: none; }
   .lp-hero > * + * { margin-top: 0.7rem; }
-}
-@media (max-width: 640px) {
-  .lp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
