@@ -2481,6 +2481,16 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .report-head__sub    { font-size: .85rem; color: #555; }
 .report-head__period { font-size: .85rem; text-align: right; line-height: 1.5; }
 
+/* Phones: the report "paper" keeps its generous print-style padding and a
+   two-column head (brand left, period right) that a narrow screen can't
+   fit side by side without squeezing both — give back the padding and let
+   the head wrap to its own lines instead. */
+@media screen and (max-width: 575.98px) {
+  .report-page { padding: 16px 14px; }
+  .report-head { flex-wrap: wrap; }
+  .report-head__period { text-align: left; }
+}
+
 .report-meta {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -2543,6 +2553,22 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 @media print {
   /* Print sees the full table — no inner scroll. */
   .report-matrix-scroll { overflow: visible !important; }
+}
+/* Phones/tablets: a class matrix with several subjects is wider than the
+   screen, so .report-matrix-scroll scrolls it sideways — but with no
+   frozen column, scrolling past the first couple of subjects loses track
+   of whose row you're looking at. Freeze Pos + Student so identity stays
+   on screen while the subject columns scroll underneath. */
+@media screen and (max-width: 991.98px) {
+  .report-matrix .t-pos,
+  .report-matrix .t-name {
+    position: sticky;
+    background: #fff;
+  }
+  .report-matrix .t-pos { left: 0; z-index: 2; }
+  .report-matrix .t-name { left: 40px; z-index: 2; box-shadow: 1px 0 0 #d0d4d9; }
+  .report-matrix thead .t-pos,
+  .report-matrix thead .t-name { background: #f4f6f8; z-index: 3; }
 }
 .report-matrix .t-subject-group {
   text-align: center;
@@ -6177,23 +6203,6 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .marks-sheet-unsaved--saved  { color: var(--success); }
 .marks-sheet-unsaved--error  { color: var(--danger); font-weight: 700; }
 
-/* Entity-form local draft autosave (students, and any other form reusing
-   the pattern) — same visual language as the marks-sheet save pill. */
-.entity-draft-status {
-  display: none;
-  align-items: center;
-  gap: .35rem;
-  font-size: .78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.entity-draft-status.is-active { display: inline-flex; }
-.entity-draft-status .bi { font-size: .5rem; }
-.entity-draft-status--saving { color: var(--accent); }
-.entity-draft-status--saving .bi { animation: marks-sheet-pulse 1s ease-in-out infinite; }
-.entity-draft-status--saved  { color: var(--success); }
-
 @keyframes marks-sheet-pulse {
   0%, 100% { opacity: .35; }
   50%      { opacity: 1; }
@@ -6394,6 +6403,27 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .marks-sheet-toolbar__row { flex-direction: column; align-items: stretch; }
   .marks-sheet-fill { justify-content: space-between; }
   .marks-sheet-search { max-width: none; }
+}
+
+/* Phones: the three frozen id columns (#, Admission, Student) otherwise eat
+   most of a narrow screen before the actual score inputs come into view.
+   Un-freeze Admission and narrow Student so more of the row's score/grade
+   cells are visible without scrolling. */
+@media (max-width: 575.98px) {
+  .marks-sheet .msheet-sticky-2 {
+    position: static;
+    box-shadow: none;
+    width: auto;
+    min-width: 4.5rem;
+  }
+  .marks-sheet .msheet-sticky-3 {
+    left: 2.4rem;
+    min-width: 6rem;
+    max-width: 7.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* ---------- Auth pages: keep card shadow neutral ---------- */

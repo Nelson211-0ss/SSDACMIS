@@ -30,15 +30,6 @@ foreach ($classes as $c) {
 $streamRequired = ($currentLevel === 'Form 3' || $currentLevel === 'Form 4');
 $dobMinAttr = date('Y-m-d', strtotime('-100 years'));
 $dobMaxAttr = date('Y-m-d');
-// Local draft key: on error, the server redirect back to this form doesn't
-// preserve anything that was typed, so a per-form local draft is what lets
-// it come back. Scoped per student when editing. When creating, the school
-// and class the super admin picks are client-side-only selections (no page
-// reload), so the school/class ids can't be baked in here — a fixed
-// server-rendered id would collapse every school's blank "New Student" form
-// onto the same key and leak one school's draft into another's. The full
-// key is built in JS instead, from the live school/class select values.
-$draftKey = $editing ? ('studentDraft:edit:' . (int) $student['id']) : 'studentDraft:new';
 ?>
 <div class="entity-form<?= $partial ? ' entity-form--modal' : '' ?>">
   <?php if (!$partial): ?>
@@ -219,7 +210,6 @@ $draftKey = $editing ? ('studentDraft:edit:' . (int) $student['id']) : 'studentD
       <?php if (!$partial): ?>
       <div class="card-footer py-2 px-3 bg-body-secondary bg-opacity-25 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span class="small text-muted mb-0"><span class="text-danger">*</span> Required · Typed names &amp; address save in CAPITAL LETTERS · Gender, section &amp; stream shown in CAPS</span>
-        <span class="entity-draft-status" data-draft-status><i class="bi bi-circle-fill"></i> <span data-draft-status-text></span></span>
         <div class="d-flex flex-wrap gap-2 ms-auto">
           <a href="<?= $base ?>/students" class="btn btn-outline-secondary btn-sm px-3">Cancel</a>
           <?php if (!$editing): ?>
@@ -339,7 +329,6 @@ $draftKey = $editing ? ('studentDraft:edit:' . (int) $student['id']) : 'studentD
     <?php if ($partial): ?>
     <div class="entity-form__actions d-flex flex-wrap align-items-center gap-2">
       <span class="entity-form__hint text-muted mb-0 me-auto d-none d-sm-inline"><span class="text-danger">*</span> Required</span>
-      <span class="entity-draft-status" data-draft-status><i class="bi bi-circle-fill"></i> <span data-draft-status-text></span></span>
       <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
       <?php if (!$editing): ?>
         <button type="submit" name="save_mode" value="another" class="btn btn-outline-primary px-3">
@@ -804,149 +793,6 @@ $draftKey = $editing ? ('studentDraft:edit:' . (int) $student['id']) : 'studentD
         stream = null;
       }
     });
-  })();
-
-  /* -----------------------------------------------------------------
-   * Local draft autosave. Not a server save — a validation error on
-   * store()/update() redirects back here without preserving anything
-   * that was typed, so this is what lets it come back. Cleared the
-   * moment a success flash shows up (the student is now actually saved).
-   * ----------------------------------------------------------------- */
-  (function () {
-    if (!form) return;
-    var DRAFT_KEY_BASE = <?= json_encode($draftKey) ?>;
-    var EDITING = <?= json_encode($editing) ?>;
-    var DRAFT_FIELDS = ['school_id', 'class_id', 'section', 'stream', 'first_name', 'last_name', 'gender', 'dob', 'guardian_name', 'guardian_phone', 'address'];
-    var statusEls = document.querySelectorAll('[data-draft-status]');
-    var saveTimer = null;
-
-    // Editing always keys off the student id. Creating keys off the
-    // *current* school/class selection, read live at call time — the
-    // school/class selects change without a page reload, so a cached key
-    // would go stale the moment the admin picks a different school.
-    function draftKey() {
-      if (EDITING) return DRAFT_KEY_BASE;
-      var schoolPart = schoolSel ? (schoolSel.value || 'none') : 'none';
-      var classPart = sel ? (sel.value || 'none') : 'none';
-      return DRAFT_KEY_BASE + ':' + schoolPart + ':' + classPart;
-    }
-
-    function setStatus(mode, text) {
-      statusEls.forEach(function (el) {
-        el.classList.remove('entity-draft-status--saving', 'entity-draft-status--saved');
-        if (mode) el.classList.add('entity-draft-status--' + mode);
-        el.classList.toggle('is-active', !!mode);
-        var t = el.querySelector('[data-draft-status-text]');
-        if (t) t.textContent = text || '';
-      });
-    }
-
-    function fieldEls(name) {
-      return Array.prototype.slice.call(form.querySelectorAll('[name="' + name + '"]'));
-    }
-
-    function readForm() {
-      var data = {};
-      DRAFT_FIELDS.forEach(function (name) {
-        var els = fieldEls(name);
-        if (!els.length) return;
-        if (els[0].type === 'radio') {
-          var checked = els.filter(function (r) { return r.checked; })[0];
-          data[name] = checked ? checked.value : '';
-        } else {
-          data[name] = els[0].value;
-        }
-      });
-      return data;
-    }
-
-    function hasAnyValue(data) {
-      return Object.keys(data).some(function (k) { return String(data[k] || '').trim() !== ''; });
-    }
-
-    function writeForm(data) {
-      DRAFT_FIELDS.forEach(function (name) {
-        if (!(name in data) || data[name] === '') return;
-        var els = fieldEls(name);
-        if (!els.length) return;
-        if (els[0].type === 'radio') {
-          els.forEach(function (r) { r.checked = (r.value === data[name]); });
-        } else {
-          els[0].value = data[name];
-        }
-      });
-    }
-
-    function saveDraft() {
-      try {
-        var data = readForm();
-        var key = draftKey();
-        if (!hasAnyValue(data)) { localStorage.removeItem(key); setStatus(null); return; }
-        localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), data: data }));
-        setStatus('saved', 'Draft saved locally · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      } catch (e) { /* storage unavailable/full — nothing lost server-side, just skip */ }
-    }
-
-    function clearDraft() {
-      try { localStorage.removeItem(draftKey()); } catch (e) { /* ignore */ }
-      setStatus(null);
-    }
-
-    function readDraft() {
-      try {
-        var raw = localStorage.getItem(draftKey());
-        return raw ? JSON.parse(raw) : null;
-      } catch (e) { return null; }
-    }
-
-    function scheduleSave() {
-      setStatus('saving', 'Saving draft…');
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveDraft, 700);
-    }
-
-    DRAFT_FIELDS.forEach(function (name) {
-      fieldEls(name).forEach(function (el) {
-        el.addEventListener('input', scheduleSave);
-        el.addEventListener('change', scheduleSave);
-      });
-    });
-
-    function tryRestore(afterError) {
-      var draft = readDraft();
-      if (draft && draft.data) {
-        // Whether this is the same entry attempt reloading after a
-        // validation error, or the admin just came back to a form they'd
-        // started earlier, the server has no memory of what was typed —
-        // so refill it quietly rather than asking first.
-        writeForm(draft.data);
-        if (typeof syncStream === 'function') syncStream();
-        if (typeof syncAdmissionPreview === 'function') syncAdmissionPreview();
-        setStatus('saved', afterError ? 'Draft restored after the error above' : 'Draft restored');
-      }
-    }
-
-    // The layout renders success/info flashes as an auto-dismissing toast
-    // (.toast.text-bg-success) and danger/warning as a persistent inline
-    // alert (.alert-danger) — see layouts/app.php. Both stay in the DOM at
-    // page load regardless of whether the toast has auto-hidden yet.
-    var hadSuccess = !!document.querySelector('.toast.text-bg-success');
-    var hadError = !!document.querySelector('.alert-danger');
-
-    if (hadSuccess) {
-      clearDraft();
-    } else {
-      tryRestore(hadError);
-    }
-
-    // Super admin: the school/class selects change without a page reload,
-    // so re-check for a matching draft every time either one changes —
-    // otherwise a draft only ever gets picked up for whichever school/class
-    // happened to be selected at page load.
-    if (!EDITING) {
-      if (schoolSel) schoolSel.addEventListener('change', function () { tryRestore(false); });
-      if (sel) sel.addEventListener('change', function () { tryRestore(false); });
-    }
   })();
 })();
 </script>
