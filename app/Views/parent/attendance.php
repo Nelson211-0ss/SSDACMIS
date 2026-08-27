@@ -29,7 +29,7 @@ $statusMeta = [
             <?= $student['class_name'] ? ' · ' . View::e($student['class_name']) : '' ?>
           </div>
         </div>
-        <form method="get" class="d-flex align-items-end flex-wrap gap-2">
+        <form method="get" class="filter-form--stack-mobile d-flex align-items-end flex-wrap gap-2">
           <div>
             <label class="form-label small mb-1">From</label>
             <input type="date" name="from" class="form-control form-control-sm" value="<?= View::e($from) ?>">

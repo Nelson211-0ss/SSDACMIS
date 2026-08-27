@@ -345,6 +345,13 @@ class ReportController extends Controller
             'peerTotal'       => $peerTotal,
             'prevStudentId'   => $prevStudentId,
             'nextStudentId'   => $nextStudentId,
+            // "Print whole class" is only offered when the viewer can
+            // actually see that class (booklet() enforces the same check
+            // server-side) — otherwise a role that can only ever see their
+            // own child/self (parent, student) would be shown a button
+            // that's either a dead link or, worse, implies class-wide
+            // access they don't have.
+            'canPrintClass'   => $classId > 0 && $this->canSeeClass($classId),
         ]);
     }
 

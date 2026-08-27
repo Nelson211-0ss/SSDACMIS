@@ -6436,6 +6436,27 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: 0.5rem;
 }
 
+/* Period/date filter forms (parent fees & attendance, the report-card
+   toolbar's year/term/assessment reload) — flex-wrap alone still lets a
+   crowded row (label+input pairs plus a submit button) overflow instead of
+   wrapping, because the input/select children don't shrink below their own
+   content width. On the report-card page specifically, that overflow gets
+   clipped rather than scrolled (report-student-layout has overflow:hidden
+   for its print-fit sizing), so the Reload button can end up invisible on
+   a narrow phone. Force a full-width vertical stack below the point where
+   these rows get tight, instead of relying on shrink-to-fit. */
+@media (max-width: 575.98px) {
+  .filter-form--stack-mobile {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .filter-form--stack-mobile > div,
+  .filter-form--stack-mobile > button {
+    width: 100%;
+  }
+}
+
 /* ---------- Auth pages: keep card shadow neutral ---------- */
 .auth-card {
   box-shadow:

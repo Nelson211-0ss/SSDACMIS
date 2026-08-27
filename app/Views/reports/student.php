@@ -28,7 +28,7 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
         <a class="btn btn-outline-secondary btn-sm flex-shrink-0" href="<?= $base ?><?= $portalPrefix ?>/reports?<?= View::e($qs) ?>">
           <i class="bi bi-arrow-left"></i> Back
         </a>
-        <form method="get" class="d-flex flex-wrap gap-2 align-items-end flex-shrink-0" action="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $student['id'] ?>">
+        <form method="get" class="filter-form--stack-mobile d-flex flex-wrap gap-2 align-items-end flex-shrink-0" action="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $student['id'] ?>">
           <div>
             <label class="form-label small mb-1">Year</label>
             <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
@@ -91,7 +91,7 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
         <?php endif; ?>
       </div>
       <div class="d-flex flex-wrap gap-2 flex-shrink-0 ms-auto">
-        <?php if (!empty($student['class_id'])): ?>
+        <?php if (!empty($canPrintClass)): ?>
           <a class="btn btn-outline-primary btn-sm"
              href="<?= $base ?><?= $portalPrefix ?>/reports/booklet?<?= View::e(http_build_query([
                  'class_id' => (int) $student['class_id'],
