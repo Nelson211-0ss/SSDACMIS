@@ -8,6 +8,17 @@
     });
   });
 
+  // --- Auto-reload filter forms -------------------------------------------
+  // A form marked data-auto-reload resubmits itself the moment a select/date
+  // field changes, or a text field is edited and loses focus — the Reload
+  // button stays in the markup only as a manual fallback (no-JS, or
+  // re-submitting an unchanged value).
+  document.querySelectorAll('form[data-auto-reload]').forEach(function (f) {
+    f.querySelectorAll('select, input').forEach(function (el) {
+      el.addEventListener('change', function () { f.submit(); });
+    });
+  });
+
   // --- Mobile sidebar toggle ---------------------------------------------
   var sidebar = document.getElementById('appSidebar');
   if (sidebar) {

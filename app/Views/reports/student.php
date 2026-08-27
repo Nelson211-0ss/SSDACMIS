@@ -28,7 +28,7 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
         <a class="btn btn-outline-secondary btn-sm flex-shrink-0" href="<?= $base ?><?= $portalPrefix ?>/reports?<?= View::e($qs) ?>">
           <i class="bi bi-arrow-left"></i> Back
         </a>
-        <form method="get" class="filter-form--stack-mobile d-flex flex-wrap gap-2 align-items-end flex-shrink-0" action="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $student['id'] ?>">
+        <form method="get" class="filter-form--stack-mobile d-flex flex-wrap gap-2 align-items-end flex-shrink-0" data-auto-reload action="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $student['id'] ?>">
           <div>
             <label class="form-label small mb-1">Year</label>
             <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
@@ -49,7 +49,9 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
               <?php endforeach; ?>
             </select>
           </div>
-          <button type="submit" class="btn btn-outline-primary btn-sm">Reload</button>
+          <button type="submit" class="btn btn-outline-primary btn-sm" title="Reload">
+            <i class="bi bi-arrow-repeat"></i><span class="visually-hidden">Reload</span>
+          </button>
         </form>
         <?php if (!empty($reportPeersJson)): ?>
           <div class="report-toolbar__peers d-flex flex-wrap align-items-center gap-2 flex-grow-1 min-w-0">

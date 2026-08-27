@@ -25,12 +25,14 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
             &middot; <?= ucfirst((string) ($student['section'] ?? '')) ?>
           </div>
         </div>
-        <form method="get" class="filter-form--stack-mobile d-flex align-items-end flex-wrap gap-2">
+        <form method="get" class="filter-form--stack-mobile d-flex align-items-end flex-wrap gap-2" data-auto-reload>
           <div>
             <label class="form-label small mb-1">Academic year</label>
             <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
           </div>
-          <button type="submit" class="btn btn-outline-primary btn-sm">Reload</button>
+          <button type="submit" class="btn btn-outline-primary btn-sm" title="Reload">
+            <i class="bi bi-arrow-repeat"></i><span class="visually-hidden">Reload</span>
+          </button>
         </form>
       </div>
     </div>

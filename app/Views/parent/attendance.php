@@ -29,7 +29,7 @@ $statusMeta = [
             <?= $student['class_name'] ? ' · ' . View::e($student['class_name']) : '' ?>
           </div>
         </div>
-        <form method="get" class="filter-form--stack-mobile d-flex align-items-end flex-wrap gap-2">
+        <form method="get" class="filter-form--stack-mobile d-flex align-items-end flex-wrap gap-2" data-auto-reload>
           <div>
             <label class="form-label small mb-1">From</label>
             <input type="date" name="from" class="form-control form-control-sm" value="<?= View::e($from) ?>">
@@ -38,7 +38,9 @@ $statusMeta = [
             <label class="form-label small mb-1">To</label>
             <input type="date" name="to" class="form-control form-control-sm" value="<?= View::e($to) ?>">
           </div>
-          <button type="submit" class="btn btn-outline-primary btn-sm">Reload</button>
+          <button type="submit" class="btn btn-outline-primary btn-sm" title="Reload">
+            <i class="bi bi-arrow-repeat"></i><span class="visually-hidden">Reload</span>
+          </button>
         </form>
       </div>
     </div>
