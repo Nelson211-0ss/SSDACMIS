@@ -6426,6 +6426,16 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   }
 }
 
+/* Parent portal dashboard — Report card / Fees / Attendance buttons per
+   child card. auto-fit + minmax (rather than three flex-grow-1 items)
+   guarantees each button keeps a readable minimum width and wraps to its
+   own row instead of getting squeezed on a narrow phone. */
+.parent-child-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.5rem;
+}
+
 /* ---------- Auth pages: keep card shadow neutral ---------- */
 .auth-card {
   box-shadow:

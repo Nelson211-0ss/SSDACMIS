@@ -44,14 +44,14 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
                 <span class="badge <?= FeesService::statusBadgeClass($status) ?>"><?= View::e(FeesService::statusLabel($status)) ?></span>
               <?php endif; ?>
             </div>
-            <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-sm btn-primary flex-grow-1" href="<?= $base ?>/parent/reports/student/<?= $sid ?>">
+            <div class="parent-child-actions">
+              <a class="btn btn-sm btn-primary" href="<?= $base ?>/parent/reports/student/<?= $sid ?>">
                 <i class="bi bi-file-earmark-text"></i> Report card
               </a>
-              <a class="btn btn-sm btn-outline-primary flex-grow-1" href="<?= $base ?>/parent/fees/<?= $sid ?>">
+              <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/parent/fees/<?= $sid ?>">
                 <i class="bi bi-cash-coin"></i> Fees
               </a>
-              <a class="btn btn-sm btn-outline-primary flex-grow-1" href="<?= $base ?>/parent/attendance/<?= $sid ?>">
+              <a class="btn btn-sm btn-outline-primary" href="<?= $base ?>/parent/attendance/<?= $sid ?>">
                 <i class="bi bi-calendar-check"></i> Attendance
               </a>
             </div>
