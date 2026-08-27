@@ -29,11 +29,11 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
           <i class="bi bi-arrow-left"></i> Back
         </a>
         <form method="get" class="filter-form--stack-mobile d-flex flex-wrap gap-2 align-items-end flex-shrink-0" data-auto-reload action="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $student['id'] ?>">
-          <div>
+          <div class="filter-field filter-field--year">
             <label class="form-label small mb-1">Year</label>
             <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
           </div>
-          <div>
+          <div class="filter-field filter-field--term">
             <label class="form-label small mb-1">Term</label>
             <select name="term" class="form-select form-select-sm">
               <?php foreach ($terms as $t): ?>
@@ -41,7 +41,7 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
               <?php endforeach; ?>
             </select>
           </div>
-          <div>
+          <div class="filter-field filter-field--stage">
             <label class="form-label small mb-1">Assessment</label>
             <select name="stage" class="form-select form-select-sm">
               <?php foreach (($stages ?? []) as $key => $label): ?>

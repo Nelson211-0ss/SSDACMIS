@@ -6457,6 +6457,17 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   }
 }
 
+/* Report-card period fields: Year/Term/Assessment don't need anywhere near
+   full input width for what they hold ("2025/2026", "Term 1", "End of
+   term") — cap them so the toolbar reads as a compact filter strip instead
+   of three full-size fields. Only above the mobile-stack breakpoint, where
+   the rule above already forces full width on purpose. */
+@media (min-width: 576px) {
+  .filter-field--year  { max-width: 7rem; }
+  .filter-field--term  { max-width: 6rem; }
+  .filter-field--stage { max-width: 9rem; }
+}
+
 /* ---------- Auth pages: keep card shadow neutral ---------- */
 .auth-card {
   box-shadow:
