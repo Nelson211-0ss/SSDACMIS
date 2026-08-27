@@ -9,6 +9,7 @@ use App\Core\SchoolIdentity;
 $role        = Auth::role() ?? 'guest';
 $useHodNav    = Auth::usesHodPortalNav();
 $useBursarNav = ($role === 'bursar') || (Auth::portal() === 'bursar');
+$useParentNav = ($role === 'parent') || (Auth::portal() === 'parent');
 $pageUri  = $_SERVER['REQUEST_URI'] ?? '';
 $pagePath = parse_url($pageUri, PHP_URL_PATH) ?? '';
 $relPath  = $base !== '' && str_starts_with($pagePath, $base)
@@ -46,6 +47,11 @@ $bursarNav = [
     ['Exam Permits', 'bi-shield-check',     '/bursar/exam-permits',     ['bursar'], '/bursar/exam-permits'],
 ];
 
+$parentNav = [
+    ['Family Dashboard', 'bi-house-heart', '/parent',               ['parent'], '/parent'],
+    ['Announcements',    'bi-megaphone',   '/parent/announcements', ['parent'], '/parent/announcements'],
+];
+
 $mainNav = [
     ['Overview',      'bi-speedometer2',      '/dashboard',     ['admin','school_admin','staff','student'], '/dashboard'],
     ['Schools',       'bi-building-gear',     '/schools',       ['admin'],                                  '/schools'],
@@ -53,6 +59,7 @@ $mainNav = [
     ['Staff',         'bi-person-badge',      '/staff',         ['admin','school_admin'],                   '/staff'],
     ['HODs',          'bi-mortarboard-fill',  '/hods',          ['admin','school_admin'],                   '/hods'],
     ['Bursars',       'bi-cash-coin',         '/bursars',       ['admin','school_admin'],                   '/bursars'],
+    ['Parents',       'bi-person-hearts',     '/parents',       ['admin','school_admin'],                   '/parents'],
     ['Classes',       'bi-grid',              '/classes',       ['admin','school_admin','staff'],           '/classes'],
     ['Subjects',      'bi-book',              '/subjects',      ['admin','school_admin','staff'],           '/subjects'],
     ['Teaching',      'bi-diagram-3',         '/teaching',      ['admin','school_admin'],                   '/teaching'],
@@ -84,7 +91,7 @@ $useEnterpriseUi = $useBursarNav
     || (in_array($role, ['admin', 'school_admin'], true) && !$useBursarNav && !$useHodNav);
 $homeHref = $useBursarNav
     ? $base . '/bursar'
-    : ($useHodNav ? $base . '/hod' : $base . '/dashboard');
+    : ($useHodNav ? $base . '/hod' : ($useParentNav ? $base . '/parent' : $base . '/dashboard'));
 // Sidebar collapse is remembered per portal (main / hod / bursar) AND per
 // school, so one school's toggle never leaks onto another's dashboard in the
 // same browser. Super admin (no school_id) gets the "global" scope.
@@ -223,6 +230,24 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
             </a>
           </li>
         <?php endforeach; ?>
+      <?php elseif ($useParentNav): ?>
+        <!-- Parent portal: locked-down, only family-relevant items. -->
+        <li class="app-sidebar__section">Family Portal</li>
+        <?php foreach ($parentNav as [$label, $icon, $href, $roles, $prefix]): ?>
+          <?php if (!in_array($role, $roles, true)) continue; ?>
+          <?php
+            $p = rtrim($prefix, '/');
+            $active = ($relPath === $href || str_starts_with($relPath, $p . '/'));
+          ?>
+          <li>
+            <a class="app-sidebar__link <?= $active ? 'is-active' : '' ?>"
+               href="<?= $base . $href ?>"
+               title="<?= View::e($label) ?>">
+              <i class="bi <?= $icon ?>"></i>
+              <span><?= View::e($label) ?></span>
+            </a>
+          </li>
+        <?php endforeach; ?>
       <?php else: ?>
         <li class="app-sidebar__section">Main</li>
         <?php foreach ($mainNav as [$label, $icon, $href, $roles, $prefix]): ?>
@@ -315,6 +340,12 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
                   <i class="bi bi-mortarboard me-2"></i> Department home
                 </a>
               </li>
+            <?php elseif ($useParentNav): ?>
+              <li>
+                <a class="dropdown-item" href="<?= $base ?>/parent">
+                  <i class="bi bi-house-heart me-2"></i> Family dashboard
+                </a>
+              </li>
             <?php else: ?>
               <li>
                 <a class="dropdown-item" href="<?= $base ?>/dashboard">
@@ -329,11 +360,16 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
                 </a>
               </li>
             <?php endif; ?>
+            <?php if (!$useParentNav): ?>
+            <!-- Parents sign in with a child's admission number, not a
+                 settable password (see Auth::attemptParent()) — nothing
+                 for this link to change. -->
             <li>
               <a class="dropdown-item" href="<?= $base ?>/account/password">
                 <i class="bi bi-key me-2"></i>Change Password
               </a>
             </li>
+            <?php endif; ?>
             <li><hr class="dropdown-divider"></li>
             <li>
               <?php
@@ -342,7 +378,7 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
                 // its sign-in).
                 $logoutHref = $base . ($useBursarNav
                     ? '/bursar/logout'
-                    : ($useHodNav ? '/hod/logout' : '/logout'));
+                    : ($useHodNav ? '/hod/logout' : ($useParentNav ? '/parent/logout' : '/logout')));
               ?>
               <a class="dropdown-item text-danger" href="<?= $logoutHref ?>">
                 <i class="bi bi-box-arrow-right me-2"></i>Sign out

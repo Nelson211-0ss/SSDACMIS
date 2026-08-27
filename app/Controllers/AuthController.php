@@ -6,12 +6,17 @@ use App\Core\Controller;
 use App\Core\Flash;
 
 /**
- * Single sign-in at /login for admins, staff, students, Heads of Department,
+ * Single sign-in at /login for admins, staff, students, Heads of Department
  * and bursars. After authentication, users are routed to the dashboard that
  * matches their role (/dashboard, /hod, or /bursar).
  *
  * Legacy URLs /hod/login and /bursar/login still resolve (GET redirects to
  * /login; POST is processed the same as /login) so old bookmarks keep working.
+ *
+ * Parents are a separate flow entirely: /parent/login is its own page where
+ * a parent signs in with a student's admission number as both "username"
+ * and "password" (see Auth::attemptParent()) rather than an email/password
+ * pair, so it can't share processLoginForm()/auth/login.php with the rest.
  */
 class AuthController extends Controller
 {
@@ -118,6 +123,15 @@ class AuthController extends Controller
         $this->redirect('/login');
     }
 
+    public function showParentLogin(): string
+    {
+        if (Auth::check()) {
+            $this->redirect('/parent');
+        }
+
+        return $this->view('auth/parent_login');
+    }
+
     public function login(): string
     {
         return $this->processLoginForm();
@@ -131,6 +145,11 @@ class AuthController extends Controller
     public function hodLogin(): string
     {
         return $this->processLoginForm();
+    }
+
+    public function parentLogin(): string
+    {
+        return $this->processParentLoginForm();
     }
 
     private function processLoginForm(): string
@@ -162,6 +181,42 @@ class AuthController extends Controller
         $dest = $this->homeAfterUnifiedSlot($slot);
         $this->flashForDestination($dest);
         $this->redirect($dest);
+
+        return '';
+    }
+
+    /**
+     * Parent sign-in: admission number as both fields (see Auth::attemptParent()
+     * and the note on parent_students.is_primary). Shares the same soft
+     * throttle slot as every other login form — one shared counter across
+     * all portals, not a separate budget per form.
+     */
+    private function processParentLoginForm(): string
+    {
+        $this->validateCsrf();
+        $admissionNo = trim((string) $this->input('admission_no'));
+        $password    = trim((string) $this->input('password'));
+
+        if ($lock = $this->checkThrottle()) {
+            return $this->view('auth/parent_login', ['error' => $lock, 'old' => compact('admissionNo')]);
+        }
+
+        if ($admissionNo === '' || $password === '') {
+            return $this->view('auth/parent_login', ['error' => 'Enter the admission number in both fields.', 'old' => compact('admissionNo')]);
+        }
+        if ($admissionNo !== $password) {
+            return $this->view('auth/parent_login', ['error' => 'Admission number and password must match.', 'old' => compact('admissionNo')]);
+        }
+
+        if (!Auth::attemptParent($admissionNo)) {
+            $this->recordFailure();
+
+            return $this->view('auth/parent_login', ['error' => 'Invalid admission number.', 'old' => compact('admissionNo')]);
+        }
+        $this->clearFailures();
+
+        Flash::set('success', 'Welcome to the Parent portal.');
+        $this->redirect('/parent');
 
         return '';
     }

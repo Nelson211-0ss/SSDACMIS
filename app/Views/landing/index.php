@@ -29,7 +29,7 @@ $year = date('Y');
           <a class="lp-btn lp-btn--white" href="<?= $base ?>/login"><i class="bi bi-box-arrow-in-right"></i> Sign In</a>
         </div>
         <p class="lp-hero__portals">
-          <a href="<?= $base ?>/hod/login">HOD sign in</a> &middot; <a href="<?= $base ?>/bursar/login">Bursar sign in</a>
+          <a href="<?= $base ?>/hod/login">HOD sign in</a> &middot; <a href="<?= $base ?>/bursar/login">Bursar sign in</a> &middot; <a href="<?= $base ?>/parent/login">Parent sign in</a>
         </p>
 
         <div class="lp-cards">

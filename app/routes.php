@@ -12,13 +12,16 @@ $router->get('/hod/login',     'AuthController@showHodLogin');
 $router->post('/hod/login',    'AuthController@hodLogin');
 $router->get('/bursar/login',  'AuthController@showBursarLogin');
 $router->post('/bursar/login', 'AuthController@bursarLogin');
+$router->get('/parent/login',  'AuthController@showParentLogin');
+$router->post('/parent/login', 'AuthController@parentLogin');
 $router->get('/logout',        'AuthController@logout');
-// HOD/Bursar-portal logouts sit under their own URL prefixes on purpose:
-// they share the URL prefix with the rest of their portal so portal
-// detection lights up correctly and only that portal's session slot is
-// cleared (admin in another tab is safe).
+// HOD/Bursar/Parent-portal logouts sit under their own URL prefixes on
+// purpose: they share the URL prefix with the rest of their portal so
+// portal detection lights up correctly and only that portal's session slot
+// is cleared (admin in another tab is safe).
 $router->get('/hod/logout',    'AuthController@logout');
 $router->get('/bursar/logout', 'AuthController@logout');
+$router->get('/parent/logout', 'AuthController@logout');
 
 // Authenticated area
 $auth = fn() => Auth::require();
@@ -32,6 +35,8 @@ $staffOrAdmin = fn() => Auth::require(['admin', 'school_admin', 'staff']);
 $staffAdminOrHod = fn() => Auth::require(['admin', 'school_admin', 'staff', 'hod']);
 /** Bursar Fees Management portal — only role=bursar allowed. */
 $bursarOnly = fn() => Auth::require(['bursar']);
+/** Parent portal — only role=parent allowed. */
+$parentOnly = fn() => Auth::require(['parent']);
 
 $router->get('/dashboard', 'DashboardController@index', [$auth]);
 
@@ -174,6 +179,15 @@ $router->get('/bursars/{id}/edit',    'BursarAccountController@edit',    [$schoo
 $router->post('/bursars/{id}',        'BursarAccountController@update',  [$schoolAdminOrAdmin]);
 $router->post('/bursars/{id}/delete', 'BursarAccountController@destroy', [$schoolAdminOrAdmin]);
 
+// Parent accounts (admin creates Parents, linked to one or more students,
+// who sign in at /login).
+$router->get('/parents',              'ParentAccountController@index',   [$schoolAdminOrAdmin]);
+$router->get('/parents/create',       'ParentAccountController@create',  [$schoolAdminOrAdmin]);
+$router->post('/parents',             'ParentAccountController@store',   [$schoolAdminOrAdmin]);
+$router->get('/parents/{id}/edit',    'ParentAccountController@edit',    [$schoolAdminOrAdmin]);
+$router->post('/parents/{id}',        'ParentAccountController@update',  [$schoolAdminOrAdmin]);
+$router->post('/parents/{id}/delete', 'ParentAccountController@destroy', [$schoolAdminOrAdmin]);
+
 // ============================================================
 // Bursar / Fees Management portal — every route is bursar-only.
 // All URLs sit under /bursar/* so the portal-aware Auth keeps
@@ -197,6 +211,21 @@ $router->get('/bursar/reports/export.csv',    'BursarController@exportCsv',     
 // Examination permits — auto-issued only to fully paid students.
 $router->get('/bursar/exam-permits',          'BursarController@examPermits',      [$bursarOnly]);
 $router->get('/bursar/exam-permits/print',    'BursarController@examPermitsPrint', [$bursarOnly]);
+
+// ============================================================
+// Parent portal — every route is parent-only. All URLs sit under
+// /parent/* so the portal-aware Auth keeps the parent session isolated
+// from admin/HOD/bursar sessions in other tabs, same as the Bursar portal
+// above.
+// ============================================================
+$router->get('/parent',                     'ParentController@dashboard',   [$parentOnly]);
+// Reuses ReportController — a parent's report card is the same document
+// admin/staff/HOD see, just scoped by canSeeStudent() to their own children.
+$router->get('/parent/reports',             'ReportController@index',       [$parentOnly]);
+$router->get('/parent/reports/student/{id}','ReportController@student',     [$parentOnly]);
+$router->get('/parent/fees/{id}',           'ParentController@fees',        [$parentOnly]);
+$router->get('/parent/attendance/{id}',     'ParentController@attendance',  [$parentOnly]);
+$router->get('/parent/announcements',       'AnnouncementController@index', [$parentOnly]);
 
 // Announcements
 $router->get('/announcements',  'AnnouncementController@index', [$auth]);

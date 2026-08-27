@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS users (
     name        VARCHAR(150) NOT NULL,
     email       VARCHAR(190) NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
-    role        ENUM('admin','staff','student','hod','bursar','school_admin') NOT NULL DEFAULT 'staff',
+    role        ENUM('admin','staff','student','hod','bursar','school_admin','parent') NOT NULL DEFAULT 'staff',
     -- Free-text department label shown next to HOD accounts (e.g. "Sciences",
     -- "Humanities"). Informational only — for ROLE='hod' users this is the
     -- "wing" the HOD heads, but does NOT restrict mark-entry access (any HOD
@@ -321,6 +321,32 @@ CREATE TABLE IF NOT EXISTS payments (
     CONSTRAINT fk_pay_student FOREIGN KEY (student_id)     REFERENCES students(id)     ON DELETE CASCADE,
     CONSTRAINT fk_pay_user    FOREIGN KEY (recorded_by)    REFERENCES users(id)        ON DELETE SET NULL,
     CONSTRAINT fk_pay_school  FOREIGN KEY (school_id)      REFERENCES schools(id)      ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ---------- Parent Portal ----------
+-- Links a parent's login (users.role='parent') to the student(s) they may
+-- view. Admin/school_admin manage these links from /parents — parents
+-- cannot self-link, so there's no way to claim a child by guessing an
+-- admission number. Composite PK (no surrogate id), styled like
+-- department_heads above.
+--
+-- is_primary marks the ONE linked child whose admission number is this
+-- parent's sign-in credential (parents log in with the admission number as
+-- both username and password — see Auth::attemptParent()). Enforced as
+-- "exactly one primary per parent" in ParentAccountController, not by a DB
+-- constraint (MySQL has no partial unique index).
+CREATE TABLE IF NOT EXISTS parent_students (
+    school_id      INT UNSIGNED NOT NULL DEFAULT 1,
+    parent_user_id INT UNSIGNED NOT NULL,
+    student_id     INT UNSIGNED NOT NULL,
+    is_primary     TINYINT(1) NOT NULL DEFAULT 0,
+    created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (parent_user_id, student_id),
+    KEY idx_ps_student (student_id),
+    KEY idx_ps_school (school_id),
+    CONSTRAINT fk_ps_parent  FOREIGN KEY (parent_user_id) REFERENCES users(id)    ON DELETE CASCADE,
+    CONSTRAINT fk_ps_student FOREIGN KEY (student_id)     REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ps_school  FOREIGN KEY (school_id)      REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ---------- Announcements ----------

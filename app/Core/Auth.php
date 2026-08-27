@@ -4,17 +4,19 @@ namespace App\Core;
 /**
  * Portal-aware authentication.
  *
- * Everyone signs in at /login. The app still tracks three portal slots in the
+ * Everyone signs in at /login. The app still tracks four portal slots in the
  * same browser session so roles can use separate areas without leaking state:
  *
  *   - "main"   portal: /login, /dashboard, /students, /staff, ... (admins,
  *              regular staff and students).
  *   - "hod"    portal: /hod/* (Heads of Department — same sign-in page).
  *   - "bursar" portal: /bursar/* (Fees Management — same sign-in page).
+ *   - "parent" portal: /parent/* (Parent Portal — same sign-in page).
  *
- * All three portals share a single PHP session cookie, but their user records
+ * All four portals share a single PHP session cookie, but their user records
  * live in DIFFERENT slots inside that session ($_SESSION['users']['main'],
- * $_SESSION['users']['hod'], $_SESSION['users']['bursar']). The "active" slot
+ * $_SESSION['users']['hod'], $_SESSION['users']['bursar'],
+ * $_SESSION['users']['parent']). The "active" slot
  * for a given request is derived from the URL prefix, so an admin can stay
  * logged in in tab A while a bursar logs in in tab B — clicking around in
  * either tab no longer leaks state across portals.
@@ -29,6 +31,7 @@ class Auth
      * Returns:
      *   'hod'    for any request under /hod/*    (HOD portal)
      *   'bursar' for any request under /bursar/* (Fees Management portal)
+     *   'parent' for any request under /parent/* (Parent portal)
      *   'main'   for everything else
      */
     public static function portal(): string
@@ -45,18 +48,21 @@ class Auth
 
         if ($rel === '/hod'    || str_starts_with($rel, '/hod/'))    return $cache = 'hod';
         if ($rel === '/bursar' || str_starts_with($rel, '/bursar/')) return $cache = 'bursar';
+        if ($rel === '/parent' || str_starts_with($rel, '/parent/')) return $cache = 'parent';
         return $cache = 'main';
     }
 
     /**
      * URL prefix to use when redirecting/linking inside the *current*
-     * portal — '/hod' / '/bursar' for those portals, '' for the main portal.
+     * portal — '/hod' / '/bursar' / '/parent' for those portals, '' for the
+     * main portal.
      */
     public static function portalPrefix(): string
     {
         return match (self::portal()) {
             'hod'    => '/hod',
             'bursar' => '/bursar',
+            'parent' => '/parent',
             default  => '',
         };
     }
@@ -135,6 +141,56 @@ class Auth
         return $slot;
     }
 
+    /**
+     * Parent portal sign-in: the credential is a student's admission
+     * number, used as both "username" and "password" (parents already know
+     * it from admission, so there's nothing to email/reset). The admission
+     * number must belong to the ONE child marked is_primary=1 for a
+     * parent — a parent with several children still signs in with just
+     * that one designated child's number (see ParentAccountController).
+     *
+     * users.password is never checked here — it holds an unused random
+     * placeholder for parent accounts (see ParentAccountController) purely
+     * to satisfy the NOT NULL column. Matching live against
+     * students.admission_no (rather than a stored hash of it) means the
+     * login keeps working automatically if the admission number is later
+     * edited, with nothing to fall out of sync.
+     */
+    public static function attemptParent(string $admissionNo): bool
+    {
+        $needle = trim($admissionNo);
+        if ($needle === '') return false;
+
+        $rows = Database::query(
+            "SELECT u.id, u.school_id, u.name, u.email, u.role, u.status
+             FROM parent_students ps
+             JOIN students st ON st.id = ps.student_id
+             JOIN users u     ON u.id = ps.parent_user_id
+             WHERE ps.is_primary = 1 AND u.role = 'parent' AND st.admission_no = ?",
+            [$needle]
+        )->fetchAll();
+
+        // Admission numbers are only unique PER SCHOOL, not globally — if a
+        // rare cross-school collision on a primary child's number ever
+        // matches more than one parent, there's no safe way to tell them
+        // apart from the number alone, so reject rather than guess.
+        if (count($rows) !== 1) return false;
+        $user = $rows[0];
+        if ($user['status'] !== 'active') return false;
+
+        if (empty($_SESSION['_regenerated_for'])
+            || $_SESSION['_regenerated_for'] !== 'parent') {
+            session_regenerate_id(true);
+            $_SESSION['_regenerated_for'] = 'parent';
+            unset($_SESSION['_csrf']);
+        }
+
+        $_SESSION['users']['parent'] = $user;
+        ActivityLog::record('login', 'user', (int) $user['id'], 'Logged in (parent)');
+
+        return true;
+    }
+
     /** @param array{id:int,role:string} $user */
     private static function portalSlotForUserRow(array $user): string
     {
@@ -144,6 +200,9 @@ class Auth
         }
         if ($role === 'bursar') {
             return 'bursar';
+        }
+        if ($role === 'parent') {
+            return 'parent';
         }
         // admin, school_admin, student all go to 'main'
         if (in_array($role, ['admin', 'school_admin', 'student'], true)) {
@@ -271,6 +330,7 @@ class Auth
         // out-of-scope URLs.
         self::enforceHodScope();
         self::enforceBursarScope();
+        self::enforceParentScope();
         if ($roles !== null && !in_array(self::role(), $roles, true)) {
             http_response_code(403);
             echo View::render('errors/403');
@@ -359,6 +419,22 @@ class Auth
         $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
         Flash::set('warning', 'That section is restricted. Use the Bursar portal instead.');
         header('Location: ' . $base . '/bursar');
+        exit;
+    }
+
+    /**
+     * Parents live exclusively inside the /parent portal. Same reasoning as
+     * enforceBursarScope() above.
+     */
+    public static function enforceParentScope(): void
+    {
+        if (self::role() !== 'parent') return;
+
+        if (self::portal() === 'parent') return;
+
+        $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
+        Flash::set('warning', 'That section is restricted. Use the Parent portal instead.');
+        header('Location: ' . $base . '/parent');
         exit;
     }
 

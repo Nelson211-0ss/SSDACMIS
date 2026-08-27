@@ -44,6 +44,7 @@ class ReportController extends Controller
     private function isAdmin(): bool   { return in_array(Auth::role(), ['admin', 'school_admin'], true); }
     private function isStudent(): bool { return Auth::role() === 'student'; }
     private function isStaff(): bool   { return Auth::role() === 'staff'; }
+    private function isParent(): bool  { return Auth::role() === 'parent'; }
 
     private function staffId(): ?int
     {
@@ -98,6 +99,14 @@ class ReportController extends Controller
             $r = Database::query("SELECT id FROM students WHERE user_id = ? LIMIT 1", [(int) $u['id']])->fetch();
             return $r && (int) $r['id'] === $studentId;
         }
+        if ($this->isParent()) {
+            $u = Auth::user();
+            $r = Database::query(
+                "SELECT 1 FROM parent_students WHERE parent_user_id = ? AND student_id = ? LIMIT 1",
+                [(int) $u['id'], $studentId]
+            )->fetch();
+            return (bool) $r;
+        }
         if ($this->isHod()) {
             $r = Database::query("SELECT 1 FROM students WHERE id = ? LIMIT 1", [$studentId])->fetch();
             return (bool) $r;
@@ -140,6 +149,16 @@ class ReportController extends Controller
 
     public function index(): string
     {
+        // A parent has at most a handful of children, so the "pick a
+        // report" step lives on the parent dashboard's child cards instead
+        // of duplicating this class/student picker. This route still needs
+        // to exist and resolve safely because reports/student.php's Back
+        // button always targets $portalPrefix . '/reports'.
+        if ($this->isParent()) {
+            $this->redirect('/parent');
+            return '';
+        }
+
         $year  = (string) ($this->input('year') ?: self::defaultYear());
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
