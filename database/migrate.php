@@ -709,12 +709,22 @@ if (!$tableExists('activity_log')) {
 }
 
 /* -- Academic years become flat calendar years --------------------------
- * Historically stored as "2025/2026"; every picker now offers "2025",
- * "2026", ... so stored values have to match or the reports would look at a
- * period nothing was ever saved under. Rewriting a spanning year to its
- * leading year is injective (2024/2025 -> 2024, 2025/2026 -> 2025), so no
- * two distinct years can collide. UPDATE IGNORE is belt-and-braces for a
- * database that somehow already holds both forms of the same year. */
+ * Historically stored as "2026/2027"; every picker now offers "2026",
+ * "2027", ... so stored values have to match or the reports would look at a
+ * period nothing was ever saved under.
+ *
+ * This RELABELS rows in place — it never deletes, moves or re-keys anything.
+ * "2026/2027" becomes "2026" and every mark, result, fee and payment already
+ * recorded under it stays attached to that same row, now filed under 2026.
+ * The mapping keeps the leading year, so it is one-to-one across academic
+ * years (2025/2026 -> 2025, 2026/2027 -> 2026) and two different years can
+ * never merge into one.
+ *
+ * The one way a row could fail to convert is a database that already holds
+ * BOTH forms of the same year (e.g. "2026" and "2026/2027") for the same
+ * student/subject/period, which the unique keys forbid. That cannot happen
+ * on an install that has only ever used the old format, but it is checked
+ * for and reported per year rather than silently skipped. */
 $flatYearTables = [
     'grades',
     'term_subject_results',
@@ -727,25 +737,67 @@ foreach ($flatYearTables as $tbl) {
         $out[] = "  --  $tbl.academic_year not present, skipped";
         continue;
     }
-    $stmt = $pdo->query(
-        "SELECT COUNT(*) FROM `$tbl` WHERE academic_year LIKE '%/%'"
-    );
-    $pending = (int) $stmt->fetchColumn();
-    if ($pending === 0) {
-        $out[] = "  --  $tbl.academic_year already flat";
+
+    $before = (int) $pdo->query("SELECT COUNT(*) FROM `$tbl`")->fetchColumn();
+    $legacy = $pdo->query(
+        "SELECT academic_year, COUNT(*) AS n
+         FROM `$tbl` WHERE academic_year LIKE '%/%'
+         GROUP BY academic_year ORDER BY academic_year"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($legacy === []) {
+        $out[] = "  --  $tbl.academic_year already flat ($before rows)";
         continue;
     }
-    $pdo->exec(
-        "UPDATE IGNORE `$tbl`
-         SET academic_year = LEFT(academic_year, 4)
-         WHERE academic_year LIKE '%/%'"
-    );
-    $left = (int) $pdo->query(
-        "SELECT COUNT(*) FROM `$tbl` WHERE academic_year LIKE '%/%'"
-    )->fetchColumn();
-    $out[] = $left === 0
-        ? "  ok  $tbl.academic_year flattened ($pending rows)"
-        : "  !!  $tbl.academic_year flattened, $left row(s) skipped as duplicates";
+
+    $bulk = $pdo->prepare("UPDATE `$tbl` SET academic_year = ? WHERE academic_year = ?");
+    $one  = $pdo->prepare("UPDATE `$tbl` SET academic_year = ? WHERE id = ?");
+
+    foreach ($legacy as $row) {
+        $old  = (string) $row['academic_year'];
+        $flat = substr($old, 0, 4);
+        $rows = (int) $row['n'];
+
+        try {
+            $bulk->execute([$flat, $old]);
+            $out[] = "  ok  $tbl: '$old' -> '$flat' ($rows rows kept, nothing deleted)";
+            continue;
+        } catch (PDOException $e) {
+            // Only a unique-key clash is recoverable row by row; anything
+            // else is a real error and should stop the migration.
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
+        }
+
+        // The year as a whole clashes, so move the rows that can move and
+        // name the ones that cannot instead of skipping the lot.
+        $ids = $pdo->query(
+            "SELECT id FROM `$tbl` WHERE academic_year = " . $pdo->quote($old)
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        $moved = 0;
+        $stuck = 0;
+        foreach ($ids as $id) {
+            try {
+                $one->execute([$flat, (int) $id]);
+                $moved++;
+            } catch (PDOException $e) {
+                if ($e->getCode() !== '23000') {
+                    throw $e;
+                }
+                $stuck++;
+            }
+        }
+        $out[] = "  !!  $tbl: '$old' -> '$flat' — $moved of $rows rows converted; "
+               . "$stuck left as '$old' because '$flat' already holds the same record. "
+               . "Nothing was deleted; reconcile those duplicates, then re-run.";
+    }
+
+    $after = (int) $pdo->query("SELECT COUNT(*) FROM `$tbl`")->fetchColumn();
+    $out[] = $after === $before
+        ? "  ok  $tbl row count unchanged ($after)"
+        : "  !!  $tbl row count changed: $before -> $after";
 }
 
 /* -- Permissions (role matrix + per-user overrides) --------------------- */

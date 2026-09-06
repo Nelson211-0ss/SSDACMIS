@@ -111,11 +111,20 @@ $action = $isEdit ? ($base . '/users/' . (int) $user['id']) : ($base . '/users')
         <a class="small" href="<?= $base ?>/users/permissions">Edit the role defaults</a>
       </div>
       <div class="card-body">
-        <p class="text-muted small">
-          Each permission follows this account’s role unless you override it here.
-          “Allow” grants it even when the role does not have it; “Deny” takes it away
-          even when the role does.
-        </p>
+        <?php if ($isSelf): ?>
+          <div class="alert alert-light border small mb-3">
+            <i class="bi bi-info-circle"></i>
+            These are your own permissions, shown read-only. Denying yourself
+            “Manage user accounts” would lock you out of this page, so changes
+            here are ignored — ask another administrator instead.
+          </div>
+        <?php else: ?>
+          <p class="text-muted small">
+            Each permission follows this account’s role unless you override it here.
+            “Allow” grants it even when the role does not have it; “Deny” takes it away
+            even when the role does.
+          </p>
+        <?php endif; ?>
         <?php foreach ($catalog as $group => $items): ?>
           <div class="mb-3">
             <div class="fw-semibold small text-uppercase text-muted mb-2"><?= View::e($group) ?></div>
@@ -137,15 +146,15 @@ $action = $isEdit ? ($base . '/users/' . (int) $user['id']) : ($base . '/users')
                       </div>
                     </div>
                     <div class="btn-group btn-group-sm flex-shrink-0" role="group" aria-label="<?= View::e($label) ?>">
-                      <input type="radio" class="btn-check" name="perm[<?= View::e($key) ?>]"
+                      <input type="radio" class="btn-check" name="perm[<?= View::e($key) ?>]" <?= $isSelf ? "disabled" : "" ?>
                              id="<?= $id ?>_inherit" value="" <?= $current === null ? 'checked' : '' ?>>
                       <label class="btn btn-outline-secondary" for="<?= $id ?>_inherit">Role</label>
 
-                      <input type="radio" class="btn-check" name="perm[<?= View::e($key) ?>]"
+                      <input type="radio" class="btn-check" name="perm[<?= View::e($key) ?>]" <?= $isSelf ? "disabled" : "" ?>
                              id="<?= $id ?>_allow" value="allow" <?= $current === true ? 'checked' : '' ?>>
                       <label class="btn btn-outline-success" for="<?= $id ?>_allow">Allow</label>
 
-                      <input type="radio" class="btn-check" name="perm[<?= View::e($key) ?>]"
+                      <input type="radio" class="btn-check" name="perm[<?= View::e($key) ?>]" <?= $isSelf ? "disabled" : "" ?>
                              id="<?= $id ?>_deny" value="deny" <?= $current === false ? 'checked' : '' ?>>
                       <label class="btn btn-outline-danger" for="<?= $id ?>_deny">Deny</label>
                     </div>

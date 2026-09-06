@@ -367,7 +367,12 @@ class UserController extends Controller
             [$schoolId, $name, $email, $role, $dept !== '' ? $dept : null, $status, $userId]
         );
 
-        Permission::saveUserOverrides($userId, (array) ($this->input('perm', []) ?: []));
+        // Per-user overrides are never applied to your own account, for the
+        // same reason role and status are locked above: a single "Deny" on
+        // users.manage would be irreversible from inside the app.
+        if (!$isSelf) {
+            Permission::saveUserOverrides($userId, (array) ($this->input('perm', []) ?: []));
+        }
         ActivityLog::record('update', 'user', $userId, "Updated account {$name} ({$role})");
 
         Flash::set('success', "Account {$name} updated.");
@@ -461,10 +466,24 @@ class UserController extends Controller
         $schoolId = $this->matrixScope();
         $posted   = (array) ($this->input('perm', []) ?: []);
 
+        // A school admin editing their own school's matrix must not be able
+        // to take "manage users" away from their own role — that would lock
+        // every school admin out of this page with no way back. The super
+        // admin is never restricted by the matrix, so they are unaffected.
+        $ownRole   = (string) Auth::role();
+        $selfLock  = false;
+        $protected = (!$this->isSuperAdmin() && isset(Permission::EDITABLE_ROLES[$ownRole]))
+            ? $ownRole
+            : null;
+
         foreach (Permission::EDITABLE_ROLES as $role => $_label) {
             $values = [];
             foreach (Permission::keys() as $key) {
                 $values[$key] = !empty($posted[$role][$key]);
+            }
+            if ($role === $protected && empty($values['users.manage'])) {
+                $values['users.manage'] = true;
+                $selfLock = true;
             }
             Permission::saveRole($schoolId, $role, $values);
         }
@@ -475,7 +494,41 @@ class UserController extends Controller
             $schoolId ?? 0,
             'Updated the role permission matrix'
         );
-        Flash::set('success', 'Permissions saved.');
+        Flash::set(
+            $selfLock ? 'warning' : 'success',
+            $selfLock
+                ? 'Permissions saved — but “Manage user accounts & permissions” was kept for your own role, so you don’t lock yourself out.'
+                : 'Permissions saved.'
+        );
+
+        $back = '/users/permissions';
+        if ($this->isSuperAdmin() && $schoolId !== null) {
+            $back .= '?school_id=' . $schoolId;
+        }
+        $this->redirect($back);
+        return '';
+    }
+
+    /**
+     * Drop every saved row for this scope so all roles fall back to the
+     * built-in defaults. The recovery path when a matrix has been edited
+     * into a state nobody can work in.
+     */
+    public function resetPermissions(): string
+    {
+        $this->validateCsrf();
+
+        $schoolId = $this->matrixScope();
+        if (Permission::ensureTables()) {
+            Database::query(
+                'DELETE FROM role_permissions WHERE school_id = ?',
+                [$schoolId ?? 0]
+            );
+            Permission::resetCaches();
+        }
+
+        ActivityLog::record('update', 'permissions', $schoolId ?? 0, 'Reset permissions to defaults');
+        Flash::set('success', 'Permissions reset to the built-in defaults for every role.');
 
         $back = '/users/permissions';
         if ($this->isSuperAdmin() && $schoolId !== null) {

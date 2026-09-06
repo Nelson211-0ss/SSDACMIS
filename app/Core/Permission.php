@@ -328,17 +328,10 @@ final class Permission
         if (isset(self::$roleRowCache[$sid])) {
             return self::$roleRowCache[$sid];
         }
-        if (!self::ensureTables()) {
-            return self::$roleRowCache[$sid] = [];
-        }
-        try {
-            return self::$roleRowCache[$sid] = Database::query(
-                'SELECT role, permission, allowed FROM role_permissions WHERE school_id = ?',
-                [$sid]
-            )->fetchAll();
-        } catch (\Throwable $e) {
-            return self::$roleRowCache[$sid] = [];
-        }
+        return self::$roleRowCache[$sid] = self::selectOrCreate(
+            'SELECT role, permission, allowed FROM role_permissions WHERE school_id = ?',
+            [$sid]
+        );
     }
 
     /** @return list<array<string,mixed>> */
@@ -350,16 +343,35 @@ final class Permission
         if (isset(self::$userRowCache[$userId])) {
             return self::$userRowCache[$userId];
         }
-        if (!self::ensureTables()) {
-            return self::$userRowCache[$userId] = [];
-        }
+        return self::$userRowCache[$userId] = self::selectOrCreate(
+            'SELECT permission, allowed FROM user_permissions WHERE user_id = ?',
+            [$userId]
+        );
+    }
+
+    /**
+     * Run a permission lookup, creating the tables only if the query fails
+     * because they are missing. Every authenticated request reads these, so
+     * issuing CREATE TABLE IF NOT EXISTS up front would add two DDL
+     * statements to every page load for the sake of a one-off install step.
+     *
+     * @return list<array<string,mixed>>
+     */
+    private static function selectOrCreate(string $sql, array $params): array
+    {
         try {
-            return self::$userRowCache[$userId] = Database::query(
-                'SELECT permission, allowed FROM user_permissions WHERE user_id = ?',
-                [$userId]
-            )->fetchAll();
+            return Database::query($sql, $params)->fetchAll();
         } catch (\Throwable $e) {
-            return self::$userRowCache[$userId] = [];
+            // Missing tables (or anything else) fall back to the built-in
+            // matrix, after one attempt to create them for next time.
+            if (self::ensureTables()) {
+                try {
+                    return Database::query($sql, $params)->fetchAll();
+                } catch (\Throwable $inner) {
+                    return [];
+                }
+            }
+            return [];
         }
     }
 

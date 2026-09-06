@@ -307,10 +307,12 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
 <script>
   // The Results filter reloads the page via GET — re-open that tab afterwards
   // instead of defaulting back to Overview.
-  (function () {
+  // Bootstrap's bundle is deferred, so it only exists once the document has
+  // been parsed — wait for that rather than checking window.bootstrap here.
+  document.addEventListener('DOMContentLoaded', function () {
     var params = new URLSearchParams(window.location.search);
     if (params.get('tab') !== 'results') return;
     var btn = document.getElementById('tab-results-btn');
     if (btn && window.bootstrap) new bootstrap.Tab(btn).show();
-  })();
+  });
 </script>

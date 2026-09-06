@@ -7643,3 +7643,159 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   padding-top: 0.25rem !important;
 }
 
+
+/* ============================================================
+   Analytics, user management & shared mobile hardening
+   ============================================================ */
+
+/* --- Analytics ------------------------------------------------------ */
+
+/* Inline percentage bar shown under a subject name on narrow screens,
+   where the numeric columns are hidden. */
+.analytics-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.analytics-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.analytics-table th,
+.analytics-table td {
+  white-space: nowrap;
+}
+
+/* The subject / class name is the one column allowed to wrap, so a long
+   name never forces the whole table sideways. */
+.analytics-table td:nth-child(2) {
+  white-space: normal;
+  min-width: 9rem;
+}
+
+.analytics-kpis .card-body {
+  padding: 0.85rem 1rem;
+}
+
+/* --- User management ------------------------------------------------ */
+
+.users-table th,
+.users-table td {
+  vertical-align: middle;
+}
+
+/* Actions stay on one line and never squash the name column. */
+.users-table td:last-child {
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* --- Permission matrix ---------------------------------------------- */
+
+/* The matrix is intentionally wide (one column per role). Scroll it
+   horizontally with the feature name pinned, rather than letting the
+   whole page scroll. */
+.permissions-scroll {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.permissions-table {
+  min-width: 44rem;
+}
+
+.permissions-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.permissions-table__feature {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--bs-body-bg, #fff);
+  min-width: 14rem;
+}
+
+.permissions-table thead .permissions-table__feature,
+.permissions-table tr.table-light .permissions-table__feature {
+  z-index: 4;
+  background: var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.permissions-table .form-check-input {
+  /* Comfortable tap target on a phone. */
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+}
+
+/* --- Cross-cutting mobile fixes ------------------------------------- */
+
+/* Nothing should ever push the page sideways; wide content scrolls inside
+   its own container instead. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+.app-shell .table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 575.98px) {
+  /* iOS zooms the viewport when a focused field is under 16px. Keeping
+     form controls at 16px on phones stops that jump on every filter. */
+  .app-shell .form-control,
+  .app-shell .form-select,
+  .app-shell .form-control-sm,
+  .app-shell .form-select-sm {
+    font-size: 16px;
+  }
+
+  /* Toolbar buttons wrap onto their own row rather than being clipped. */
+  .app-shell .btn-group-sm > .btn,
+  .app-shell .btn-sm {
+    min-height: 38px;
+  }
+
+  /* Filter rows: every field takes the full width so labels stay readable. */
+  .reports-page__filter-row > [class*="col-"],
+  .analytics-page form .row > [class*="col-"],
+  .users-page form .row > [class*="col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  /* Long emails and school names break instead of widening the table. */
+  .users-table td {
+    word-break: break-word;
+  }
+
+  .permissions-table {
+    min-width: 34rem;
+  }
+
+  .permissions-table__feature {
+    min-width: 10rem;
+  }
+
+  /* Hero headings lose a step so they don't wrap to three lines. */
+  .app-shell .dash-hero__title {
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Card bodies get tighter padding on small screens — the default
+     1.5rem eats a third of the width on a 360px phone. */
+  .app-shell .card-body {
+    padding: 0.9rem;
+  }
+}

@@ -289,6 +289,7 @@ $router->get('/users',                  'UserController@index',            [$can
 $router->get('/users/create',           'UserController@create',           [$canManageUsers]);
 $router->get('/users/permissions',      'UserController@permissions',      [$canManageUsers]);
 $router->post('/users/permissions',     'UserController@savePermissions',  [$canManageUsers]);
+$router->post('/users/permissions/reset','UserController@resetPermissions', [$canManageUsers]);
 $router->post('/users',                 'UserController@store',            [$canManageUsers]);
 $router->get('/users/{id}/edit',        'UserController@edit',             [$canManageUsers]);
 $router->post('/users/{id}',            'UserController@update',           [$canManageUsers]);

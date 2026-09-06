@@ -55,6 +55,46 @@ cd /var/www/SSDACMIS && git pull origin main \
 
 Run these **once**, after the normal pull + migrate above.
 
+### Academic years become plain years (2026/2027 → 2026)
+
+Academic years are now stored and shown as a single calendar year. The
+year pickers on Reports, Results, Marks and the Bursar module list
+`2026`, `2027`, … instead of `2026/2027`.
+
+**Your existing data is kept.** Step 4 above (`php database/migrate.php`)
+relabels the year column in place — it never deletes, moves or re-keys a
+row. Everything recorded under `2026/2027` (marks, computed results,
+report cards, fee structures, student bills and their payments) stays on
+the same rows and is simply filed under **2026** afterwards. Terms,
+subjects, students and amounts are untouched.
+
+The migration prints exactly what it did, one line per year, e.g.:
+
+```
+  ok  grades: '2026/2027' -> '2026' (18420 rows kept, nothing deleted)
+  ok  grades row count unchanged (18420)
+```
+
+A row count that changes, or a line starting `!!`, means something needs
+attention — see below. Re-running the migration is safe; once converted it
+reports `already flat` and does nothing.
+
+Take a database backup before pulling, as with any release:
+
+```bash
+mysqldump -u root -p ssdacmis > ~/ssdacmis-before-flat-years.sql
+```
+
+If the migration reports `!!` for a year, it means that database already
+held both forms of the same year (for example `2026` *and* `2026/2027`)
+for the same student/subject/period, which the unique keys forbid. It
+converts every row it safely can, leaves the conflicting ones under their
+old label, deletes nothing, and tells you how many. Reconcile those few
+records, then run the migration again.
+
+After migrating, open **Reports → Year** and confirm the period you use
+(e.g. `2026`) shows the classes and marks you expect.
+
 ### Separate mid-term / end-of-term results
 
 Results are now published per assessment stage. `migrate.php` adds the

@@ -3,6 +3,7 @@ use App\Core\View;
 use App\Core\Flash;
 use App\Core\App;
 use App\Core\Auth;
+use App\Core\Permission;
 use App\Core\Settings;
 use App\Core\SchoolIdentity;
 
@@ -34,6 +35,7 @@ $hodNav = [
     ['Department Marks',  'bi-pencil-square',     '/hod/marks',         ['staff','hod'], '/hod/marks'],
     ['Department Reports','bi-file-earmark-text', '/hod/reports',       ['staff','hod'], '/hod/reports'],
     ['Results',           'bi-graph-up-arrow',    '/hod/results',       ['staff','hod'], '/hod/results'],
+    ['Analytics',         'bi-bar-chart-line',    '/hod/analytics',     ['staff','hod'], '/hod/analytics'],
     ['Announcements',     'bi-megaphone',         '/hod/announcements', ['staff','hod'], '/hod/announcements'],
 ];
 
@@ -52,27 +54,32 @@ $parentNav = [
     ['Announcements',    'bi-megaphone',   '/parent/announcements', ['parent'], '/parent/announcements'],
 ];
 
+// Sixth element (optional) is the permission key the item needs. An item
+// with one is hidden as soon as the role — or that individual account —
+// loses the permission, so the sidebar matches what the routes allow.
 $mainNav = [
     ['Overview',      'bi-speedometer2',      '/dashboard',     ['admin','school_admin','staff','student'], '/dashboard'],
-    ['Schools',       'bi-building-gear',     '/schools',       ['admin'],                                  '/schools'],
-    ['Students',      'bi-people',            '/students',      ['admin','school_admin','staff'],           '/students'],
-    ['Staff',         'bi-person-badge',      '/staff',         ['admin','school_admin'],                   '/staff'],
-    ['HODs',          'bi-mortarboard-fill',  '/hods',          ['admin','school_admin'],                   '/hods'],
-    ['Bursars',       'bi-cash-coin',         '/bursars',       ['admin','school_admin'],                   '/bursars'],
-    ['Parents',       'bi-person-hearts',     '/parents',       ['admin','school_admin'],                   '/parents'],
-    ['Classes',       'bi-grid',              '/classes',       ['admin','school_admin','staff'],           '/classes'],
-    ['Subjects',      'bi-book',              '/subjects',      ['admin','school_admin','staff'],           '/subjects'],
-    ['Teaching',      'bi-diagram-3',         '/teaching',      ['admin','school_admin'],                   '/teaching'],
-    ['Marks',         'bi-pencil-square',     '/marks',         ['admin','school_admin','staff'],           '/marks'],
-    ['Results',       'bi-graph-up-arrow',    '/results',       ['admin','school_admin','staff'],           '/results'],
-    ['Reports',       'bi-file-earmark-text', '/reports',       ['admin','school_admin','staff','student'], '/reports'],
-    ['Attendance',    'bi-calendar-check',    '/attendance',    ['admin','school_admin','staff'],           '/attendance'],
+    ['Schools',       'bi-building-gear',     '/schools',       ['admin'],                                  '/schools',      'schools.manage'],
+    ['Students',      'bi-people',            '/students',      ['admin','school_admin','staff'],           '/students',     'students.view'],
+    ['Staff',         'bi-person-badge',      '/staff',         ['admin','school_admin'],                   '/staff',        'staff.manage'],
+    ['Users',         'bi-person-gear',       '/users',         ['admin','school_admin'],                   '/users',        'users.manage'],
+    ['HODs',          'bi-mortarboard-fill',  '/hods',          ['admin','school_admin'],                   '/hods',         'accounts.hod'],
+    ['Bursars',       'bi-cash-coin',         '/bursars',       ['admin','school_admin'],                   '/bursars',      'accounts.bursar'],
+    ['Parents',       'bi-person-hearts',     '/parents',       ['admin','school_admin'],                   '/parents',      'accounts.parent'],
+    ['Classes',       'bi-grid',              '/classes',       ['admin','school_admin','staff'],           '/classes',      'classes.view'],
+    ['Subjects',      'bi-book',              '/subjects',      ['admin','school_admin','staff'],           '/subjects',     'subjects.view'],
+    ['Teaching',      'bi-diagram-3',         '/teaching',      ['admin','school_admin'],                   '/teaching',     'teaching.manage'],
+    ['Marks',         'bi-pencil-square',     '/marks',         ['admin','school_admin','staff'],           '/marks',        'marks.enter'],
+    ['Results',       'bi-graph-up-arrow',    '/results',       ['admin','school_admin','staff'],           '/results',      'results.view'],
+    ['Analytics',     'bi-bar-chart-line',    '/analytics',     ['admin','school_admin','staff'],           '/analytics',    'analytics.view'],
+    ['Reports',       'bi-file-earmark-text', '/reports',       ['admin','school_admin','staff','student'], '/reports',      'reports.view'],
+    ['Attendance',    'bi-calendar-check',    '/attendance',    ['admin','school_admin','staff'],           '/attendance',   'attendance.manage'],
     // Fees Management Module is bursar-only and lives under /bursar/*.
     // Students still see /fees as a read-only "My fees" page.
     ['My Fees',       'bi-cash-coin',         '/fees',          ['student'],                                '/fees'],
     ['Announcements', 'bi-megaphone',         '/announcements', ['admin','school_admin','staff','student'], '/announcements'],
-    ['Settings',      'bi-gear',              '/settings',      ['admin'],                                  '/settings'],
-    ['Activity Log',  'bi-clock-history',     '/activity-log',  ['admin','school_admin'],                   '/activity-log'],
+    ['Settings',      'bi-gear',              '/settings',      ['admin'],                                  '/settings',     'settings.manage'],
+    ['Activity Log',  'bi-clock-history',     '/activity-log',  ['admin','school_admin'],                   '/activity-log', 'activity.view'],
 ];
 
 // school_admin has no /schools access (that's super-admin only), so their
@@ -106,6 +113,10 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
   <title><?= View::e($pageTitle) ?> &middot; <?= View::e($schoolName) ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <?php /* Bootstrap CSS/JS and the icon font all come from jsDelivr — opening
+           that connection during head parsing saves a DNS + TLS round trip
+           before the render-blocking stylesheet is even requested. */ ?>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -250,8 +261,13 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
         <?php endforeach; ?>
       <?php else: ?>
         <li class="app-sidebar__section">Main</li>
-        <?php foreach ($mainNav as [$label, $icon, $href, $roles, $prefix]): ?>
+        <?php foreach ($mainNav as $navItem): ?>
+          <?php
+            [$label, $icon, $href, $roles, $prefix] = $navItem;
+            $navPerm = $navItem[5] ?? null;
+          ?>
           <?php if (!in_array($role, $roles, true)) continue; ?>
+          <?php if ($navPerm !== null && !Permission::allows($navPerm)) continue; ?>
           <?php
             $active = $relPath === $href
                    || str_starts_with($relPath, rtrim($prefix, '/') . '/');
@@ -889,9 +905,13 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
 }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= View::asset($base, 'assets/js/app.js') ?>"></script>
-<script src="<?= View::asset($base, 'assets/js/entity-modal.js') ?>"></script>
+<?php /* Deferred: none of these three touch the DOM before it is parsed, and
+        `defer` keeps their relative order while letting the parser finish
+        first. Page-level inline scripts must therefore wait for
+        DOMContentLoaded before using the bootstrap global. */ ?>
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script defer src="<?= View::asset($base, 'assets/js/app.js') ?>"></script>
+<script defer src="<?= View::asset($base, 'assets/js/entity-modal.js') ?>"></script>
 <script>
   // Inline print: load any URL inside a hidden iframe and trigger the print
   // dialog from there, so receipts/reports never spawn a new tab or window

@@ -110,11 +110,24 @@ if ($isSuperAdmin) {
       </div>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 mb-4">
+    <div class="d-flex flex-wrap gap-2 mb-3">
       <button type="submit" class="btn btn-primary">
         <i class="bi bi-check2"></i> Save permissions
       </button>
       <a class="btn btn-outline-secondary" href="<?= $base ?>/users">Cancel</a>
     </div>
+  </form>
+
+  <form method="post" action="<?= $base ?>/users/permissions" class="mb-4"
+        onsubmit="return confirm('Reset every role back to the built-in defaults? Any customisation for this scope is discarded.');">
+    <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+    <?php if ($isSuperAdmin): ?>
+      <input type="hidden" name="school_id" value="<?= (int) ($schoolId ?? 0) ?>">
+    <?php endif; ?>
+    <button type="submit" class="btn btn-outline-danger btn-sm"
+            formaction="<?= $base ?>/users/permissions/reset">
+      <i class="bi bi-arrow-counterclockwise"></i> Reset to defaults
+    </button>
+    <span class="small text-muted ms-2">Restores the access each role had before the matrix was edited.</span>
   </form>
 </div>
