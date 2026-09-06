@@ -138,9 +138,8 @@ if (!$columnExists('classes', 'class_teacher_id')) {
 }
 
 /* -- grades.academic_year + exam_type + recorded_by --------------------- */
-$currentAY = (date('n') >= 9)
-    ? date('Y') . '/' . (date('Y') + 1)
-    : (date('Y') - 1) . '/' . date('Y');
+/* Academic years are flat calendar years — see App\Core\AcademicYear. */
+$currentAY = date('Y');
 
 if (!$columnExists('grades', 'academic_year')) {
     $run(
@@ -707,6 +706,108 @@ if (!$tableExists('activity_log')) {
     );
 } else {
     $out[] = "  --  activity_log already exists";
+}
+
+/* -- Academic years become flat calendar years --------------------------
+ * Historically stored as "2025/2026"; every picker now offers "2025",
+ * "2026", ... so stored values have to match or the reports would look at a
+ * period nothing was ever saved under. Rewriting a spanning year to its
+ * leading year is injective (2024/2025 -> 2024, 2025/2026 -> 2025), so no
+ * two distinct years can collide. UPDATE IGNORE is belt-and-braces for a
+ * database that somehow already holds both forms of the same year. */
+$flatYearTables = [
+    'grades',
+    'term_subject_results',
+    'term_student_results',
+    'fees_structure',
+    'student_fees',
+];
+foreach ($flatYearTables as $tbl) {
+    if (!$tableExists($tbl) || !$columnExists($tbl, 'academic_year')) {
+        $out[] = "  --  $tbl.academic_year not present, skipped";
+        continue;
+    }
+    $stmt = $pdo->query(
+        "SELECT COUNT(*) FROM `$tbl` WHERE academic_year LIKE '%/%'"
+    );
+    $pending = (int) $stmt->fetchColumn();
+    if ($pending === 0) {
+        $out[] = "  --  $tbl.academic_year already flat";
+        continue;
+    }
+    $pdo->exec(
+        "UPDATE IGNORE `$tbl`
+         SET academic_year = LEFT(academic_year, 4)
+         WHERE academic_year LIKE '%/%'"
+    );
+    $left = (int) $pdo->query(
+        "SELECT COUNT(*) FROM `$tbl` WHERE academic_year LIKE '%/%'"
+    )->fetchColumn();
+    $out[] = $left === 0
+        ? "  ok  $tbl.academic_year flattened ($pending rows)"
+        : "  !!  $tbl.academic_year flattened, $left row(s) skipped as duplicates";
+}
+
+/* -- Permissions (role matrix + per-user overrides) --------------------- */
+if (!$tableExists('role_permissions')) {
+    $run(
+        "CREATE TABLE role_permissions (
+            school_id  INT UNSIGNED NOT NULL DEFAULT 0,
+            role       VARCHAR(30)  NOT NULL,
+            permission VARCHAR(60)  NOT NULL,
+            allowed    TINYINT(1)   NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (school_id, role, permission)
+        ) ENGINE=InnoDB",
+        "role_permissions table created"
+    );
+} else {
+    $out[] = "  --  role_permissions already exists";
+}
+
+if (!$tableExists('user_permissions')) {
+    $run(
+        "CREATE TABLE user_permissions (
+            user_id    INT UNSIGNED NOT NULL,
+            permission VARCHAR(60)  NOT NULL,
+            allowed    TINYINT(1)   NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, permission),
+            CONSTRAINT fk_up_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB",
+        "user_permissions table created"
+    );
+} else {
+    $out[] = "  --  user_permissions already exists";
+}
+
+/* -- Indexes for the report / analytics hot paths -----------------------
+ * Every period-scoped page filters on (academic_year, term[, stage]) and
+ * joins back to students/classes. Without these the analytics roll-ups and
+ * the report-card pages fall back to full scans of grades and the
+ * term_* result tables. */
+$perfIndexes = [
+    ['grades',               'idx_grades_period',        '(academic_year, term, exam_type)'],
+    ['grades',               'idx_grades_student_period','(student_id, academic_year, term)'],
+    ['term_subject_results', 'idx_tsr_subject_period',   '(subject_id, academic_year, term, stage)'],
+    ['term_subject_results', 'idx_tsr_period',           '(academic_year, term, stage)'],
+    ['term_student_results', 'idx_tst_period',           '(academic_year, term, stage)'],
+    ['students',             'idx_students_class_stream','(class_id, stream)'],
+];
+foreach ($perfIndexes as [$tbl, $idx, $cols]) {
+    if (!$tableExists($tbl)) {
+        $out[] = "  --  $tbl missing, index $idx skipped";
+        continue;
+    }
+    if ($indexExists($tbl, $idx)) {
+        $out[] = "  --  $tbl.$idx already present";
+        continue;
+    }
+    try {
+        $run("ALTER TABLE `$tbl` ADD KEY $idx $cols", "$tbl.$idx index added");
+    } catch (\Throwable $e) {
+        $out[] = "  !!  $tbl.$idx could not be added: " . $e->getMessage();
+    }
 }
 
 $out[] = "Done.";

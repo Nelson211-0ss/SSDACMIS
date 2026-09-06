@@ -1,4 +1,5 @@
 <?php
+use App\Core\AcademicYear;
 use App\Core\View;
 use App\Services\FeesService;
 $layout = 'app';
@@ -28,7 +29,11 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
         <form method="get" class="filter-form--stack-mobile d-flex align-items-end flex-wrap gap-2" data-auto-reload>
           <div>
             <label class="form-label small mb-1">Academic year</label>
-            <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
+            <select name="year" class="form-select form-select-sm">
+              <?php foreach (AcademicYear::options() as $_y): ?>
+                <option value="<?= View::e($_y) ?>" <?= (string) $year === $_y ? "selected" : "" ?>><?= View::e($_y) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <button type="submit" class="btn btn-outline-primary btn-sm" title="Reload">
             <i class="bi bi-arrow-repeat"></i><span class="visually-hidden">Reload</span>

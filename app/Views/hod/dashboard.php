@@ -1,4 +1,5 @@
 <?php
+use App\Core\AcademicYear;
 use App\Core\View;
 
 $layout = 'app';
@@ -7,18 +8,9 @@ $title  = 'Department Dashboard';
 $catLabel = ['core' => 'Compulsory Core', 'science' => 'Science', 'arts' => 'Arts', 'optional' => 'Optional'];
 $catShort = ['core' => 'Core', 'science' => 'Science', 'arts' => 'Arts', 'optional' => 'Optional'];
 
-// Default academic year: Sept-Dec uses next year, Jan-Aug uses prior year.
-$defaultYear = (date('n') >= 9)
-    ? date('Y') . '/' . (date('Y') + 1)
-    : (date('Y') - 1) . '/' . date('Y');
-[$startStr] = explode('/', $defaultYear);
-$start = (int) $startStr;
-
-$availableYears = [];
-for ($i = -2; $i <= 2; $i++) {
-    $a = $start + $i;
-    $availableYears[] = $a . '/' . ($a + 1);
-}
+// Academic years are flat calendar years — see App\Core\AcademicYear.
+$defaultYear    = AcademicYear::current();
+$availableYears = AcademicYear::options();
 $availableTerms = ['Term 1', 'Term 2', 'Term 3'];
 
 $selYear = trim((string) ($_GET['year'] ?? ''));

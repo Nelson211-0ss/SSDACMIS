@@ -367,7 +367,7 @@ class BursarController extends Controller
         // record a payment for a specific term without first switching.
         $year = trim((string) $this->input('academic_year', $period['year']));
         $term = trim((string) $this->input('term',          $period['term']));
-        if (!preg_match('/^\d{4}\/\d{4}$/', $year))             $year = $period['year'];
+        if (!preg_match('/^\d{4}$/', $year))                    $year = $period['year'];
         if (!in_array($term, FeesService::TERMS, true))         $term = $period['term'];
 
         $back = $this->safeReturn((string) $this->input('return', '/bursar/students'));

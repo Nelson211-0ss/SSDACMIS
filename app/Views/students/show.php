@@ -224,8 +224,12 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
     <form method="get" action="<?= $base ?>/students/<?= (int) $student['id'] ?>" class="row g-2 align-items-end mb-3">
       <input type="hidden" name="tab" value="results">
       <div class="col-6 col-md-3">
-        <label class="form-label small mb-1">Academic year</label>
-        <input type="text" name="year" value="<?= View::e($resultsYear) ?>" class="form-control form-control-sm" placeholder="2025/2026">
+        <label class="form-label small mb-1">Year</label>
+        <select name="year" class="form-select form-select-sm">
+          <?php foreach (\App\Core\AcademicYear::options() as $y): ?>
+            <option value="<?= View::e($y) ?>" <?= $resultsYear === $y ? 'selected' : '' ?>><?= View::e($y) ?></option>
+          <?php endforeach; ?>
+        </select>
       </div>
       <div class="col-6 col-md-2">
         <label class="form-label small mb-1">Term</label>

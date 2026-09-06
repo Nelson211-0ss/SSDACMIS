@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS students (
     PRIMARY KEY (id),
     UNIQUE KEY uniq_admission_school (school_id, admission_no),
     KEY idx_class (class_id),
+    KEY idx_students_class_stream (class_id, stream),
     KEY idx_students_school (school_id),
     CONSTRAINT fk_student_user   FOREIGN KEY (user_id)   REFERENCES users(id)    ON DELETE SET NULL,
     CONSTRAINT fk_student_class  FOREIGN KEY (class_id)  REFERENCES classes(id)  ON DELETE SET NULL,
@@ -188,6 +189,8 @@ CREATE TABLE IF NOT EXISTS grades (
     PRIMARY KEY (id),
     UNIQUE KEY uniq_student_subject_period (student_id, subject_id, academic_year, term, exam_type),
     KEY idx_grade_lookup (subject_id, academic_year, term, exam_type),
+    KEY idx_grades_period (academic_year, term, exam_type),
+    KEY idx_grades_student_period (student_id, academic_year, term),
     KEY idx_grades_school (school_id),
     CONSTRAINT fk_grade_student  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT fk_grade_subject  FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
@@ -349,6 +352,31 @@ CREATE TABLE IF NOT EXISTS parent_students (
     CONSTRAINT fk_ps_school  FOREIGN KEY (school_id)      REFERENCES schools(id)  ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ---------- Permissions ----------
+-- Per-school capability matrix, edited by an admin at /users/permissions.
+-- school_id 0 is the super admin's global scope. A missing row means "use
+-- the built-in default for that role" (App\Core\Permission::DEFAULTS), so an
+-- install that never touches this table behaves exactly as it always did.
+CREATE TABLE IF NOT EXISTS role_permissions (
+    school_id  INT UNSIGNED NOT NULL DEFAULT 0,
+    role       VARCHAR(30)  NOT NULL,
+    permission VARCHAR(60)  NOT NULL,
+    allowed    TINYINT(1)   NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (school_id, role, permission)
+) ENGINE=InnoDB;
+
+-- Per-account overrides. allowed=1 grants a permission the user's role does
+-- not have; allowed=0 revokes one it does. Beats role_permissions.
+CREATE TABLE IF NOT EXISTS user_permissions (
+    user_id    INT UNSIGNED NOT NULL,
+    permission VARCHAR(60)  NOT NULL,
+    allowed    TINYINT(1)   NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, permission),
+    CONSTRAINT fk_up_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ---------- Announcements ----------
 CREATE TABLE IF NOT EXISTS announcements (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -417,6 +445,8 @@ CREATE TABLE IF NOT EXISTS term_subject_results (
     PRIMARY KEY (id),
     UNIQUE KEY uniq_term_subject_stage (student_id, subject_id, academic_year, term, stage),
     KEY idx_term_class_period (class_id, academic_year, term, stage),
+    KEY idx_tsr_subject_period (subject_id, academic_year, term, stage),
+    KEY idx_tsr_period (academic_year, term, stage),
     CONSTRAINT fk_tsr_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsr_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsr_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
@@ -437,6 +467,7 @@ CREATE TABLE IF NOT EXISTS term_student_results (
     PRIMARY KEY (id),
     UNIQUE KEY uniq_term_student_stage (student_id, academic_year, term, stage),
     KEY idx_tst_class_period (class_id, academic_year, term, stage),
+    KEY idx_tst_period (academic_year, term, stage),
     CONSTRAINT fk_tsi_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsi_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

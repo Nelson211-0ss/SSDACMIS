@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\AcademicYear;
 use App\Core\ActivityLog;
 use App\Core\App;
 use App\Core\Auth;
@@ -377,7 +378,7 @@ class StudentController extends Controller
         )->fetchAll();
 
         /* ---------------------------- Results ---------------------------- */
-        $resultsYear = (string) ($this->input('year') ?: self::defaultAcademicYear());
+        $resultsYear = AcademicYear::resolve((string) $this->input('year', ''));
         $resultsTerm = (string) ($this->input('term') ?: 'Term 1');
         if (!in_array($resultsTerm, ['Term 1', 'Term 2', 'Term 3'], true)) {
             $resultsTerm = 'Term 1';
@@ -425,12 +426,10 @@ class StudentController extends Controller
         ]);
     }
 
-    /** Same "academic year rolls over in September" rule ReportController uses. */
+    /** Flat calendar year, same as everywhere else — see App\Core\AcademicYear. */
     private static function defaultAcademicYear(): string
     {
-        return (date('n') >= 9)
-            ? date('Y') . '/' . (date('Y') + 1)
-            : (date('Y') - 1) . '/' . date('Y');
+        return AcademicYear::current();
     }
 
     public function store(): string

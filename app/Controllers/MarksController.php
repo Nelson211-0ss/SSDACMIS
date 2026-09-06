@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\AcademicYear;
 use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
@@ -32,32 +33,22 @@ class MarksController extends Controller
 
     private static function defaultYear(): string
     {
-        return (date('n') >= 9)
-            ? date('Y') . '/' . (date('Y') + 1)
-            : (date('Y') - 1) . '/' . date('Y');
+        return AcademicYear::current();
     }
 
     /**
-     * The list of academic years a user may pick on the period chooser:
-     * current year ± 2. Always returns "YYYY/YYYY" strings.
+     * The list of academic years a user may pick on the period chooser.
+     * Academic years are flat calendar years — see App\Core\AcademicYear.
      */
     private static function selectableYears(): array
     {
-        [$startStr] = explode('/', self::defaultYear());
-        $start = (int) $startStr;
-        $years = [];
-        for ($i = -2; $i <= 2; $i++) {
-            $a = $start + $i;
-            $years[] = $a . '/' . ($a + 1);
-        }
-        return $years;
+        return AcademicYear::options();
     }
 
-    /** Strict server-side check: the academic year must look like "YYYY/YYYY" with consecutive years. */
+    /** Strict server-side check: a plain four-digit year inside the offered range. */
     private static function isValidYear(string $year): bool
     {
-        if (!preg_match('~^(\d{4})/(\d{4})$~', $year, $m)) return false;
-        return ((int) $m[2]) === ((int) $m[1]) + 1;
+        return AcademicYear::isValid($year);
     }
 
     private function isAdmin(): bool

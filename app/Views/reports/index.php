@@ -47,34 +47,78 @@ $isMid      = ($stage === 'midterm');
           </p>
         </div>
       </div>
-      <div class="row g-3 align-items-end">
-        <div class="col-md-3">
-          <label class="form-label">Academic year</label>
-          <input name="year" class="form-control shadow-sm" value="<?= View::e($year) ?>"
-                 placeholder="e.g. <?= View::e(date('n') >= 9 ? date('Y') . '/' . (date('Y') + 1) : (date('Y') - 1) . '/' . date('Y')) ?>">
+      <div class="row g-2 g-md-3 align-items-end reports-page__filter-row">
+        <div class="col-6 col-md-4 col-xl-2">
+          <label class="form-label" for="filterYear">Year</label>
+          <select name="year" id="filterYear" class="form-select form-select-sm shadow-sm">
+            <?php foreach (($years ?? [$year]) as $y): ?>
+              <option value="<?= View::e((string) $y) ?>" <?= (string) $y === (string) $year ? 'selected' : '' ?>>
+                <?= View::e((string) $y) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
         </div>
-        <div class="col-md-3">
-          <label class="form-label">Term</label>
-          <select name="term" class="form-select shadow-sm">
+        <div class="col-6 col-md-4 col-xl-2">
+          <label class="form-label" for="filterTerm">Term</label>
+          <select name="term" id="filterTerm" class="form-select form-select-sm shadow-sm">
             <?php foreach ($terms as $t): ?>
               <option <?= $t === $term ? 'selected' : '' ?>><?= View::e($t) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-md-3">
-          <label class="form-label">Assessment</label>
-          <select name="stage" class="form-select shadow-sm">
+        <div class="col-6 col-md-4 col-xl-2">
+          <label class="form-label" for="filterStage">Assessment</label>
+          <select name="stage" id="filterStage" class="form-select form-select-sm shadow-sm">
             <?php foreach (($stages ?? []) as $key => $label): ?>
               <option value="<?= View::e((string) $key) ?>" <?= $key === $stage ? 'selected' : '' ?>><?= View::e($label) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-md-3">
-          <button type="submit" class="btn btn-primary w-100 shadow-sm">
-            <i class="bi bi-check2-circle me-1"></i> Apply period
+        <?php if ($role !== 'student'): ?>
+          <div class="col-6 col-md-4 col-xl-2">
+            <label class="form-label" for="filterClass">Class</label>
+            <select name="class_id" id="filterClass" class="form-select form-select-sm shadow-sm">
+              <option value="0">All classes</option>
+              <?php foreach (($allClasses ?? []) as $c): ?>
+                <option value="<?= (int) $c['id'] ?>" <?= (int) $c['id'] === (int) ($filterClassId ?? 0) ? 'selected' : '' ?>>
+                  <?= View::e((string) $c['name']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-6 col-md-4 col-xl-2">
+            <label class="form-label" for="filterStream">Stream</label>
+            <select name="stream" id="filterStream" class="form-select form-select-sm shadow-sm"
+                    title="Science / Arts applies to Form 3 and Form 4 only">
+              <option value="">All streams</option>
+              <?php foreach (($streams ?? []) as $key => $label): ?>
+                <option value="<?= View::e((string) $key) ?>" <?= (string) $key === (string) ($filterStream ?? '') ? 'selected' : '' ?>>
+                  <?= View::e($label) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        <?php endif; ?>
+        <div class="col-12 col-md-4 col-xl-2">
+          <button type="submit" class="btn btn-primary btn-sm w-100 shadow-sm">
+            <i class="bi bi-check2-circle me-1"></i> Apply
           </button>
         </div>
       </div>
+      <?php if ($role !== 'student' && (!empty($filterClassId) || !empty($filterStream))): ?>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+          <span class="small text-muted">Filtered:</span>
+          <?php if (!empty($filterStream)): ?>
+            <span class="badge rounded-pill text-bg-light border">
+              <?= View::e(($streams[$filterStream] ?? $filterStream) . ' stream') ?>
+            </span>
+          <?php endif; ?>
+          <a class="btn btn-link btn-sm p-0 ms-1"
+             href="<?= $base ?><?= $portalPrefix ?>/reports?year=<?= rawurlencode($year) ?>&amp;term=<?= rawurlencode($term) ?>&amp;stage=<?= rawurlencode($stage) ?>">
+            Clear filters
+          </a>
+        </div>
+      <?php endif; ?>
       <?php if ($role !== 'student' && !empty($classes)): ?>
         <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">
           <span class="small text-muted flex-grow-1">
@@ -82,9 +126,10 @@ $isMid      = ($stage === 'midterm');
             Print every student's report card in one go — one A4 sheet per student.
           </span>
           <a class="btn btn-outline-primary btn-sm"
-             href="<?= $base ?><?= $portalPrefix ?>/reports/booklet?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>&stage=<?= rawurlencode($stage) ?>"
+             href="<?= $base ?><?= $portalPrefix ?>/reports/booklet?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>&stage=<?= rawurlencode($stage) ?><?= !empty($filterClassId) ? '&class_id=' . (int) $filterClassId : '' ?>"
              target="_blank" rel="noopener">
-            <i class="bi bi-printer"></i> Print all report cards
+            <i class="bi bi-printer"></i>
+            <?= !empty($filterClassId) ? 'Print this class' : 'Print all report cards' ?>
           </a>
         </div>
       <?php endif; ?>
@@ -117,15 +162,27 @@ $isMid      = ($stage === 'midterm');
   <div class="card border-0 shadow-sm reports-page__empty">
     <div class="card-body d-flex gap-3 align-items-start py-4">
       <span class="reports-page__empty-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
-      <div>
-        <h3 class="h6 mb-2">No reports available</h3>
-        <p class="text-muted small mb-0">
-          You don’t have access to any classes’ reports yet.
-          <?php if ($role === 'staff'): ?>
-            Ask an admin to assign you a teaching class or make you the class teacher.
-          <?php endif; ?>
-        </p>
-      </div>
+      <?php if (!empty($allClasses)): ?>
+        <div>
+          <h3 class="h6 mb-2">Nothing matches these filters</h3>
+          <p class="text-muted small mb-0">
+            No class matches the selected class and stream.
+            <?php if (!empty($filterStream)): ?>
+              Streams only apply to Form 3 and Form 4 classes.
+            <?php endif; ?>
+          </p>
+        </div>
+      <?php else: ?>
+        <div>
+          <h3 class="h6 mb-2">No reports available</h3>
+          <p class="text-muted small mb-0">
+            You don’t have access to any classes’ reports yet.
+            <?php if ($role === 'staff'): ?>
+              Ask an admin to assign you a teaching class or make you the class teacher.
+            <?php endif; ?>
+          </p>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 

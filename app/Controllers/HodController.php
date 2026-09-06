@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\AcademicYear;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -260,16 +261,8 @@ class HodController extends Controller
             : array_merge($categories, $extra);
 
         // Default academic year / term (same rules as HOD dashboard).
-        $defaultYear = (date('n') >= 9)
-            ? date('Y') . '/' . (date('Y') + 1)
-            : (date('Y') - 1) . '/' . date('Y');
-        [$startStr] = explode('/', $defaultYear);
-        $start = (int) $startStr;
-        $availableYears = [];
-        for ($i = -2; $i <= 2; $i++) {
-            $a = $start + $i;
-            $availableYears[] = $a . '/' . ($a + 1);
-        }
+        $defaultYear    = AcademicYear::current();
+        $availableYears = AcademicYear::options();
         $availableTerms = ['Term 1', 'Term 2', 'Term 3'];
 
         $selYear = trim((string) $this->input('year'));

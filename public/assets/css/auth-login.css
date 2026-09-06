@@ -113,13 +113,16 @@ body.auth-page--login .auth-credit {
   padding: 2rem 1.5rem;
 }
 
+/* Borderless by design: the form sits straight on the page background with
+   no card, frame, radius or shadow around it. */
 .auth-login__card {
   width: min(400px, 100%);
   max-width: 400px;
-  padding: 2rem 1.75rem 1.75rem;
-  background: #fff;
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-lg);
+  padding: 1.5rem 0 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   animation: auth-login-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -430,7 +433,7 @@ body.auth-page--login .auth-credit {
 
 @media (max-width: 480px) {
   .auth-login__card {
-    padding: 1rem 1.35rem 0.95rem;
+    padding: 0.75rem 0 0;
   }
 
   .auth-login__fields,

@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\AcademicYear;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -28,11 +29,13 @@ class ReportController extends Controller
 {
     private const TERMS = ['Term 1', 'Term 2', 'Term 3'];
 
+    /** Streams a Form 3 / Form 4 student can sit in. */
+    private const STREAMS = ['science' => 'Science', 'arts' => 'Arts'];
+
+    /** Academic years are flat calendar years — see App\Core\AcademicYear. */
     private static function defaultYear(): string
     {
-        return (date('n') >= 9)
-            ? date('Y') . '/' . (date('Y') + 1)
-            : (date('Y') - 1) . '/' . date('Y');
+        return AcademicYear::current();
     }
 
     /** Requested assessment stage, defaulting to the full end-of-term report. */
@@ -159,13 +162,22 @@ class ReportController extends Controller
             return '';
         }
 
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
+        if (!in_array($term, self::TERMS, true)) $term = 'Term 1';
         $stage = $this->stage();
+        // Filters: one class, and (Form 3/4 only) one stream.
+        $filterClassId = (int) $this->input('class_id', 0);
+        $filterStream  = self::normalizeStream((string) $this->input('stream', ''));
+
         $stageMeta = [
             'stage'      => $stage,
             'stages'     => AcademicMarking::stages(),
             'stageLabel' => AcademicMarking::stageLabel($stage),
+            'years'      => AcademicYear::options(),
+            'streams'    => self::STREAMS,
+            'filterClassId' => $filterClassId,
+            'filterStream'  => $filterStream,
         ];
 
         if ($this->isStudent()) {
@@ -187,29 +199,81 @@ class ReportController extends Controller
             return $this->view('reports/index', $stageMeta + [
                 'year' => $year, 'term' => $term, 'terms' => self::TERMS,
                 'role' => Auth::role(), 'classes' => [], 'students' => [],
+                'allClasses' => [],
             ]);
         }
 
         $ph = implode(',', array_fill(0, count($classIds), '?'));
-        $classes = Database::query(
+        // Every class the user may see — the class filter always lists all of
+        // them, even when the results below are narrowed to one.
+        $allClasses = Database::query(
             "SELECT c.id, c.name, c.level,
                     (SELECT COUNT(*) FROM students st WHERE st.class_id = c.id) AS student_count
              FROM classes c WHERE c.id IN ($ph)
              ORDER BY c.level, c.name",
             $classIds
         )->fetchAll();
-        $students = Database::query(
-            "SELECT id, admission_no, first_name, last_name, class_id
-             FROM students WHERE class_id IN ($ph)
-             ORDER BY class_id, first_name, last_name",
-            $classIds
-        )->fetchAll();
+
+        // A class filter outside the user's own scope is ignored rather than
+        // rejected, so a stale bookmark just falls back to "all classes".
+        if ($filterClassId > 0 && !in_array($filterClassId, $classIds, true)) {
+            $filterClassId = 0;
+            $stageMeta['filterClassId'] = 0;
+        }
+
+        $classes = $allClasses;
+        if ($filterClassId > 0) {
+            $classes = array_values(array_filter(
+                $allClasses,
+                static fn ($c) => (int) $c['id'] === $filterClassId
+            ));
+        }
+        // Streams only exist in Form 3 / Form 4, so a stream filter also
+        // drops the lower-form classes from the class list.
+        if ($filterStream !== '') {
+            $classes = array_values(array_filter(
+                $classes,
+                static fn ($c) => self::isUpperForm((string) ($c['level'] ?? ''))
+            ));
+        }
+
+        $scopeIds = array_map(static fn ($c) => (int) $c['id'], $classes);
+        $students = [];
+        if ($scopeIds !== []) {
+            $sph    = implode(',', array_fill(0, count($scopeIds), '?'));
+            $params = $scopeIds;
+            $streamSql = '';
+            if ($filterStream !== '') {
+                $streamSql = ' AND stream = ?';
+                $params[]  = $filterStream;
+            }
+            $students = Database::query(
+                "SELECT id, admission_no, first_name, last_name, class_id, stream
+                 FROM students WHERE class_id IN ($sph){$streamSql}
+                 ORDER BY class_id, first_name, last_name",
+                $params
+            )->fetchAll();
+        }
 
         return $this->view('reports/index', $stageMeta + [
             'year' => $year, 'term' => $term, 'terms' => self::TERMS,
             'role' => Auth::role(),
             'classes' => $classes, 'students' => $students,
+            'allClasses' => $allClasses,
         ]);
+    }
+
+    /** Only Form 3 and Form 4 split into Science / Arts streams. */
+    private static function isUpperForm(string $level): bool
+    {
+        return in_array(trim($level), ['Form 3', 'Form 4'], true);
+    }
+
+    /** '' when no stream filter is requested, otherwise 'science' or 'arts'. */
+    private static function normalizeStream(string $stream): string
+    {
+        $s = strtolower(trim($stream));
+        return isset(self::STREAMS[$s]) ? $s : '';
     }
 
     /* -------------------------- helpers (data) -------------------- */
@@ -269,7 +333,7 @@ class ReportController extends Controller
             http_response_code(403); return $this->view('errors/403');
         }
 
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) $term = 'Term 1';
@@ -364,7 +428,7 @@ class ReportController extends Controller
             http_response_code(403); return $this->view('errors/403');
         }
 
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) $term = 'Term 1';
@@ -545,7 +609,7 @@ class ReportController extends Controller
      */
     public function booklet(): string
     {
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {
@@ -674,7 +738,7 @@ class ReportController extends Controller
             return $this->view('errors/403');
         }
 
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {
@@ -703,13 +767,46 @@ class ReportController extends Controller
             [$classId]
         )->fetchAll();
 
+        // Build each score sheet once and rank from those sheets, the same way
+        // booklet() does. classPositionRow() per student would rebuild every
+        // peer's sheet for every student — quadratic on a full class.
+        $level   = trim((string) ($class['level'] ?? ''));
+        $isUpper = self::isUpperForm($level);
+        $sheets  = [];
+        $cohorts = [];
+        foreach ($rows as $student) {
+            $sid = (int) $student['id'];
+            $sheets[$sid] = AcademicMarking::buildScoreSheet($sid, $year, $term, $stage);
+            $stream = (string) ($student['stream'] ?? 'none');
+            $cohorts[($isUpper && isset(self::STREAMS[$stream])) ? $stream : 'class'][] = $sid;
+        }
+
+        $positions = [];
+        foreach ($cohorts as $cohortLabel => $memberIds) {
+            $members = [];
+            foreach ($memberIds as $sid) {
+                $members[] = ['student_id' => $sid, 'average' => $sheets[$sid]['average'] ?? null];
+            }
+            $ranks = AcademicMarking::competitionRanksByAverage($members);
+            foreach ($memberIds as $sid) {
+                $rank = $ranks[$sid] ?? 0;
+                $positions[$sid] = [
+                    'position'     => $rank > 0 ? $rank : null,
+                    'cohort'       => count($memberIds),
+                    'cohort_label' => $cohortLabel === 'class' ? 'class' : (ucfirst($cohortLabel) . ' stream'),
+                    'stream'       => $cohortLabel,
+                    'stage'        => $stage,
+                ];
+            }
+        }
+
         $booklet = [];
         foreach ($rows as $student) {
             $sid = (int) $student['id'];
             $booklet[] = [
                 'student'  => $student,
-                'sheet'    => $this->studentScoreSheet($sid, $year, $term, $stage),
-                'position' => $this->classPosition($sid, $classId, $year, $term, $stage),
+                'sheet'    => $sheets[$sid],
+                'position' => $positions[$sid] ?? ['position' => null, 'cohort' => 0, 'cohort_label' => 'class'],
             ];
         }
 

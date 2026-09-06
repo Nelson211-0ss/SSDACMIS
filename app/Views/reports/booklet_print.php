@@ -1,4 +1,5 @@
 <?php
+use App\Core\AcademicYear;
 use App\Core\View;
 use App\Core\SchoolIdentity;
 
@@ -168,7 +169,11 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
     </div>
     <div>
       <label class="form-label small mb-1">Year</label>
-      <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>" size="9">
+      <select name="year" class="form-select form-select-sm">
+              <?php foreach (AcademicYear::options() as $_y): ?>
+                <option value="<?= View::e($_y) ?>" <?= (string) $year === $_y ? "selected" : "" ?>><?= View::e($_y) ?></option>
+              <?php endforeach; ?>
+            </select>
     </div>
     <div>
       <label class="form-label small mb-1">Term</label>

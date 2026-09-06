@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\AcademicYear;
 use App\Core\App;
 use App\Core\Auth;
 use App\Core\Controller;
@@ -29,31 +30,20 @@ class ResultsController extends Controller
         return AcademicMarking::normalizeStage((string) $this->input('stage', ''));
     }
 
+    /** Academic years are flat calendar years — see App\Core\AcademicYear. */
     private static function defaultYear(): string
     {
-        return (date('n') >= 9)
-            ? date('Y') . '/' . (date('Y') + 1)
-            : (date('Y') - 1) . '/' . date('Y');
+        return AcademicYear::current();
     }
 
     private static function selectableYears(): array
     {
-        [$startStr] = explode('/', self::defaultYear());
-        $start = (int) $startStr;
-        $years = [];
-        for ($i = -2; $i <= 2; $i++) {
-            $a = $start + $i;
-            $years[] = $a . '/' . ($a + 1);
-        }
-        return $years;
+        return AcademicYear::options();
     }
 
     private static function isValidYear(string $year): bool
     {
-        if (!preg_match('~^(\d{4})/(\d{4})$~', $year, $m)) {
-            return false;
-        }
-        return ((int) $m[2]) === ((int) $m[1]) + 1;
+        return AcademicYear::isValid($year);
     }
 
     private function isAdmin(): bool
@@ -181,7 +171,7 @@ class ResultsController extends Controller
             return $this->view('errors/403');
         }
 
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {
@@ -273,7 +263,7 @@ class ResultsController extends Controller
      */
     public function genderPerformance(): string
     {
-        $year  = (string) ($this->input('year') ?: self::defaultYear());
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
         $term  = (string) ($this->input('term') ?: 'Term 1');
         $stage = $this->stage();
         if (!in_array($term, self::TERMS, true)) {

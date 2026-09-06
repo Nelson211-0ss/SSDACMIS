@@ -1,4 +1,5 @@
 <?php
+use App\Core\AcademicYear;
 use App\Core\View;
 use App\Core\SchoolIdentity;
 $layout = 'app';
@@ -31,7 +32,11 @@ $peersAttr = htmlspecialchars(json_encode($reportPeersJson ?? [], JSON_HEX_TAG |
         <form method="get" class="filter-form--stack-mobile d-flex flex-wrap gap-2 align-items-end flex-shrink-0" data-auto-reload action="<?= $base ?><?= $portalPrefix ?>/reports/student/<?= (int) $student['id'] ?>">
           <div class="filter-field filter-field--year">
             <label class="form-label small mb-1">Year</label>
-            <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
+            <select name="year" class="form-select form-select-sm">
+              <?php foreach (AcademicYear::options() as $_y): ?>
+                <option value="<?= View::e($_y) ?>" <?= (string) $year === $_y ? "selected" : "" ?>><?= View::e($_y) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <div class="filter-field filter-field--term">
             <label class="form-label small mb-1">Term</label>

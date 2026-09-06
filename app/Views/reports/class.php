@@ -1,4 +1,5 @@
 <?php
+use App\Core\AcademicYear;
 use App\Core\View;
 use App\Core\SchoolIdentity;
 use App\Services\AcademicMarking;
@@ -47,7 +48,11 @@ $nMatrix = count($matrixPeers);
             action="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $class['id'] ?>">
         <div>
           <label class="form-label small mb-1">Year</label>
-          <input name="year" class="form-control form-control-sm" value="<?= View::e($year) ?>">
+          <select name="year" class="form-select form-select-sm">
+              <?php foreach (AcademicYear::options() as $_y): ?>
+                <option value="<?= View::e($_y) ?>" <?= (string) $year === $_y ? "selected" : "" ?>><?= View::e($_y) ?></option>
+              <?php endforeach; ?>
+            </select>
         </div>
         <div>
           <label class="form-label small mb-1">Term</label>

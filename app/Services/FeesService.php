@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Core\AcademicYear;
 use App\Core\Database;
 
 /**
@@ -38,14 +39,12 @@ class FeesService
     private const PERIOD_SESSION_KEY = 'bursar_period';
 
     /**
-     * Current academic year string, e.g. "2025/2026". Matches the convention
-     * already used by grades.academic_year (September is the cutover month).
+     * Current academic year, e.g. "2026" — the same flat calendar year
+     * grades.academic_year uses (see App\Core\AcademicYear).
      */
     public static function currentYear(): string
     {
-        return (date('n') >= 9)
-            ? date('Y') . '/' . (date('Y') + 1)
-            : (date('Y') - 1) . '/' . date('Y');
+        return AcademicYear::current();
     }
 
     /**
@@ -77,9 +76,9 @@ class FeesService
         $year   = is_array($stored) ? (string) ($stored['year'] ?? '') : '';
         $term   = is_array($stored) ? (string) ($stored['term'] ?? '') : '';
 
-        if ($year === '' || !preg_match('/^\d{4}\/\d{4}$/', $year)) {
-            $year = self::currentYear();
-        }
+        // Accepts the flat year and, for a session stored before the
+        // changeover, the legacy "YYYY/YYYY" form.
+        $year = $year === '' ? self::currentYear() : AcademicYear::normalize($year);
         if (!in_array($term, self::TERMS, true)) {
             $term = self::currentTerm();
         }
@@ -92,8 +91,8 @@ class FeesService
      */
     public static function setActivePeriod(string $year, string $term): void
     {
-        if (!preg_match('/^\d{4}\/\d{4}$/', $year))   return;
-        if (!in_array($term, self::TERMS, true))      return;
+        if (!preg_match('/^\d{4}$/', $year))     return;
+        if (!in_array($term, self::TERMS, true)) return;
         $_SESSION[self::PERIOD_SESSION_KEY] = [
             'year' => $year,
             'term' => $term,
@@ -116,9 +115,12 @@ class FeesService
         )->fetchAll();
 
         $years = [];
-        foreach ($rows as $r) $years[(string) $r['academic_year']] = true;
+        // Legacy "YYYY/YYYY" rows are folded onto their flat year so the
+        // dropdown never offers both forms of the same year.
+        foreach ($rows as $r) $years[AcademicYear::normalize((string) $r['academic_year'])] = true;
+        foreach (AcademicYear::options() as $y) $years[$y] = true;
         $years[self::currentYear()] = true;
-        $years[self::activePeriod()['year']] = true;
+        $years[AcademicYear::normalize(self::activePeriod()['year'])] = true;
 
         $list = array_keys($years);
         // Newer years first.
