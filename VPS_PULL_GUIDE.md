@@ -55,45 +55,76 @@ cd /var/www/SSDACMIS && git pull origin main \
 
 Run these **once**, after the normal pull + migrate above.
 
-### Academic years become plain years (2026/2027 → 2026)
+### Academic years become plain years (2025/2026 → 2026)
 
-Academic years are now stored and shown as a single calendar year. The
-year pickers on Reports, Results, Marks and the Bursar module list
-`2026`, `2027`, … instead of `2026/2027`.
+Academic years are now stored and shown as a single calendar year — the
+school year and the calendar year are the same thing. The year pickers on
+Reports, Results, Marks and the Bursar module list `2026`, `2027`, … and
+default to the **current** year.
 
 **Your existing data is kept.** Step 4 above (`php database/migrate.php`)
 relabels the year column in place — it never deletes, moves or re-keys a
-row. Everything recorded under `2026/2027` (marks, computed results,
-report cards, fee structures, student bills and their payments) stays on
-the same rows and is simply filed under **2026** afterwards. Terms,
-subjects, students and amounts are untouched.
+row. Marks, computed results, report cards, fee structures, student bills
+and their payments all stay on the same rows. Terms, subjects, students
+and amounts are untouched.
 
-The migration prints exactly what it did, one line per year, e.g.:
+Which plain year does a spanning year become? The old default rolled over
+in September, so **both** of these describe work done in 2026:
+
+| Stored as   | Written during | Becomes |
+|-------------|----------------|---------|
+| `2025/2026` | Jan–Aug 2026   | `2026`  |
+| `2026/2027` | Sep–Dec 2026   | `2026`  |
+| `2024/2025` | Jan–Aug 2025   | `2025`  |
+
+The migration prints one line per year:
 
 ```
-  ok  grades: '2026/2027' -> '2026' (18420 rows kept, nothing deleted)
+  ok  grades: '2025/2026' -> '2026' (18420 rows kept, nothing deleted)
   ok  grades row count unchanged (18420)
 ```
 
-A row count that changes, or a line starting `!!`, means something needs
-attention — see below. Re-running the migration is safe; once converted it
-reports `already flat` and does nothing.
-
-Take a database backup before pulling, as with any release:
+Take a backup before pulling, as with any release:
 
 ```bash
 mysqldump -u root -p ssdacmis > ~/ssdacmis-before-flat-years.sql
 ```
 
-If the migration reports `!!` for a year, it means that database already
-held both forms of the same year (for example `2026` *and* `2026/2027`)
-for the same student/subject/period, which the unique keys forbid. It
-converts every row it safely can, leaves the conflicting ones under their
-old label, deletes nothing, and tells you how many. Reconcile those few
-records, then run the migration again.
+Re-running the migration is safe; once converted it reports `already
+flat` and does nothing.
 
-After migrating, open **Reports → Year** and confirm the period you use
-(e.g. `2026`) shows the classes and marks you expect.
+A line starting `!!` means the database already held the same record
+under both years. The migration converts every row it safely can, leaves
+the conflicting ones under their old label, deletes nothing, and tells
+you how many. Reconcile those, then run it again.
+
+After migrating, open **Reports → Year**; it should already be on the
+current year and show your classes and marks.
+
+### If your data landed on the wrong year
+
+Earlier builds of the migration kept the *leading* year, so marks entered
+between January and August showed up a year early (`2025/2026` → `2025`
+instead of `2026`). The rule above fixes this for databases that have not
+migrated yet. If yours already converted, move the affected year with:
+
+```bash
+# 1) See which years hold data
+sudo -u www-data php scripts/remap_academic_year.php --list
+
+# 2) Preview the move — changes nothing
+sudo -u www-data php scripts/remap_academic_year.php --from 2025 --to 2026
+
+# 3) Apply it once the preview looks right
+sudo -u www-data php scripts/remap_academic_year.php --from 2025 --to 2026 --apply
+```
+
+It relabels rows in place and prints the row count before and after so you
+can confirm nothing was lost. If the destination year already holds the
+same record (same student, subject, term and stage), that row stays where
+it is and is reported — a merge can never overwrite marks already there.
+Repeat per year if an older year also needs shifting (e.g. `2024` → `2025`);
+do the **newest year first** so the years never collide on the way.
 
 ### Separate mid-term / end-of-term results
 

@@ -709,22 +709,23 @@ if (!$tableExists('activity_log')) {
 }
 
 /* -- Academic years become flat calendar years --------------------------
- * Historically stored as "2026/2027"; every picker now offers "2026",
- * "2027", ... so stored values have to match or the reports would look at a
+ * Historically stored as "2025/2026"; every picker now offers "2025",
+ * "2026", ... so stored values have to match or the reports would look at a
  * period nothing was ever saved under.
  *
  * This RELABELS rows in place — it never deletes, moves or re-keys anything.
- * "2026/2027" becomes "2026" and every mark, result, fee and payment already
- * recorded under it stays attached to that same row, now filed under 2026.
- * The mapping keeps the leading year, so it is one-to-one across academic
- * years (2025/2026 -> 2025, 2026/2027 -> 2026) and two different years can
- * never merge into one.
+ * Every mark, result, fee and payment stays attached to the same row, just
+ * filed under a plain year.
  *
- * The one way a row could fail to convert is a database that already holds
- * BOTH forms of the same year (e.g. "2026" and "2026/2027") for the same
- * student/subject/period, which the unique keys forbid. That cannot happen
- * on an install that has only ever used the old format, but it is checked
- * for and reported per year rather than silently skipped. */
+ * Which year? The old default rolled over in September, so marks entered
+ * Jan–Aug 2026 were saved as "2025/2026" and marks entered Sep–Dec 2026 as
+ * "2026/2027" — both describe work done in 2026. App\Core\AcademicYear::
+ * legacyToCalendarYear() resolves that, so BOTH of those land on 2026
+ * rather than one of them ending up a year early.
+ *
+ * A consequence: two spanning years can map onto the same calendar year, so
+ * rows may merge. Where a merge would break a unique key, the row is left
+ * under its old label and reported — never deleted. */
 $flatYearTables = [
     'grades',
     'term_subject_results',
@@ -755,8 +756,10 @@ foreach ($flatYearTables as $tbl) {
 
     foreach ($legacy as $row) {
         $old  = (string) $row['academic_year'];
-        $flat = substr($old, 0, 4);
         $rows = (int) $row['n'];
+        $flat = preg_match('~^(\d{4})/(\d{4})$~', $old, $m)
+            ? \App\Core\AcademicYear::legacyToCalendarYear($m[1], $m[2])
+            : substr($old, 0, 4);
 
         try {
             $bulk->execute([$flat, $old]);

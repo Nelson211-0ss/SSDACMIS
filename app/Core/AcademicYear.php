@@ -2,12 +2,17 @@
 namespace App\Core;
 
 /**
- * Academic years are plain calendar years ("2025", "2026", ...).
+ * Academic years are plain calendar years ("2025", "2026", ...) — the school
+ * year and the calendar year are the same thing here.
  *
- * The system originally stored spanning years ("2025/2026"). Everything now
- * reads and writes the flat form; legacy values are normalised on read via
- * normalize() and converted in place by database/migrate.php, which rewrites
- * every "YYYY/YYYY" academic_year to its leading year.
+ * The system originally stored spanning years ("2025/2026"), picked by a
+ * September cutover: marks entered Jan–Aug went in as "Y-1/Y" and marks
+ * entered Sep–Dec as "Y/Y+1". Both of those describe work done in calendar
+ * year Y, which is why legacyToCalendarYear() resolves a spanning value to
+ * the year it was actually recorded in rather than blindly taking one side.
+ *
+ * database/migrate.php converts stored values with that rule;
+ * normalize() accepts either form on read.
  */
 final class AcademicYear
 {
@@ -51,10 +56,39 @@ final class AcademicYear
     public static function normalize(?string $year): string
     {
         $raw = trim((string) $year);
+        if (preg_match('~^(\d{4})/(\d{4})$~', $raw, $m)) {
+            return self::legacyToCalendarYear($m[1], $m[2]);
+        }
         if (preg_match('~^(\d{4})~', $raw, $m)) {
             return $m[1];
         }
         return self::current();
+    }
+
+    /**
+     * The calendar year a legacy "A/B" academic year actually refers to.
+     *
+     * The old default rolled over in September, so at any moment only one of
+     * the two spanning years was in use:
+     *
+     *   Jan–Aug 2026 wrote "2025/2026"  -> that work happened in 2026 (B)
+     *   Sep–Dec 2026 wrote "2026/2027"  -> that work happened in 2026 (A)
+     *
+     * So B is the answer whenever B has already started; otherwise the span
+     * reaches into the future and A is the year being worked in. Both of the
+     * examples above therefore resolve to 2026, which is what the school
+     * means by "the 2026 school year".
+     *
+     * @param int|string $a leading year of the span
+     * @param int|string $b trailing year of the span
+     */
+    public static function legacyToCalendarYear($a, $b): string
+    {
+        $a = (int) $a;
+        $b = (int) $b;
+        $now = (int) self::current();
+
+        return (string) ($b <= $now ? $b : $a);
     }
 
     /**
