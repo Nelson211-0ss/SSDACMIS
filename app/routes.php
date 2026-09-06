@@ -187,6 +187,10 @@ $router->get('/hod/results',              'ResultsController@index',      [$canV
 $router->get('/hod/results/class/{id}', 'ResultsController@classView',   [$canViewResults]);
 $router->get('/hod/results/gender', 'ResultsController@genderPerformance', [$canViewResults]);
 
+// Subject performance analytics (per-subject ranking, per class and school-wide)
+$router->get('/analytics',     'AnalyticsController@index', [$canViewAnalytics]);
+$router->get('/hod/analytics', 'AnalyticsController@index', [$canViewAnalytics]);
+
 // Reports (printable mid-term & end-term report cards)
 $router->get('/reports',                'ReportController@index',       [$auth]);
 // Registered before /reports/student/{id} etc. so the static path wins.
@@ -273,6 +277,23 @@ $router->get('/settings',  'SettingsController@index',  [$canManageSettings]);
 $router->post('/settings', 'SettingsController@update', [$canManageSettings]);
 
 $router->get('/activity-log', 'ActivityLogController@index', [$canViewActivity]);
+
+// ============================================================
+// User management & permissions.
+// Shared by the super admin (all schools, every role) and a school admin
+// (their own school only) — UserController scopes the queries by role.
+// The static /users/permissions routes are registered BEFORE /users/{id}
+// so "permissions" is never matched as an account id.
+// ============================================================
+$router->get('/users',                  'UserController@index',            [$canManageUsers]);
+$router->get('/users/create',           'UserController@create',           [$canManageUsers]);
+$router->get('/users/permissions',      'UserController@permissions',      [$canManageUsers]);
+$router->post('/users/permissions',     'UserController@savePermissions',  [$canManageUsers]);
+$router->post('/users',                 'UserController@store',            [$canManageUsers]);
+$router->get('/users/{id}/edit',        'UserController@edit',             [$canManageUsers]);
+$router->post('/users/{id}',            'UserController@update',           [$canManageUsers]);
+$router->post('/users/{id}/status',     'UserController@toggleStatus',     [$canManageUsers]);
+$router->post('/users/{id}/delete',     'UserController@destroy',          [$canManageUsers]);
 
 // Schools (super-admin: multi-tenant school management)
 $router->get('/schools',                     'SchoolController@index',         [$canManageSchools]);
