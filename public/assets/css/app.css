@@ -7799,3 +7799,281 @@ body {
     padding: 0.9rem;
   }
 }
+
+/* ============================================================
+   Student download (export) page
+   One panel, three bands: filters -> result -> quiet footnote.
+   ============================================================ */
+
+.export-page {
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.export-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -16px rgba(15, 23, 42, .18);
+}
+
+/* ---------- head ---------- */
+
+.export-card__head {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1.25rem 1.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.export-card__icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.export-card__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.export-card__sub {
+  margin: .15rem 0 0;
+  font-size: .85rem;
+  color: var(--text-muted);
+}
+
+/* ---------- filters ---------- */
+
+.export-card__body {
+  padding: 1.35rem;
+}
+
+.export-fields {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  align-items: start;
+}
+
+.export-label {
+  display: block;
+  margin-bottom: .4rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.export-hint {
+  margin: .4rem 0 0;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+/* Segmented control — radios styled as one pill group. */
+.export-segmented {
+  display: inline-flex;
+  width: 100%;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.export-segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.export-segmented label {
+  flex: 1 1 0;
+  margin: 0;
+  padding: .42rem .5rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: .86rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  user-select: none;
+}
+
+.export-segmented label:hover {
+  color: var(--text);
+}
+
+/* Tinted rather than plain white: in dark mode --surface and --surface-2 sit
+   a couple of hex values apart, so a surface-coloured pill would be almost
+   invisible against the group it sits in. */
+.export-segmented input:checked + label {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Keyboard focus has to stay visible even though the input is hidden. */
+.export-segmented input:focus-visible + label {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.export-segmented.is-disabled {
+  opacity: .55;
+}
+
+.export-segmented.is-disabled label {
+  cursor: not-allowed;
+}
+
+/* ---------- result band ---------- */
+
+.export-card__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.35rem;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-2));
+}
+
+.export-card__result.is-empty {
+  background: var(--surface-2);
+}
+
+.export-result__meta {
+  display: flex;
+  align-items: baseline;
+  gap: .65rem;
+  min-width: 0;
+}
+
+.export-result__count {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
+.export-card__result.is-empty .export-result__count {
+  color: var(--text-muted);
+}
+
+.export-result__scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+  font-size: .9rem;
+}
+
+.export-result__class {
+  font-weight: 600;
+}
+
+.export-result__noun {
+  color: var(--text-muted);
+}
+
+.export-chip {
+  padding: .1rem .5rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.export-result__empty {
+  font-size: .88rem;
+  color: var(--text-muted);
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem 1.15rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* ---------- footnote ---------- */
+
+.export-card__foot {
+  padding: .85rem 1.35rem 1.1rem;
+  border-top: 1px solid var(--border);
+}
+
+.export-card__foot summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+  cursor: pointer;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.export-card__foot summary code {
+  font-size: .78rem;
+  color: var(--text);
+}
+
+.export-foot__more {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.export-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: .85rem 0 .6rem;
+}
+
+.export-col {
+  padding: .15rem .5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 575.98px) {
+  .export-card__head,
+  .export-card__body,
+  .export-card__result,
+  .export-card__foot {
+    padding-inline: 1rem;
+  }
+
+  .export-fields {
+    grid-template-columns: 1fr;
+  }
+
+  /* The download button owns its own row so it is never cramped. */
+  .export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

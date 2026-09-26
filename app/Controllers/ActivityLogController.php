@@ -10,7 +10,7 @@ class ActivityLogController extends Controller
     private const LIST_LIMIT = 200;
 
     /** Recognised action types — used to populate the filter dropdown. */
-    private const ACTIONS = ['create', 'update', 'delete', 'login', 'logout'];
+    private const ACTIONS = ['create', 'update', 'delete', 'export', 'login', 'logout'];
 
     public function index(): string
     {

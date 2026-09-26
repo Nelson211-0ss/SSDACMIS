@@ -51,6 +51,7 @@ $parentOnly = fn() => Auth::require(['parent']);
 $canViewStudents    = Permission::gate('students.view',   ['admin', 'school_admin', 'staff']);
 $canManageStudents  = Permission::gate('students.manage', ['admin', 'school_admin']);
 $canImportStudents  = Permission::gate('students.import', ['admin', 'school_admin']);
+$canExportStudents  = Permission::gate('students.export', ['admin', 'school_admin']);
 $canManageStaff     = Permission::gate('staff.manage',    ['admin', 'school_admin']);
 $canManageHods      = Permission::gate('accounts.hod',    ['admin', 'school_admin']);
 $canManageBursars   = Permission::gate('accounts.bursar', ['admin', 'school_admin']);
@@ -90,6 +91,11 @@ $router->get('/students/id-cards',     'IdCardController@bulk',    [$schoolAdmin
 $router->get('/students/{id}/id-card', 'IdCardController@show',    [$schoolAdminOrAdmin]);
 $router->get('/students/create',       'StudentController@create', [$canManageStudents]);
 $router->get('/students/table-rows',   'StudentController@tableRows', [$canViewStudents]);
+// Download a class (or one stream of a Form 3/4 class) as CSV. Both paths are
+// registered before /students/{id} so "download" and "download.csv" are never
+// matched as a student id.
+$router->get('/students/download',     'StudentController@downloadForm', [$canExportStudents]);
+$router->get('/students/download.csv', 'StudentController@downloadCsv',  [$canExportStudents]);
 // Registered before POST /students/{id} so "clear-all" is never treated as an id.
 $router->get('/students/clear-all',    'StudentController@clearAllForm',    [$canImportStudents]);
 $router->post('/students/clear-all',  'StudentController@clearAllExecute', [$canImportStudents]);

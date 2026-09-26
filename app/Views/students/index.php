@@ -29,6 +29,15 @@ ob_start();
       <a class="btn btn-outline-secondary" href="<?= $base ?>/students/print" title="Print enrolled students — whole school, by class, or by gender">
         <i class="bi bi-printer"></i> Print roster
       </a>
+      <?php /* Gated on the permission, not just the role: an admin can revoke
+               "Download student lists" at /users/permissions, and the button
+               has to disappear with it or it is a dead link to a 403. */ ?>
+      <?php if (\App\Core\Permission::allows('students.export')): ?>
+        <a class="btn btn-outline-success" href="<?= $base ?>/students/download"
+           title="Download a class — or one stream of a Form 3/4 class — as a spreadsheet">
+          <i class="bi bi-download"></i> Download
+        </a>
+      <?php endif; ?>
       <a class="btn btn-outline-primary" href="<?= $base ?>/students/admission-letters"
          data-inline-print
          title="Print admission letters for every admitted student">

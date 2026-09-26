@@ -533,6 +533,298 @@ class StudentController extends Controller
         ]);
     }
 
+    /* ------------------------------------------------------------------
+     * Download student lists (CSV)
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Columns written to a student download, in order.
+     *
+     * The names deliberately match the bulk-import template
+     * (importTemplate() / importStore()), so a downloaded file can be edited
+     * and fed straight back in through /students/import. The extra columns
+     * the importer doesn't read (admission_no, class, level, stream,
+     * admitted_on) are simply ignored on the way back.
+     */
+    private const EXPORT_COLUMNS = [
+        'admission_no',
+        'first_name',
+        'last_name',
+        'gender',
+        'dob',
+        'class',
+        'level',
+        'stream',
+        'section',
+        'guardian_name',
+        'guardian_phone',
+        'address',
+        'admitted_on',
+    ];
+
+    /**
+     * Columns for a given scope. A super admin spanning every school gets a
+     * leading `school` column — two schools can each have a class called
+     * "Form 3A", and without it those rows are indistinguishable in the file.
+     *
+     * @return list<string>
+     */
+    private function exportColumns(array $scope): array
+    {
+        return $this->exportSpansSchools($scope)
+            ? array_merge(['school'], self::EXPORT_COLUMNS)
+            : self::EXPORT_COLUMNS;
+    }
+
+    /** True when the download covers more than one school (super admin only). */
+    private function exportSpansSchools(array $scope): bool
+    {
+        return $scope['isAdmin'] && $scope['schoolId'] === null;
+    }
+
+    /**
+     * Work out exactly which students a download request covers.
+     *
+     * Both the picker page and the CSV endpoint go through here, so the
+     * count an admin sees on screen is produced by the same WHERE clause
+     * that builds the file — they can never drift apart.
+     *
+     * A school admin is pinned to their own school; only the super admin may
+     * choose one (or span all of them).
+     *
+     * @return array{
+     *   schoolId:?int, classId:int, class:?array, classes:array, schools:array,
+     *   isAdmin:bool, isUpperLevel:bool, stream:string, effectiveStream:string,
+     *   where:string, params:array
+     * }
+     */
+    private function resolveDownloadScope(): array
+    {
+        $isAdmin      = Auth::role() === 'admin';
+        $ownSchoolId  = Auth::schoolId();           // null for the super admin
+
+        $selectedSchoolId = $ownSchoolId;
+        $schools          = [];
+        if ($isAdmin && $ownSchoolId === null) {
+            $schools          = Database::query(
+                "SELECT id, name FROM schools ORDER BY name"
+            )->fetchAll();
+            $selectedSchoolId = (int) $this->input('school_id', 0) ?: null;
+        }
+
+        $classSql    = "SELECT id, name, level FROM classes";
+        $classParams = [];
+        if ($selectedSchoolId !== null) {
+            $classSql     .= " WHERE school_id = ?";
+            $classParams[] = $selectedSchoolId;
+        }
+        $classSql .= " ORDER BY level, name";
+        $classes   = Database::query($classSql, $classParams)->fetchAll();
+
+        $classId = (int) $this->input('class_id', 0);
+        $stream  = strtolower(trim((string) $this->input('stream', 'all')));
+        if (!in_array($stream, ['all', 'science', 'arts'], true)) {
+            $stream = 'all';
+        }
+
+        // Look the class up directly rather than trusting the filtered list,
+        // then re-check its school: a school admin must never be able to
+        // download another school's class by guessing an id.
+        $class        = null;
+        $isUpperLevel = false;
+        if ($classId > 0) {
+            $row = Database::query(
+                "SELECT id, name, level, school_id FROM classes WHERE id = ?",
+                [$classId]
+            )->fetch();
+            $inScope = $row
+                && ($ownSchoolId === null || (int) $row['school_id'] === $ownSchoolId);
+            if ($inScope) {
+                $class        = $row;
+                $level        = trim((string) ($row['level'] ?? ''));
+                $isUpperLevel = ($level === 'Form 3' || $level === 'Form 4');
+            } else {
+                $classId = 0;   // out of scope or missing — fall back to "all classes"
+            }
+        }
+
+        // Streams only exist in Form 3 / Form 4, so the filter is ignored
+        // anywhere else rather than silently returning nothing.
+        $effectiveStream = ($classId > 0 && !$isUpperLevel) ? 'all' : $stream;
+
+        $where  = ' WHERE 1=1';
+        $params = [];
+        if ($selectedSchoolId !== null) {
+            $where   .= ' AND s.school_id = ?';
+            $params[] = $selectedSchoolId;
+        }
+        if ($classId > 0) {
+            $where   .= ' AND s.class_id = ?';
+            $params[] = $classId;
+        }
+        if ($effectiveStream !== 'all') {
+            $where   .= ' AND s.stream = ?';
+            $params[] = $effectiveStream;
+        }
+
+        return [
+            'schoolId'        => $selectedSchoolId,
+            'classId'         => $classId,
+            'class'           => $class,
+            'classes'         => $classes,
+            'schools'         => $schools,
+            'isAdmin'         => $isAdmin && $ownSchoolId === null,
+            'isUpperLevel'    => $isUpperLevel,
+            'stream'          => $stream,
+            'effectiveStream' => $effectiveStream,
+            'where'           => $where,
+            'params'          => $params,
+        ];
+    }
+
+    /**
+     * GET /students/download — pick a class (and, for Form 3 / Form 4, a
+     * stream) and see how many students the file will contain before
+     * downloading it.
+     */
+    public function downloadForm(): string
+    {
+        $scope = $this->resolveDownloadScope();
+
+        $row = Database::query(
+            'SELECT COUNT(*) AS n FROM students s' . $scope['where'],
+            $scope['params']
+        )->fetch();
+
+        return $this->view('students/download', [
+            'classes'         => $scope['classes'],
+            'schools'         => $scope['schools'],
+            'isAdmin'         => $scope['isAdmin'],
+            'selectedSchoolId' => $scope['schoolId'],
+            'selectedClass'   => $scope['class'],
+            'classId'         => $scope['classId'],
+            'stream'          => $scope['stream'],
+            'isUpperLevel'    => $scope['isUpperLevel'],
+            'effectiveStream' => $scope['effectiveStream'],
+            'studentCount'    => (int) ($row['n'] ?? 0),
+            'columns'         => $this->exportColumns($scope),
+        ]);
+    }
+
+    /**
+     * GET /students/download.csv — stream the chosen class/stream as CSV.
+     *
+     * Rows are streamed one at a time rather than collected with fetchAll(),
+     * so downloading a whole school costs the same memory as one class.
+     */
+    public function downloadCsv(): string
+    {
+        $scope = $this->resolveDownloadScope();
+
+        $spansSchools = $this->exportSpansSchools($scope);
+
+        $sql = 'SELECT s.admission_no, s.first_name, s.last_name, s.gender, s.dob,
+                       s.section, s.stream, s.guardian_name, s.guardian_phone,
+                       s.address, s.created_at,
+                       c.name AS class_name, c.level AS class_level';
+        if ($spansSchools) {
+            $sql .= ', sch.name AS school_name';
+        }
+        $sql .= ' FROM students s
+                  LEFT JOIN classes c ON c.id = s.class_id';
+        if ($spansSchools) {
+            $sql .= ' LEFT JOIN schools sch ON sch.id = s.school_id';
+        }
+        $sql .= $scope['where'];
+        // Spanning every school, group by school first so one school's
+        // classes don't interleave with another's.
+        $sql .= $spansSchools
+            ? ' ORDER BY sch.name, c.level, c.name, s.first_name, s.last_name'
+            : ' ORDER BY c.level, c.name, s.first_name, s.last_name';
+
+        $stmt = Database::query($sql, $scope['params']);
+
+        $filename = $this->downloadFilename($scope);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+        // BOM so Excel reads UTF-8 names correctly.
+        fwrite($out, "\xEF\xBB\xBF");
+        // Explicit $escape ('') for forward compatibility with PHP 8.5+,
+        // matching the other CSV writers in the app.
+        fputcsv($out, $this->exportColumns($scope), ',', '"', '');
+
+        $rows = 0;
+        while ($r = $stmt->fetch()) {
+            $rows++;
+            $line = [
+                (string) ($r['admission_no'] ?? ''),
+                (string) ($r['first_name'] ?? ''),
+                (string) ($r['last_name'] ?? ''),
+                (string) ($r['gender'] ?? ''),
+                (string) ($r['dob'] ?? ''),
+                (string) ($r['class_name'] ?? ''),
+                (string) ($r['class_level'] ?? ''),
+                // 'none' is an internal placeholder for lower forms; an empty
+                // cell reads better in a spreadsheet.
+                ($r['stream'] ?? 'none') === 'none' ? '' : (string) $r['stream'],
+                (string) ($r['section'] ?? ''),
+                (string) ($r['guardian_name'] ?? ''),
+                (string) ($r['guardian_phone'] ?? ''),
+                (string) ($r['address'] ?? ''),
+                $r['created_at'] ? date('Y-m-d', strtotime((string) $r['created_at'])) : '',
+            ];
+            if ($spansSchools) {
+                array_unshift($line, (string) ($r['school_name'] ?? ''));
+            }
+            fputcsv($out, $line, ',', '"', '');
+        }
+        fclose($out);
+
+        ActivityLog::record(
+            'export',
+            'student',
+            $scope['classId'] ?: null,
+            'Downloaded ' . $rows . ' student record(s): ' . $this->downloadScopeLabel($scope)
+        );
+
+        return '';
+    }
+
+    /** Human label for the current download scope, e.g. "Form 3A · Science stream". */
+    private function downloadScopeLabel(array $scope): string
+    {
+        $label = $scope['class']
+            ? (string) $scope['class']['name']
+            : 'All classes';
+        if ($scope['effectiveStream'] !== 'all') {
+            $label .= ' · ' . ucfirst($scope['effectiveStream']) . ' stream';
+        }
+        return $label;
+    }
+
+    /** e.g. students-form-3a-science-2026-09-26.csv */
+    private function downloadFilename(array $scope): string
+    {
+        $slug = static function (string $v): string {
+            $v = strtolower(trim($v));
+            $v = preg_replace('~[^a-z0-9]+~', '-', $v) ?? '';
+            return trim($v, '-');
+        };
+
+        $parts = ['students'];
+        $parts[] = $scope['class'] ? $slug((string) $scope['class']['name']) : 'all-classes';
+        if ($scope['effectiveStream'] !== 'all') {
+            $parts[] = $slug($scope['effectiveStream']);
+        }
+        $parts[] = date('Y-m-d');
+
+        return implode('-', array_filter($parts)) . '.csv';
+    }
+
     /** GET /students/import/template — blank CSV with the expected columns. */
     public function importTemplate(): string
     {

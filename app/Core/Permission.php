@@ -25,6 +25,7 @@ final class Permission
             'students.view'      => 'View students',
             'students.manage'    => 'Add / edit / delete students',
             'students.import'    => 'Bulk import & mass delete students',
+            'students.export'    => 'Download student lists (CSV)',
             'classes.view'       => 'View classes',
             'classes.manage'     => 'Create & edit classes',
             'subjects.view'      => 'View subjects',
@@ -61,7 +62,7 @@ final class Permission
     private const DEFAULTS = [
         'admin' => ['*'],
         'school_admin' => [
-            'students.view', 'students.manage', 'students.import',
+            'students.view', 'students.manage', 'students.import', 'students.export',
             'classes.view', 'classes.manage',
             'subjects.view', 'subjects.manage',
             'teaching.manage', 'attendance.manage',

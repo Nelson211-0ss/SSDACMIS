@@ -7,6 +7,7 @@ $actionBadge = [
     'create' => 'bg-success-subtle text-success-emphasis',
     'update' => 'bg-primary-subtle text-primary-emphasis',
     'delete' => 'bg-danger-subtle text-danger-emphasis',
+    'export' => 'bg-warning-subtle text-warning-emphasis',
     'login'  => 'bg-info-subtle text-info-emphasis',
     'logout' => 'bg-secondary-subtle text-secondary-emphasis',
 ];
