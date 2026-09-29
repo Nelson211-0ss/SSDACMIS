@@ -42,14 +42,6 @@ class Settings
         // admission letters, exam permits and report cards. Falls back
         // to the cursive name styling when blank.
         'school_headteacher_signature' => '',
-        // Show student passport photos in the public landing-page slider.
-        // These are learners' photographs on a page anyone can reach without
-        // signing in, so it is a deliberate, reversible choice rather than
-        // something that just happens.
-        //
-        // Stored as '1' or '0', never '': get() reads an empty value as
-        // "unset" and returns the default below, so '' would mean ON.
-        'landing_student_photos' => '1',
     ];
 
     /**
