@@ -12,7 +12,9 @@ $pageTitle = $title ?? 'SSDACMIS';
   <?php $schoolLogo = null; require __DIR__ . '/../partials/favicon.php'; ?>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <?php /* Same families the login page loads (layouts/auth.php) so the two
+           public pages share one typeface pairing as well as one palette. */ ?>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="<?= View::asset($base, 'assets/css/landing.css') ?>" rel="stylesheet">
 </head>
