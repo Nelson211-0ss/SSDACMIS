@@ -24,20 +24,44 @@ class LandingController extends Controller
     }
 
     /**
-     * Student passport photos for the hero slider.
+     * Images shipped with the project, used whenever there are no student
+     * photos to show. Most installs never upload a passport photo — the CSV
+     * importer doesn't set one — so without this the hero would simply have
+     * an empty column on a perfectly healthy system.
+     */
+    private const FALLBACK_SLIDES = [
+        'assets/img/login-slide-1.jpg',
+        'assets/img/login-slide-2.jpg',
+        'assets/img/login-slide-3.jpg',
+        'assets/img/login-slide-4.jpg',
+        'assets/img/login-hero.jpg',
+    ];
+
+    /**
+     * Pictures for the hero slider: real student photos where they exist,
+     * otherwise the bundled school images.
      *
-     * This page is public — no sign-in — so the query is deliberately
-     * narrow: the photo path and nothing else. No name, admission number,
-     * class or school comes back with it, so a visitor sees faces but can
-     * identify nobody from the page.
-     *
-     * An administrator can switch the whole thing off in Settings
-     * ('landing_student_photos'), and with no photos uploaded the slider
-     * simply isn't rendered.
+     * This page is public — no sign-in — so the student query is
+     * deliberately narrow: the photo path and nothing else. No name,
+     * admission number, class or school comes back with it, so a visitor
+     * sees faces but can identify nobody from the page. An administrator
+     * can switch student photos off in Settings ('landing_student_photos'),
+     * which drops the page back to the bundled images rather than leaving
+     * the hero half empty.
      *
      * @return list<string> public-relative image paths
      */
     private function heroSlides(): array
+    {
+        $slides = $this->studentSlides();
+
+        return $slides !== [] ? $slides : $this->existingFiles(self::FALLBACK_SLIDES);
+    }
+
+    /**
+     * @return list<string> public-relative paths of uploaded student photos
+     */
+    private function studentSlides(): array
     {
         try {
             Settings::ensureTable();
@@ -57,19 +81,36 @@ class LandingController extends Controller
             return [];
         }
 
-        $root   = dirname(__DIR__, 2) . '/public/';
-        $slides = [];
+        $paths = [];
         foreach ($rows as $r) {
             $rel = ltrim(trim((string) ($r['photo_path'] ?? '')), '/');
-            // Uploads only, no traversal, and the file has to actually exist.
+            // Uploads only, and no traversal out of /public.
             if ($rel === '' || !str_starts_with($rel, 'uploads/') || str_contains($rel, '..')) {
                 continue;
             }
+            $paths[] = $rel;
+        }
+
+        return $this->existingFiles($paths);
+    }
+
+    /**
+     * Keep only the paths that are actually on disk — a photo row can
+     * outlive its file, and a missing image would show as a blank slide.
+     *
+     * @param  list<string> $paths
+     * @return list<string>
+     */
+    private function existingFiles(array $paths): array
+    {
+        $root = dirname(__DIR__, 2) . '/public/';
+        $out  = [];
+        foreach ($paths as $rel) {
             if (is_file($root . $rel)) {
-                $slides[] = $rel;
+                $out[] = $rel;
             }
         }
 
-        return $slides;
+        return $out;
     }
 }

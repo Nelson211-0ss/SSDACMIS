@@ -110,11 +110,14 @@ $entries = [
       <div class="lp-container">
         <h2 class="lp-section__title">What it covers</h2>
         <ul class="lp-features">
-          <?php foreach ($features as [$icon, $title, $desc]): ?>
+          <?php /* Not $title: the layout renders the page <title> from that
+                   same variable, and destructuring into it here would leave
+                   the browser tab showing the last feature's name. */ ?>
+          <?php foreach ($features as [$fIcon, $fName, $fDesc]): ?>
             <li class="lp-feature">
-              <span class="lp-feature__icon" aria-hidden="true"><i class="bi <?= $icon ?>"></i></span>
-              <h3 class="lp-feature__title"><?= View::e($title) ?></h3>
-              <p class="lp-feature__desc"><?= View::e($desc) ?></p>
+              <span class="lp-feature__icon" aria-hidden="true"><i class="bi <?= $fIcon ?>"></i></span>
+              <h3 class="lp-feature__title"><?= View::e($fName) ?></h3>
+              <p class="lp-feature__desc"><?= View::e($fDesc) ?></p>
             </li>
           <?php endforeach; ?>
         </ul>
