@@ -28,7 +28,7 @@ $isBursarDashboard = ($relReq === '/bursar');
 <div class="bursar-period-bar mb-3">
   <div class="card border-0 shadow-sm">
     <div class="card-body py-2 px-3">
-      <form method="post" action="<?= $base ?>/bursar/period" class="d-flex flex-wrap align-items-center gap-2 w-100">
+      <form method="post" data-auto-reload action="<?= $base ?>/bursar/period" class="d-flex flex-wrap align-items-center gap-2 w-100">
         <input type="hidden" name="_csrf" value="<?= $csrf ?>">
         <input type="hidden" name="return" value="<?= View::e($relReq) ?>">
 

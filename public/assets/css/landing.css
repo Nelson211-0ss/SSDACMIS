@@ -1,252 +1,366 @@
-/* SSD-ACMIS — public landing page. One non-scrolling screen. */
+/* ============================================================
+   SSD-ACMIS — public landing page.
+
+   Flat by design: every surface is a solid colour with a 1px
+   border. No gradients, no glass blur, no drop shadows doing
+   the work a border should do. Hierarchy comes from type size,
+   weight and whitespace instead.
+   ============================================================ */
+
 :root {
-  --lp-ink: #101828;
-  --lp-accent: #2554c7;
-  --lp-accent-ink: #ffffff;
-  --lp-border: #e5e8ee;
+  /* Surfaces */
+  --lp-bg:        #ffffff;
+  --lp-bg-soft:   #f7f8fa;   /* the one alternating band */
+  --lp-border:    #e6e8ec;
+  --lp-border-mid:#d6dae1;
+
+  /* Ink */
+  --lp-ink:       #0f172a;
+  --lp-ink-soft:  #4b5563;
+  --lp-ink-faint: #5f6a7a;   /* AA on both #fff and the soft band */
+
+  /* One accent, used sparingly */
+  --lp-accent:      #2554c7;
+  --lp-accent-dark: #1d44a4;
+  --lp-accent-soft: #eef2fd;   /* solid tint, not a gradient */
+  --lp-accent-ink:  #ffffff;
+
+  --lp-radius:    10px;
   --lp-radius-sm: 8px;
   --lp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --lp-bg:        #0b0d11;
+    --lp-bg-soft:   #111419;
+    --lp-border:    #1e232b;
+    --lp-border-mid:#2b323d;
+
+    --lp-ink:       #e8eaee;
+    --lp-ink-soft:  #a8b0bd;
+    --lp-ink-faint: #8a93a3;
+
+    --lp-accent:      #6f9bff;
+    --lp-accent-dark: #8fb2ff;
+    --lp-accent-soft: #16203a;
+    --lp-accent-ink:  #0b0d11;
+  }
+}
+
 *, *::before, *::after { box-sizing: border-box; }
-html, body.landing-page { height: 100%; overflow: hidden; }
+
 body.landing-page {
   margin: 0;
   font-family: var(--lp-font);
-  line-height: 1.5;
-  color: #fff;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--lp-ink);
+  background: var(--lp-bg);
+  -webkit-font-smoothing: antialiased;
 }
 
-.lp-container { width: min(1120px, 92vw); margin-inline: auto; }
-
-/* The whole page is one screen: nav, hero, footer — nothing to scroll to. */
-.lp-screen {
-  position: relative;
-  height: 100dvh;
+.lp {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-.lp-screen__bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: linear-gradient(135deg, #2f7dfa 0%, #1750c9 55%, #0c2d7a 100%);
-}
-/* Dot-pattern accent, top-left corner only — fades out, doesn't tile
-   the whole page. */
-.lp-screen__dots {
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  left: 0;
-  width: 240px;
-  height: 240px;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1.5px, transparent 1.5px);
-  background-size: 16px 16px;
-  -webkit-mask-image: radial-gradient(circle at 0% 0%, #000 55%, transparent 100%);
-  mask-image: radial-gradient(circle at 0% 0%, #000 55%, transparent 100%);
-  pointer-events: none;
+  /* Tall enough to fill the viewport, but free to grow and scroll on a
+     short window rather than hiding content to stay on one screen. */
+  min-height: 100dvh;
 }
 
-/* Nav */
-.lp-nav { position: relative; z-index: 2; flex: 0 0 auto; padding: 1.1rem 0; }
-.lp-nav__inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.lp-logo {
+.lp-container {
+  width: min(1080px, 100% - 3rem);
+  margin-inline: auto;
+}
+
+/* ---------------------------------------------------------- Nav ---- */
+
+.lp-nav {
+  border-bottom: 1px solid var(--lp-border);
+  background: var(--lp-bg);
+}
+
+.lp-nav__inner {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  text-decoration: none;
-  color: #fff;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
-}
-.lp-logo__mark {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--lp-radius-sm);
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 68px;
 }
 
-/* Buttons */
+.lp-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  text-decoration: none;
+  color: var(--lp-ink);
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -.01em;
+}
+
+.lp-logo__mark {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-accent);
+  color: var(--lp-accent-ink);
+  display: grid;
+  place-items: center;
+  font-size: .95rem;
+}
+
+/* ------------------------------------------------------ Buttons ---- */
+
 .lp-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.3rem;
-  border-radius: var(--lp-radius-sm);
-  font-weight: 600;
-  font-size: 0.95rem;
-  text-decoration: none;
+  gap: .5rem;
+  padding: .7rem 1.25rem;
   border: 1px solid transparent;
-  transition: background 0.15s ease;
+  border-radius: var(--lp-radius-sm);
+  font-size: .95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
-.lp-btn--white { background: #fff; color: var(--lp-accent); font-weight: 700; }
-.lp-btn--white:hover { background: #eef2ff; }
-.lp-btn--sm { padding: 0.45rem 1rem; font-size: 0.88rem; }
 
-/* Hero — vertical rhythm comes from one owl-selector margin per group
-   (.lp-hero, .lp-hero__lede), not each child's own ad-hoc margin. */
-.lp-screen__main {
-  position: relative;
-  z-index: 2;
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 0.5rem 1.25rem;
+.lp-btn--sm { padding: .45rem 1rem; font-size: .88rem; }
+
+.lp-btn--primary {
+  background: var(--lp-accent);
+  color: var(--lp-accent-ink);
 }
-/* Split hero: content left, decorative visual right — mirrors the
-   two-column reference, minus the lead-capture form (there's nothing
-   to "enquire" about here, so Sign In is the one CTA). */
-.lp-split {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  align-items: center;
-  gap: 2.5rem;
+.lp-btn--primary:hover { background: var(--lp-accent-dark); }
+
+.lp-btn--ghost {
+  background: var(--lp-bg);
+  border-color: var(--lp-border-mid);
+  color: var(--lp-ink);
 }
-.lp-hero { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
-.lp-hero > * + * { margin-top: 1.1rem; }
-.lp-hero__lede { display: flex; flex-direction: column; align-items: flex-start; }
-.lp-hero__lede > * + * { margin-top: 0.5rem; }
+.lp-btn--ghost:hover { border-color: var(--lp-ink-faint); }
+
+.lp-btn:focus-visible,
+.lp-logo:focus-visible,
+.lp-entry:focus-visible {
+  outline: 2px solid var(--lp-accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------- Hero ---- */
+
+.lp-hero {
+  padding: clamp(3rem, 9vw, 6rem) 0 clamp(2.5rem, 7vw, 4.5rem);
+}
+
 .lp-eyebrow {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  margin: 0 0 1rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--lp-ink-faint);
 }
-.lp-screen__title {
+
+.lp-hero__title {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 3rem);
+  max-width: 18ch;
+  font-size: clamp(2.1rem, 5.4vw, 3.4rem);
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -.03em;
+  color: var(--lp-ink);
   text-wrap: balance;
 }
-.lp-screen__tagline {
-  margin: 0;
-  max-width: 38ch;
-  font-size: clamp(0.95rem, 1.6vw, 1.08rem);
-  color: rgba(255, 255, 255, 0.85);
-}
-.lp-hero__cta { display: flex; justify-content: flex-start; }
-.lp-hero__portals { margin: 0; font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); }
-.lp-hero__portals a { color: #fff; text-decoration: none; font-weight: 600; }
-.lp-hero__portals a:hover { text-decoration: underline; }
 
-/* Decorative visual — a glass "orb" with floating module chips around
-   it, standing in for the reference's photo without using one. */
-.lp-split__visual {
-  position: relative;
-  height: 280px;
+.lp-hero__lede {
+  margin: 1.15rem 0 0;
+  max-width: 56ch;
+  font-size: clamp(1rem, 1.5vw, 1.1rem);
+  color: var(--lp-ink-soft);
+}
+
+.lp-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 2rem;
+}
+
+/* ----------------------------------------------------- Sections ---- */
+
+.lp-section {
+  padding: clamp(2.5rem, 6vw, 4rem) 0;
+  border-top: 1px solid var(--lp-border);
+}
+
+.lp-section--soft { background: var(--lp-bg-soft); }
+
+.lp-section__title {
+  margin: 0 0 1.75rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--lp-ink-faint);
+}
+
+/* ----------------------------------------------------- Features ---- */
+
+.lp-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-feature {
+  padding: 1.35rem;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+}
+
+.lp-feature__icon {
+  width: 38px;
+  height: 38px;
+  margin-bottom: .9rem;
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-accent-soft);
+  color: var(--lp-accent);
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+}
+
+.lp-feature__title {
+  margin: 0 0 .35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--lp-ink);
+}
+
+.lp-feature__desc {
+  margin: 0;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--lp-ink-soft);
+}
+
+/* ------------------------------------------------------ Sign in ---- */
+
+.lp-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.lp-entry {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s ease;
 }
-.lp-orb {
-  width: 170px;
-  height: 170px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 3.2rem;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 24px 60px -20px rgba(6, 12, 30, 0.55);
-}
-.lp-chip {
-  position: absolute;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: #fff;
-  color: var(--lp-accent);
-  font-size: 1.15rem;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 12px 26px -8px rgba(6, 12, 30, 0.4);
-}
-.lp-chip--1 { top: 4%;  left: 8%;   transform: rotate(-8deg); }
-.lp-chip--2 { top: 10%; right: 6%;  transform: rotate(7deg); }
-.lp-chip--3 { bottom: 14%; left: 0%; transform: rotate(6deg); }
-.lp-chip--4 { bottom: 2%; right: 16%; transform: rotate(-5deg); }
-.lp-chip--5 { top: 46%; right: -4%; transform: rotate(10deg); }
 
-/* "What it is" cards — brief, flat glass surfaces on the dark background */
-.lp-cards {
+.lp-entry:hover { border-color: var(--lp-accent); }
+
+.lp-entry--primary { border-color: var(--lp-border-mid); }
+
+.lp-entry__icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-accent-soft);
+  color: var(--lp-accent);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-  width: 100%;
+  place-items: center;
+  font-size: 1.1rem;
 }
-.lp-card {
+
+.lp-entry--primary .lp-entry__icon {
+  background: var(--lp-accent);
+  color: var(--lp-accent-ink);
+}
+
+.lp-entry__text {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.4rem;
-  padding: 1.1rem 0.9rem;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  min-width: 0;
+  flex: 1 1 auto;
 }
-.lp-card__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(147, 197, 253, 0.16);
-  color: #93c5fd;
-  display: grid;
-  place-items: center;
+
+.lp-entry__title {
   font-size: 1rem;
-}
-.lp-card__title { margin: 0; font-size: 0.92rem; font-weight: 700; color: #fff; }
-.lp-card__brief { margin: 0; font-size: 0.78rem; line-height: 1.4; color: rgba(255, 255, 255, 0.72); }
-
-/* Footer */
-.lp-screen__footer {
-  position: relative;
-  z-index: 2;
-  flex: 0 0 auto;
-  text-align: center;
-  padding: 0.85rem 0;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--lp-ink);
 }
 
-/* Below desktop width the split layout would get cramped before it
-   would ever need to scroll — drop to one centered column instead,
-   same as before the visual was added. */
-@media (max-width: 991.98px) {
-  .lp-split { grid-template-columns: 1fr; }
-  .lp-split__visual { display: none; }
-  .lp-hero, .lp-hero__lede { align-items: center; text-align: center; }
-  .lp-screen__tagline { margin-inline: auto; }
-  .lp-hero__cta { justify-content: center; }
+.lp-entry__desc {
+  font-size: .86rem;
+  line-height: 1.45;
+  color: var(--lp-ink-soft);
 }
 
-/* Compact down before content would ever need to scroll */
-@media (max-height: 700px) {
-  .lp-nav { padding: 0.7rem 0; }
-  .lp-screen__tagline { display: none; }
+.lp-entry__arrow {
+  flex-shrink: 0;
+  color: var(--lp-ink-faint);
+  transition: color .15s ease, transform .15s ease;
 }
-@media (max-height: 520px) {
-  .lp-cards { display: none; }
-  .lp-hero > * + * { margin-top: 0.7rem; }
+
+.lp-entry:hover .lp-entry__arrow {
+  color: var(--lp-accent);
+  transform: translateX(2px);
+}
+
+/* ------------------------------------------------------- Footer ---- */
+
+.lp-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--lp-border);
+  background: var(--lp-bg);
+}
+
+.lp-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: 1.35rem 0;
+  font-size: .82rem;
+  color: var(--lp-ink-faint);
+}
+
+/* --------------------------------------------------------- Small --- */
+
+@media (max-width: 575.98px) {
+  .lp-container { width: min(1080px, 100% - 2rem); }
+  .lp-nav__inner { height: 60px; }
+  .lp-hero__actions .lp-btn { flex: 1 1 100%; justify-content: center; }
+  .lp-entry { padding: 1.1rem; gap: .85rem; }
+  /* The copyright is the part that has to stay; the byline would only
+     wrap onto its own line at this width. */
+  .lp-footer__by { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-btn,
+  .lp-entry,
+  .lp-entry__arrow {
+    transition: none;
+  }
+  .lp-entry:hover .lp-entry__arrow { transform: none; }
 }

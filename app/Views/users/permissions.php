@@ -35,7 +35,7 @@ if ($isSuperAdmin) {
   </div>
 
   <?php if ($isSuperAdmin): ?>
-    <form class="card border-0 shadow-sm mb-3" method="get" action="<?= $base ?>/users/permissions">
+    <form class="card border-0 shadow-sm mb-3" method="get" data-auto-reload action="<?= $base ?>/users/permissions">
       <div class="card-body d-flex flex-wrap align-items-end gap-2">
         <div class="flex-grow-1" style="max-width:22rem;">
           <label class="form-label" for="permScope">Apply to</label>

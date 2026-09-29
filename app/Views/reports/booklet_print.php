@@ -155,7 +155,7 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
       &middot; <?= View::e($scopeLabel) ?> &middot; <?= (int) $n ?> student<?= $n === 1 ? '' : 's' ?>
     </small>
   </div>
-  <form method="get" class="d-flex flex-wrap gap-2 align-items-end">
+  <form method="get" data-auto-reload class="d-flex flex-wrap gap-2 align-items-end">
     <div>
       <label class="form-label small mb-1">Class</label>
       <select name="class_id" class="form-select form-select-sm">

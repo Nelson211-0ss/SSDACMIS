@@ -8,7 +8,7 @@ $pageIcon = 'bi-calendar-check';
 include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 
-<form class="card mb-3 filter-panel" method="get" action="<?= $base ?>/attendance">
+<form class="card mb-3 filter-panel" method="get" data-auto-reload action="<?= $base ?>/attendance">
   <div class="card-body row g-3 align-items-end">
     <div class="col-md-5">
       <label class="form-label fw-semibold">Class</label>

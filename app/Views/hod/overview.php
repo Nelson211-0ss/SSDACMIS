@@ -9,7 +9,7 @@ $hasMarks = $gradeCount > 0;
 
 <div class="hod-overview-page portal-dash">
 
-<form method="get"
+<form method="get" data-auto-reload
       action="<?= $base ?>/hod/overview"
       class="period-bar hod-overview-period period-bar--ok mb-2">
 

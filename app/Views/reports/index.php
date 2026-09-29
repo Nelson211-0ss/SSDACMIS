@@ -34,7 +34,7 @@ $isMid      = ($stage === 'midterm');
   </section>
 
   <!-- Period filter -->
-  <form method="get" action="<?= $base ?><?= $portalPrefix ?>/reports" class="reports-page__filters card border-0 shadow-sm mb-4">
+  <form method="get" data-auto-reload action="<?= $base ?><?= $portalPrefix ?>/reports" class="reports-page__filters card border-0 shadow-sm mb-4">
     <div class="card-body">
       <div class="reports-page__filters-head mb-3">
         <span class="reports-page__filters-icon" aria-hidden="true"><i class="bi bi-sliders"></i></span>

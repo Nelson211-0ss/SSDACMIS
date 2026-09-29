@@ -102,7 +102,7 @@ $greetTone = $h < 12 ? 'orange' : ($h < 17 ? 'yellow' : 'purple');
 <!-- ============================================================
      Period bar (horizontal, single row)
      ============================================================ -->
-<form method="get"
+<form method="get" data-auto-reload
       action="<?= $base ?>/hod"
       class="period-bar <?= $periodSet ? 'period-bar--ok' : 'period-bar--warn' ?>">
 

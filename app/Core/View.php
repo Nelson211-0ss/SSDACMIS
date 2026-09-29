@@ -105,6 +105,34 @@ class View
      * Used in layouts so browsers fetch a fresh copy whenever the file changes,
      * even though .htaccess sets long Expires headers.
      */
+    /**
+     * Resolve a public-relative file reference (a school logo, a signature,
+     * a student photo) to a URL, or '' when the file is not on disk.
+     *
+     * The reference may carry a cache-busting query string — e.g.
+     * SchoolIdentity::logoUrl() returns "uploads/logo.png?v=1788…". That
+     * suffix is stripped before the filesystem check, because is_file()
+     * treats it as part of the filename and fails, which silently drops the
+     * logo from printed documents. The query is kept in the returned URL so
+     * the browser still re-fetches an updated file.
+     */
+    public static function publicAsset(string $base, ?string $rel): string
+    {
+        $rel = ltrim(trim((string) $rel), '/');
+        if ($rel === '') {
+            return '';
+        }
+        $path = explode('?', $rel)[0];
+        // Uploaded assets only, and never a traversal out of /public.
+        if ($path === '' || str_contains($path, '..')) {
+            return '';
+        }
+        if (!is_file(dirname(__DIR__, 2) . '/public/' . $path)) {
+            return '';
+        }
+        return rtrim($base, '/') . '/' . $rel;
+    }
+
     public static function asset(string $base, string $relPath): string
     {
         $absolute = dirname(__DIR__, 2) . '/public/' . ltrim($relPath, '/');

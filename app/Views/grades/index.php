@@ -7,7 +7,7 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 
 <?php if (!$isStudent): ?>
-  <form class="card border-0 shadow-sm mb-3" method="get" action="<?= $base ?>/grades">
+  <form class="card border-0 shadow-sm mb-3" method="get" data-auto-reload action="<?= $base ?>/grades">
     <div class="card-body row g-3 align-items-end">
       <div class="col-md-9">
         <label class="form-label">Student</label>

@@ -43,7 +43,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
   </div>
 <?php endif; ?>
 
-<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/department" class="card border-0 shadow-sm mb-3" data-sheet-reload>
+<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/department" class="card border-0 shadow-sm mb-3" data-sheet-reload data-auto-reload>
   <input type="hidden" name="class_id" value="<?= (int) $class['id'] ?>">
   <input type="hidden" name="category" value="<?= View::e($category) ?>">
   <div class="card-body row g-3 align-items-end">

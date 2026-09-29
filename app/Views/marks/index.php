@@ -70,7 +70,7 @@ $examLabel = View::e($exams[$examType] ?? ucfirst((string) $examType));
   </section>
 
   <!-- Period / exam filter -->
-  <form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks" class="marks-page__filters card border-0 shadow-sm mb-4">
+  <form method="get" data-auto-reload action="<?= $base ?><?= $portalPrefix ?>/marks" class="marks-page__filters card border-0 shadow-sm mb-4">
     <div class="card-body">
       <div class="marks-page__filters-head mb-3">
         <span class="marks-page__filters-icon" aria-hidden="true"><i class="bi bi-sliders"></i></span>

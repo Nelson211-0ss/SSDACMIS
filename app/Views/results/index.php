@@ -41,7 +41,7 @@ $qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage='
     <div class="small"><?= View::e($stageLabel) ?> results overview · <?= View::e($year) ?> · <?= View::e($term) ?></div>
   </div>
 
-  <form class="card border-0 shadow-sm mb-4 d-print-none" method="get" action="<?= $base ?><?= $portalPrefix ?>/results">
+  <form class="card border-0 shadow-sm mb-4 d-print-none" method="get" data-auto-reload action="<?= $base ?><?= $portalPrefix ?>/results">
     <div class="card-body row g-3 align-items-end">
       <div class="col-md-3">
         <label class="form-label">Year</label>

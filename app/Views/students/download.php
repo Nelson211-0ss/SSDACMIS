@@ -56,13 +56,13 @@ $fileName = 'students-'
     </header>
 
     <!-- Filters -->
-    <form method="get" action="<?= $base ?>/students/download" class="export-card__body" id="exportForm">
+    <form method="get" data-auto-reload action="<?= $base ?>/students/download" class="export-card__body" id="exportForm">
       <div class="export-fields">
 
         <?php if ($hasSchoolPicker): ?>
           <div class="export-field">
             <label class="export-label" for="dlSchool">School</label>
-            <select name="school_id" id="dlSchool" class="form-select" onchange="this.form.submit()">
+            <select name="school_id" id="dlSchool" class="form-select">
               <option value="">All schools</option>
               <?php foreach ($schools as $sch): ?>
                 <option value="<?= (int) $sch['id'] ?>" <?= $selectedSchoolId === (int) $sch['id'] ? 'selected' : '' ?>>
@@ -75,7 +75,7 @@ $fileName = 'students-'
 
         <div class="export-field">
           <label class="export-label" for="dlClass">Class</label>
-          <select name="class_id" id="dlClass" class="form-select" onchange="this.form.submit()">
+          <select name="class_id" id="dlClass" class="form-select">
             <option value="">All classes</option>
             <?php foreach ($classes as $c): ?>
               <option value="<?= (int) $c['id'] ?>" <?= $classId === (int) $c['id'] ? 'selected' : '' ?>>
@@ -92,8 +92,7 @@ $fileName = 'students-'
             <?php foreach (['all' => 'All', 'science' => 'Science', 'arts' => 'Arts'] as $key => $label): ?>
               <input type="radio" name="stream" value="<?= $key ?>" id="dlStream_<?= $key ?>"
                      <?= $stream === $key ? 'checked' : '' ?>
-                     <?= $streamLocked ? 'disabled' : '' ?>
-                     onchange="this.form.submit()">
+                     <?= $streamLocked ? "disabled" : "" ?>>
               <label for="dlStream_<?= $key ?>"><?= $label ?></label>
             <?php endforeach; ?>
           </div>

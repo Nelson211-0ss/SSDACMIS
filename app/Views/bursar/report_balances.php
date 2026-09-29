@@ -49,7 +49,7 @@ $qs = $level !== '' ? '?level=' . urlencode($level) : '';
   <!-- Filters + KPI -->
   <div class="row g-2">
     <div class="col-lg-5">
-      <form class="card border-0 shadow-sm h-100" method="get" action="<?= $base ?>/bursar/reports/balances">
+      <form class="card border-0 shadow-sm h-100" method="get" data-auto-reload action="<?= $base ?>/bursar/reports/balances">
         <div class="card-body py-2 px-3 row g-2 align-items-end">
           <div class="col-8">
             <label class="form-label small fw-semibold mb-1">Filter by class</label>

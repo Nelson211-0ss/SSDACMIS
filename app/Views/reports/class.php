@@ -44,7 +44,7 @@ $nMatrix = count($matrixPeers);
          href="<?= $base ?><?= $portalPrefix ?>/reports?<?= View::e($qs) ?>">
         <i class="bi bi-arrow-left"></i> Back
       </a>
-      <form method="get" class="d-flex flex-wrap gap-2 align-items-end flex-shrink-0"
+      <form method="get" data-auto-reload class="d-flex flex-wrap gap-2 align-items-end flex-shrink-0"
             action="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $class['id'] ?>">
         <div>
           <label class="form-label small mb-1">Year</label>

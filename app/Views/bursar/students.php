@@ -45,7 +45,7 @@ $totBal    = max(0.0, $totBilled - $totPaid);
   </section>
 
   <!-- Filter bar -->
-  <form class="card border-0 shadow-sm" method="get" action="<?= $base ?>/bursar/students">
+  <form class="card border-0 shadow-sm" method="get" data-auto-reload action="<?= $base ?>/bursar/students">
     <div class="card-body py-2 px-3 row g-2 align-items-end">
       <div class="col-md-5">
         <label class="form-label small fw-semibold mb-1">Search</label>

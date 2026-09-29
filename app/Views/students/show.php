@@ -221,7 +221,7 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
 
   <!-- ============================== Results ============================== -->
   <div class="tab-pane fade" id="tab-results" role="tabpanel" aria-labelledby="tab-results-btn">
-    <form method="get" action="<?= $base ?>/students/<?= (int) $student['id'] ?>" class="row g-2 align-items-end mb-3">
+    <form method="get" data-auto-reload action="<?= $base ?>/students/<?= (int) $student['id'] ?>" class="row g-2 align-items-end mb-3">
       <input type="hidden" name="tab" value="results">
       <div class="col-6 col-md-3">
         <label class="form-label small mb-1">Year</label>

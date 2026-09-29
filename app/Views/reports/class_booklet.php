@@ -34,7 +34,7 @@ $peersAttr = htmlspecialchars(json_encode($peersJson, JSON_HEX_TAG | JSON_HEX_AP
         <a class="btn btn-outline-secondary btn-sm flex-shrink-0" href="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $class['id'] ?>?<?= View::e($qs) ?>">
           <i class="bi bi-arrow-left"></i> Class matrix
         </a>
-        <form method="get" class="d-flex flex-wrap gap-2 align-items-end flex-shrink-0" action="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $class['id'] ?>/booklet">
+        <form method="get" data-auto-reload class="d-flex flex-wrap gap-2 align-items-end flex-shrink-0" action="<?= $base ?><?= $portalPrefix ?>/reports/class/<?= (int) $class['id'] ?>/booklet">
           <div>
             <label class="form-label small mb-1">Year</label>
             <select name="year" class="form-select form-select-sm">

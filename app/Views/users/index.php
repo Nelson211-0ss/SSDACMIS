@@ -79,7 +79,7 @@ $roleTone = [
   </div>
 
   <!-- Filters -->
-  <form class="card border-0 shadow-sm mb-3" method="get" action="<?= $base ?>/users">
+  <form class="card border-0 shadow-sm mb-3" method="get" data-auto-reload action="<?= $base ?>/users">
     <div class="card-body">
       <div class="row g-2 align-items-end">
         <div class="col-12 col-md-4">

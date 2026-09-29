@@ -14,11 +14,11 @@ $title  = 'Students by Class';
   </a>
 </div>
 
-<form class="card border-0 shadow-sm mb-3" method="get" action="<?= $base ?>/hod/students">
+<form class="card border-0 shadow-sm mb-3" method="get" data-auto-reload action="<?= $base ?>/hod/students">
   <div class="card-body row g-3 align-items-end">
     <div class="col-md-6">
       <label class="form-label">Filter by class</label>
-      <select name="class_id" class="form-select" onchange="this.form.submit()">
+      <select name="class_id" class="form-select">
         <option value="0">All classes (<?= (int) $total ?> student<?= $total === 1 ? '' : 's' ?>)</option>
         <?php foreach ($classes as $c): ?>
           <option value="<?= (int) $c['id'] ?>" <?= $classFilter === (int) $c['id'] ? 'selected' : '' ?>>

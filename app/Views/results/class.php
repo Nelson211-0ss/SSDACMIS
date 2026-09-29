@@ -32,7 +32,7 @@ $subLabel = static function (array $sub): string {
         <i class="bi bi-arrow-left"></i> Classes
       </a>
       <div class="d-flex flex-wrap gap-2 align-items-end justify-content-end flex-grow-1">
-        <form method="get" class="d-flex flex-wrap gap-2 align-items-end"
+        <form method="get" data-auto-reload class="d-flex flex-wrap gap-2 align-items-end"
               action="<?= $base ?><?= $portalPrefix ?>/results/class/<?= (int) $class['id'] ?>">
           <div>
             <label class="form-label small mb-1">Year</label>

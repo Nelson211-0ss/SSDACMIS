@@ -9,9 +9,9 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 
 <?php if ($auth['role'] === 'admin' && !empty($schools)): ?>
-  <form method="get" class="mb-3 d-flex gap-2 align-items-center">
+  <form method="get" data-auto-reload class="mb-3 d-flex gap-2 align-items-center">
     <label class="small text-muted mb-0">School:</label>
-    <select name="school_id" class="form-select form-select-sm" style="max-width: 22rem" onchange="this.form.submit()">
+    <select name="school_id" class="form-select form-select-sm" style="max-width: 22rem">
       <option value="">— Select school —</option>
       <?php foreach ($schools as $sch): ?>
         <option value="<?= (int)$sch['id'] ?>" <?= (isset($selectedSchool) && (int)$selectedSchool === (int)$sch['id']) ? 'selected' : '' ?>><?= View::e($sch['name']) ?></option>

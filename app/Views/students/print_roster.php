@@ -8,12 +8,9 @@ $total = count($students ?? []);
 $grouped = empty($classId) || (int) $classId <= 0; // viewing more than one class -> group by class instead of a per-row Class column
 $showSchoolInGroup = empty($selectedSchoolId); // super admin, "All schools"
 $letterhead = $letterhead ?? [];
-$logoRel = trim((string) ($letterhead['logo'] ?? ''));
-$logoUrl = '';
-if ($logoRel !== '') {
-    $abs = dirname(__DIR__, 3) . '/public/' . ltrim($logoRel, '/');
-    if (is_file($abs)) $logoUrl = rtrim($base, '/') . '/' . ltrim($logoRel, '/');
-}
+// A school admin's logo arrives cache-busted ("uploads/logo.png?v=…"), so
+// the file check has to ignore the query string — View::publicAsset() does.
+$logoUrl = View::publicAsset($base, $letterhead['logo'] ?? '');
 $motto  = trim((string) ($letterhead['motto']  ?? ''));
 $addr   = trim((string) ($letterhead['address'] ?? ''));
 $htName = trim((string) ($letterhead['headteacher_name']  ?? ''));
@@ -44,7 +41,7 @@ $htTitle = trim((string) ($letterhead['headteacher_title'] ?? '')) ?: 'Head Teac
       </div>
     </div>
     <div class="card-body pt-3 pb-4">
-      <form method="get" action="<?= $base ?>/students/print" class="student-roster-filter-form">
+      <form method="get" data-auto-reload action="<?= $base ?>/students/print" class="student-roster-filter-form">
         <label class="form-label fw-semibold mb-2 mb-lg-3">
           Who to include <span class="text-danger">*</span>
         </label>

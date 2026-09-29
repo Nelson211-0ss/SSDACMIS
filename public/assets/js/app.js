@@ -8,14 +8,66 @@
     });
   });
 
-  // --- Auto-reload filter forms -------------------------------------------
-  // A form marked data-auto-reload resubmits itself the moment a select/date
-  // field changes, or a text field is edited and loses focus — the Reload
-  // button stays in the markup only as a manual fallback (no-JS, or
-  // re-submitting an unchanged value).
+  // --- Auto-applying filter forms -----------------------------------------
+  // A form marked data-auto-reload applies itself as soon as a filter
+  // changes: immediately for a select, checkbox, radio, date or number, and
+  // on blur/Enter for a text or search box (so it doesn't reload on every
+  // keystroke). The Apply/Reload/Filter button stays in the markup as a
+  // manual fallback for no-JS and for re-submitting an unchanged value.
+  //
+  // Opt a single control out with data-no-auto — used where a field is part
+  // of the form but shouldn't trigger a reload on its own.
   document.querySelectorAll('form[data-auto-reload]').forEach(function (f) {
-    f.querySelectorAll('select, input').forEach(function (el) {
-      el.addEventListener('change', function () { f.submit(); });
+    var submitting = false;
+
+    // requestSubmit() fires the form's submit listeners; submit() does not.
+    // That matters here: the mark-entry sheets hang an "unsaved marks"
+    // confirmation off submit, and a silent submit() would sail past it.
+    function apply() {
+      if (submitting) return;
+      submitting = true;
+      f.classList.add('is-autofiltering');
+      // Disable the manual button so a fast second click can't double-post.
+      f.querySelectorAll('button[type="submit"], input[type="submit"]')
+        .forEach(function (b) { b.disabled = true; });
+
+      if (typeof f.requestSubmit === 'function') {
+        f.requestSubmit();
+      } else {
+        f.submit();
+      }
+
+      // A cancelled submit (the user declined a confirm) has to leave the
+      // form usable again, so release the lock once the event has settled.
+      window.setTimeout(function () {
+        submitting = false;
+        f.classList.remove('is-autofiltering');
+        f.querySelectorAll('button[type="submit"], input[type="submit"]')
+          .forEach(function (b) { b.disabled = false; });
+      }, 0);
+    }
+
+    var SKIP = ['submit', 'reset', 'button', 'file', 'hidden', 'password'];
+
+    f.querySelectorAll('select, input, textarea').forEach(function (el) {
+      if (el.hasAttribute('data-no-auto')) return;
+      var type = (el.getAttribute('type') || '').toLowerCase();
+      if (SKIP.indexOf(type) !== -1) return;
+
+      // change fires on commit for every control: instantly for selects,
+      // checkboxes and radios; on blur for typed text.
+      el.addEventListener('change', apply);
+
+      // Enter inside a text field would submit anyway, but doing it through
+      // apply() keeps the double-submit guard and the disabled state.
+      if (el.tagName === 'INPUT' && (type === 'text' || type === 'search' || type === '')) {
+        el.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            apply();
+          }
+        });
+      }
     });
   });
 

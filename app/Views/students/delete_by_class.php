@@ -36,12 +36,12 @@ $className  = $selectedClass ? (string) $selectedClass['name'] : '';
 
     <div class="card border-0 shadow-sm mb-3">
       <div class="card-body">
-        <form method="get" action="<?= $base ?>/students/delete-by-class" class="row g-3 align-items-end">
+        <form method="get" data-auto-reload action="<?= $base ?>/students/delete-by-class" class="row g-3 align-items-end">
 
           <?php if ($isAdmin && !empty($schools)): ?>
           <div class="col-md-6">
             <label class="form-label fw-semibold" for="dbcSchool">School</label>
-            <select name="school_id" id="dbcSchool" class="form-select" onchange="this.form.submit()">
+            <select name="school_id" id="dbcSchool" class="form-select">
               <option value="">— All schools —</option>
               <?php foreach ($schools as $sch): ?>
                 <option value="<?= (int) $sch['id'] ?>" <?= $selectedSchoolId === (int) $sch['id'] ? 'selected' : '' ?>><?= View::e((string) $sch['name']) ?></option>
@@ -52,7 +52,7 @@ $className  = $selectedClass ? (string) $selectedClass['name'] : '';
 
           <div class="col-md-6">
             <label class="form-label fw-semibold" for="dbcClass">Class</label>
-            <select name="class_id" id="dbcClass" class="form-select" onchange="this.form.submit()">
+            <select name="class_id" id="dbcClass" class="form-select">
               <option value="">— Choose a class —</option>
               <?php foreach ($classes as $c): ?>
                 <option value="<?= (int) $c['id'] ?>" <?= $selectedClass && (int) $selectedClass['id'] === (int) $c['id'] ? 'selected' : '' ?>>
@@ -65,7 +65,7 @@ $className  = $selectedClass ? (string) $selectedClass['name'] : '';
           <?php if ($selectedClass && $isUpperLevel): ?>
           <div class="col-md-6">
             <label class="form-label fw-semibold" for="dbcStream">Stream</label>
-            <select name="stream" id="dbcStream" class="form-select" onchange="this.form.submit()">
+            <select name="stream" id="dbcStream" class="form-select">
               <option value="all" <?= $stream === 'all' ? 'selected' : '' ?>>All streams (whole class)</option>
               <option value="science" <?= $stream === 'science' ? 'selected' : '' ?>>Science only</option>
               <option value="arts" <?= $stream === 'arts' ? 'selected' : '' ?>>Arts only</option>

@@ -8077,3 +8077,32 @@ body {
     justify-content: center;
   }
 }
+
+/* ============================================================
+   Auto-applying filter forms (form[data-auto-reload])
+   The page reloads on change, so the only job here is to show
+   that something is happening and stop a second interaction
+   landing mid-navigation.
+   ============================================================ */
+
+.is-autofiltering {
+  position: relative;
+  cursor: progress;
+}
+
+/* Dim + lock the controls without shifting layout. */
+.is-autofiltering .form-select,
+.is-autofiltering .form-control,
+.is-autofiltering .btn {
+  opacity: .6;
+  pointer-events: none;
+  transition: opacity .12s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-autofiltering .form-select,
+  .is-autofiltering .form-control,
+  .is-autofiltering .btn {
+    transition: none;
+  }
+}

@@ -59,7 +59,7 @@ foreach ($classes as $c) {
   </section>
 
   <!-- Filters -->
-  <form class="card border-0 shadow-sm mb-3 d-print-none" method="get"
+  <form class="card border-0 shadow-sm mb-3 d-print-none" method="get" data-auto-reload
         action="<?= $base ?><?= $portalPrefix ?>/analytics">
     <div class="card-body">
       <div class="row g-2 g-md-3 align-items-end">

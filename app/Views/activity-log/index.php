@@ -19,7 +19,7 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>
 
 <div class="app-panel mb-3">
-  <form method="get" action="<?= $base ?>/activity-log" class="row g-2 align-items-end p-3">
+  <form method="get" data-auto-reload action="<?= $base ?>/activity-log" class="row g-2 align-items-end p-3">
     <div class="col-6 col-md-2">
       <label class="form-label small mb-1">Action</label>
       <select name="action" class="form-select form-select-sm">

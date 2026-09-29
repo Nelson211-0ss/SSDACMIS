@@ -20,7 +20,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
   </a>
 </div>
 
-<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/entry" class="msheet-period" data-sheet-reload>
+<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/entry" class="msheet-period" data-sheet-reload data-auto-reload>
   <input type="hidden" name="class_id"   value="<?= (int) $class['id'] ?>">
   <input type="hidden" name="subject_id" value="<?= (int) $subject['id'] ?>">
   <label class="msheet-period__field">
