@@ -155,6 +155,21 @@ body.landing-page {
   padding: clamp(3rem, 9vw, 6rem) 0 clamp(2.5rem, 7vw, 4.5rem);
 }
 
+/* Copy left, student photos right. Collapses to one column below
+   desktop, where the slider sits under the buttons. */
+.lp-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+/* Without photos the copy keeps its comfortable measure instead of
+   stretching across the full container. */
+.lp-hero__grid--solo { grid-template-columns: minmax(0, 1fr); }
+
+.lp-hero__copy { min-width: 0; }
+
 .lp-eyebrow {
   margin: 0 0 1rem;
   font-size: .78rem;
@@ -187,6 +202,75 @@ body.landing-page {
   flex-wrap: wrap;
   gap: .75rem;
   margin-top: 2rem;
+}
+
+/* ------------------------------------------------- Photo slider ---- */
+
+.lp-slider {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+/* A plain white card on a solid blue mat — the two theme colours doing
+   the framing, with no gradient or shadow involved. */
+.lp-slider__frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  padding: 10px;
+  background: var(--lp-accent);
+  border-radius: calc(var(--lp-radius) + 4px);
+  overflow: hidden;
+}
+
+.lp-slide {
+  position: absolute;
+  inset: 10px;
+  margin: 0;
+  border-radius: var(--lp-radius);
+  overflow: hidden;
+  background: var(--lp-bg);
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.lp-slide.is-active { opacity: 1; }
+
+.lp-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Faces sit high in a passport photo; bias the crop upward so a tight
+     frame never cuts the top of the head off. */
+  object-position: center 22%;
+  display: block;
+}
+
+/* Dots */
+.lp-slider__dots {
+  display: flex;
+  justify-content: center;
+  gap: .4rem;
+}
+
+.lp-slider__dot {
+  width: 22px;
+  height: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--lp-border-mid);
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+
+.lp-slider__dot:hover { background: var(--lp-ink-faint); }
+.lp-slider__dot.is-active { background: var(--lp-accent); }
+
+.lp-slider__dot:focus-visible {
+  outline: 2px solid var(--lp-accent);
+  outline-offset: 3px;
 }
 
 /* ----------------------------------------------------- Sections ---- */
@@ -346,11 +430,20 @@ body.landing-page {
 
 /* --------------------------------------------------------- Small --- */
 
+/* Below desktop the two hero columns would each be too narrow to read or
+   to show a face at a useful size — stack them instead. */
+@media (max-width: 899.98px) {
+  .lp-hero__grid { grid-template-columns: minmax(0, 1fr); }
+  .lp-slider__frame { aspect-ratio: 16 / 10; }
+}
+
 @media (max-width: 575.98px) {
   .lp-container { width: min(1080px, 100% - 2rem); }
   .lp-nav__inner { height: 60px; }
   .lp-hero__actions .lp-btn { flex: 1 1 100%; justify-content: center; }
   .lp-entry { padding: 1.1rem; gap: .85rem; }
+  .lp-slider__frame { aspect-ratio: 4 / 3; padding: 8px; }
+  .lp-slide { inset: 8px; }
   /* The copyright is the part that has to stay; the byline would only
      wrap onto its own line at this width. */
   .lp-footer__by { display: none; }
@@ -359,7 +452,9 @@ body.landing-page {
 @media (prefers-reduced-motion: reduce) {
   .lp-btn,
   .lp-entry,
-  .lp-entry__arrow {
+  .lp-entry__arrow,
+  .lp-slide,
+  .lp-slider__dot {
     transition: none;
   }
   .lp-entry:hover .lp-entry__arrow { transform: none; }

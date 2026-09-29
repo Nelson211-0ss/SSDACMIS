@@ -255,6 +255,30 @@ $themesJson = json_encode(
 
   </div>
 
+  <!-- ===================== Public landing page ===================== -->
+  <div class="card mt-3">
+    <div class="card-header d-flex align-items-center">
+      <span class="card-header-icon card-header-icon--blue me-2" aria-hidden="true"><i class="bi bi-globe2"></i></span>
+      <strong class="mb-0">Public landing page</strong>
+    </div>
+    <div class="card-body">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch"
+               id="landing_student_photos" name="landing_student_photos" value="1"
+               <?= ($settings['landing_student_photos'] ?? '1') !== '0' ? 'checked' : '' ?>>
+        <label class="form-check-label fw-semibold" for="landing_student_photos">
+          Show student photos on the landing page
+        </label>
+      </div>
+      <p class="form-text mb-0 mt-2">
+        Rotates a few student passport photos in the hero of the public home page.
+        No names, admission numbers or classes are shown with them — but the page
+        needs no sign-in, so the photographs are visible to anyone with the link.
+        Turn this off to show the page without them.
+      </p>
+    </div>
+  </div>
+
   <!-- ===================== Live preview ===================== -->
   <div class="card mt-3">
     <div class="card-header d-flex align-items-center">

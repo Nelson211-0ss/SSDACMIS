@@ -70,6 +70,15 @@ class SettingsController extends Controller
         Settings::set('school_headteacher_name',  mb_substr($htName,  0, 120));
         Settings::set('school_headteacher_title', mb_substr($htTitle, 0, 60));
 
+        // Public landing page: whether the hero slider shows real student
+        // photographs. Stored as '1'/'0' rather than '1'/'': Settings::get()
+        // treats an empty value as "never set" and falls back to the default,
+        // so '' would silently read back as ON and the switch would not work.
+        Settings::set(
+            'landing_student_photos',
+            $this->input('landing_student_photos') === '1' ? '1' : '0'
+        );
+
         // Theme picker.
         $themeKey = (string) $this->input('theme_accent', 'blue');
         if (!array_key_exists($themeKey, Settings::themes())) {
