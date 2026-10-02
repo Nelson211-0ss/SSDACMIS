@@ -1,12 +1,19 @@
 /* ============================================================
    SSD-ACMIS — public landing page.
 
-   Flat and borderless: nothing on this page is outlined. Panels
-   are told apart by fill alone — white against the soft canvas,
-   and a blue tint where the eye should land first — so the two
-   theme colours do all the separating. No gradients, no glass
-   blur, no shadows. The rest of the hierarchy is type size,
-   weight and whitespace.
+   ONE SCREEN. The shell is exactly the viewport tall and clips
+   its overflow, so the page can never scroll. Everything below
+   earns its height: nav and footer are fixed-size, the middle
+   takes what is left, and the type scales with the viewport so
+   a short window shrinks rather than spills. The max-height
+   rules at the bottom shed the optional parts in order — hint,
+   lede, eyebrow, then the slider. The two sign-in doors and the
+   headline are never among them.
+
+   Flat and borderless: nothing is outlined. Panels are told
+   apart by fill alone — white against the soft canvas, blue
+   tint where the eye should land first. No gradients, no blur,
+   no shadows. Icons are inline Feather strokes.
    ============================================================ */
 
 :root {
@@ -19,7 +26,7 @@
   --lp-text:      #1e293b;   /* body copy */
   --lp-muted:     #64748b;   /* labels, captions */
   --lp-blue:      #2563eb;   /* accent */
-  --lp-blue-dark: #1d4ed8;   /* accent hover (login uses this on links/submit) */
+  --lp-blue-dark: #1d4ed8;   /* accent hover */
   --lp-bg:        #f8fafc;   /* soft canvas */
   --lp-white:     #ffffff;   /* cards, nav */
 
@@ -29,42 +36,36 @@
   --lp-font:    'Inter', system-ui, sans-serif;
   --lp-display: 'Manrope', 'Inter', sans-serif;
 
-  /* ----------------------------------------------------------------
-     Semantic aliases. Nothing here is a border colour: panels are
-     separated by fill, so these are the three fills the page uses.
-     ---------------------------------------------------------------- */
-  --lp-surface:      var(--lp-white);   /* cards on the soft canvas */
-  --lp-surface-soft: var(--lp-bg);      /* canvas, and cards on white */
-  /* Flat tint of --lp-blue over white — the blue panel behind the
-     slider and the icon chips. The login page tints the same chip with
-     a gradient, which this page deliberately does without. */
-  --lp-accent-soft:  #e5ecfd;
-  --lp-accent-soft-deep: #d5e1fc;       /* the same tint, one step up, for hover */
-  /* Inactive slider dots. Darker than it looks like it needs to be:
-     they are a control, so they owe 3:1 against white (WCAG 1.4.11),
-     and a paler grey makes the slide count invisible. */
-  --lp-track:        #8b95a5;
+  /* Fills do all the separating; none of these is a border colour. */
+  --lp-surface:          var(--lp-white);
+  --lp-surface-soft:     var(--lp-bg);
+  --lp-accent-soft:      #e5ecfd;   /* flat tint of --lp-blue over white */
+  --lp-accent-soft-deep: #d5e1fc;   /* the same tint, one step up, for hover */
+  --lp-track:            #8b95a5;   /* inactive dots — a control, owes 3:1 */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+
+html, body.landing-page { height: 100%; }
 
 body.landing-page {
   margin: 0;
   font-family: var(--lp-font);
   font-size: 16px;
   line-height: 1.6;
-  /* Body copy is --lp-text; headings step up to --lp-navy, same as login. */
   color: var(--lp-text);
   background: var(--lp-surface);
   -webkit-font-smoothing: antialiased;
+  /* The page is one screen; there is nothing below the fold to reach. */
+  overflow: hidden;
 }
 
+/* Shell: nav and footer keep their height, the middle absorbs the rest. */
 .lp {
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  /* Tall enough to fill the viewport, but free to grow and scroll on a
-     short window rather than hiding content to stay on one screen. */
-  min-height: 100dvh;
+  overflow: hidden;
 }
 
 .lp-container {
@@ -72,9 +73,19 @@ body.landing-page {
   margin-inline: auto;
 }
 
-/* ---------------------------------------------------------- Nav ---- */
+/* ---------------------------------------------------------- Icons --- */
+
+.ft {
+  width: 1em;
+  height: 1em;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------ Nav --- */
 
 .lp-nav {
+  flex: 0 0 auto;
   background: var(--lp-surface);
 }
 
@@ -83,14 +94,14 @@ body.landing-page {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  height: 68px;
+  height: clamp(56px, 8vh, 68px);
 }
 
 .lp-logo {
   display: inline-flex;
-  font-family: var(--lp-display);
   align-items: center;
   gap: .6rem;
+  font-family: var(--lp-display);
   text-decoration: none;
   color: var(--lp-navy);
   font-weight: 700;
@@ -107,28 +118,25 @@ body.landing-page {
   color: var(--lp-white);
   display: grid;
   place-items: center;
-  font-size: .95rem;
+  font-size: 1.05rem;
 }
 
-/* ------------------------------------------------------ Buttons ---- */
+/* -------------------------------------------------------- Buttons --- */
 
 .lp-btn {
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  padding: .7rem 1.25rem;
+  padding: .5rem 1.1rem;
   border: 0;
   border-radius: var(--lp-radius-sm);
-  font-size: .95rem;
+  font-size: .9rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: background-color .15s ease, color .15s ease;
 }
 
-.lp-btn--sm { padding: .45rem 1rem; font-size: .88rem; }
-
-/* Solid blue for the one action that matters. */
 .lp-btn--primary {
   background: var(--lp-blue);
   color: var(--lp-white);
@@ -136,46 +144,47 @@ body.landing-page {
 .lp-btn--primary:hover { background: var(--lp-blue-dark); }
 
 .lp-btn:focus-visible,
-.lp-logo:focus-visible {
+.lp-logo:focus-visible,
+.lp-door:focus-visible {
   outline: 2px solid var(--lp-blue);
   outline-offset: 2px;
 }
 
-/* --------------------------------------------------------- Hero ---- */
+/* ----------------------------------------------------------- Main --- */
 
-.lp-hero {
-  padding: clamp(3rem, 9vw, 6rem) 0 clamp(2.5rem, 7vw, 4.5rem);
+.lp-main {
+  flex: 1 1 auto;
+  min-height: 0;          /* lets the shell clip instead of growing */
+  display: flex;
+  align-items: center;
+  padding-block: clamp(.75rem, 3vh, 2.5rem);
 }
 
-/* Copy left, student photos right. Collapses to one column below
-   desktop, where the slider sits under the buttons. */
-.lp-hero__grid {
+.lp-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
   align-items: center;
-  gap: clamp(2rem, 5vw, 4rem);
+  gap: clamp(1.5rem, 5vw, 4rem);
 }
 
-/* Without photos the copy keeps its comfortable measure instead of
-   stretching across the full container. */
-.lp-hero__grid--solo { grid-template-columns: minmax(0, 1fr); }
-
-.lp-hero__copy { min-width: 0; }
+.lp-copy { min-width: 0; }
 
 .lp-eyebrow {
-  margin: 0 0 1rem;
-  font-size: .78rem;
+  margin: 0 0 .75rem;
+  font-size: .76rem;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--lp-muted);
 }
 
-.lp-hero__title {
-  font-family: var(--lp-display);
+.lp-title {
   margin: 0;
   max-width: 18ch;
-  font-size: clamp(2.1rem, 5.4vw, 3.4rem);
+  font-family: var(--lp-display);
+  /* Tied to viewport height as well as width, so a short window shrinks
+     the headline instead of pushing the doors off-screen. */
+  font-size: clamp(1.75rem, min(4.6vw, 6.4vh), 3.1rem);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -.03em;
@@ -183,20 +192,18 @@ body.landing-page {
   text-wrap: balance;
 }
 
-.lp-hero__lede {
-  margin: 1.15rem 0 0;
-  max-width: 56ch;
-  font-size: clamp(1rem, 1.5vw, 1.1rem);
+.lp-lede {
+  margin: clamp(.6rem, 1.6vh, 1.1rem) 0 0;
+  max-width: 52ch;
+  font-size: clamp(.92rem, 1.4vh, 1.05rem);
   color: var(--lp-text);
 }
 
-/* ---------------------------------------------- Ways in (doors) ---- */
+/* --------------------------------------------- Ways in (the doors) --- */
 
-/* The page asks one question — staff or parent — and answers it here,
-   in the hero, rather than at the foot of the page. */
 .lp-doors__heading {
-  margin: 2.25rem 0 .85rem;
-  font-size: .78rem;
+  margin: clamp(1.1rem, 3vh, 2rem) 0 .7rem;
+  font-size: .76rem;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -205,14 +212,14 @@ body.landing-page {
 
 .lp-doors {
   display: grid;
-  gap: .75rem;
+  gap: .6rem;
 }
 
 .lp-door {
   display: flex;
   align-items: center;
-  gap: .9rem;
-  padding: 1rem 1.1rem;
+  gap: .85rem;
+  padding: clamp(.7rem, 1.6vh, 1rem) 1.05rem;
   background: var(--lp-surface-soft);
   border-radius: var(--lp-radius);
   text-decoration: none;
@@ -226,17 +233,21 @@ body.landing-page {
 .lp-door--primary { background: var(--lp-accent-soft); }
 .lp-door--primary:hover { background: var(--lp-accent-soft-deep); }
 
-.lp-door:focus-visible {
-  outline: 2px solid var(--lp-blue);
-  outline-offset: 2px;
+.lp-door__icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--lp-radius-sm);
+  background: var(--lp-surface);
+  color: var(--lp-blue);
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
 }
 
-.lp-door__emoji {
-  flex-shrink: 0;
-  font-size: 1.6rem;
-  line-height: 1;
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
-               "Segoe UI Symbol", sans-serif;
+.lp-door--primary .lp-door__icon {
+  background: var(--lp-blue);
+  color: var(--lp-white);
 }
 
 .lp-door__text {
@@ -255,13 +266,15 @@ body.landing-page {
 }
 
 .lp-door__desc {
-  font-size: .86rem;
+  font-size: .85rem;
   line-height: 1.45;
   color: var(--lp-text);
 }
 
 .lp-door__arrow {
   flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
   color: var(--lp-muted);
   transition: color .15s ease, transform .15s ease;
 }
@@ -271,28 +284,31 @@ body.landing-page {
   transform: translateX(2px);
 }
 
-.lp-doors__hint {
-  margin: .85rem 0 0;
+.lp-hint {
+  margin: .8rem 0 0;
   font-size: .82rem;
   color: var(--lp-muted);
 }
 
-.lp-doors__hint strong { color: var(--lp-text); font-weight: 600; }
+.lp-hint strong { color: var(--lp-text); font-weight: 600; }
 
-/* ------------------------------------------------------- Slider ---- */
+/* --------------------------------------------------------- Slider --- */
 
 .lp-slider {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: .9rem;
 }
 
-/* One tinted blue panel — no mat, no outline. The tint is what marks
-   this out from the white page around it. */
+/* One tinted blue panel — no mat, no outline. */
 .lp-slider__frame {
   position: relative;
+  width: 100%;
   aspect-ratio: 4 / 3;
+  /* Never taller than the space the middle band actually has. */
+  max-height: min(46vh, 380px);
+  margin-inline: auto;
   background: var(--lp-accent-soft);
   border-radius: var(--lp-radius);
   overflow: hidden;
@@ -302,12 +318,12 @@ body.landing-page {
   position: absolute;
   inset: 0;
   margin: 0;
-  padding: clamp(1.25rem, 4vw, 2.25rem);
+  padding: clamp(1rem, 3vh, 2rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: .9rem;
+  gap: .85rem;
   text-align: center;
   opacity: 0;
   transition: opacity .6s ease;
@@ -315,24 +331,26 @@ body.landing-page {
 
 .lp-slide.is-active { opacity: 1; }
 
-.lp-slide__emoji {
-  font-size: clamp(3.5rem, 10vw, 6rem);
-  line-height: 1;
-  /* Emoji fonts vary by platform; name them so the glyph is colour
-     everywhere rather than a monochrome fallback on some systems. */
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
-               'Segoe UI Symbol', sans-serif;
+.lp-slide__icon {
+  width: clamp(3rem, 7vh, 4.25rem);
+  height: clamp(3rem, 7vh, 4.25rem);
+  border-radius: var(--lp-radius);
+  background: var(--lp-surface);
+  color: var(--lp-blue);
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.5rem, 3.4vh, 2rem);
 }
 
 .lp-slide__caption {
   display: flex;
   flex-direction: column;
-  gap: .25rem;
+  gap: .2rem;
 }
 
 .lp-slide__title {
   font-family: var(--lp-display);
-  font-size: 1.15rem;
+  font-size: clamp(1rem, 2vh, 1.15rem);
   font-weight: 700;
   letter-spacing: -.01em;
   color: var(--lp-navy);
@@ -340,12 +358,11 @@ body.landing-page {
 
 .lp-slide__desc {
   max-width: 28ch;
-  font-size: .88rem;
+  font-size: clamp(.8rem, 1.5vh, .88rem);
   line-height: 1.5;
   color: var(--lp-text);
 }
 
-/* Dots */
 .lp-slider__dots {
   display: flex;
   justify-content: center;
@@ -371,71 +388,10 @@ body.landing-page {
   outline-offset: 3px;
 }
 
-/* ----------------------------------------------------- Sections ---- */
-
-.lp-section {
-  padding: clamp(2.5rem, 6vw, 4rem) 0;
-}
-
-.lp-section--soft { background: var(--lp-surface-soft); }
-
-.lp-section__title {
-  margin: 0 0 1.75rem;
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--lp-muted);
-}
-
-/* ----------------------------------------------------- Features ---- */
-
-.lp-features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* White on the soft band — the inverse of the hero, where tinted cards
-   sit on white. Either way the fill is what separates them, with no
-   outline involved. */
-.lp-feature {
-  padding: 1.35rem;
-  background: var(--lp-surface);
-  border-radius: var(--lp-radius);
-}
-
-.lp-feature__emoji {
-  display: block;
-  margin-bottom: .75rem;
-  font-size: 1.75rem;
-  line-height: 1;
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
-               "Segoe UI Symbol", sans-serif;
-}
-
-.lp-feature__title {
-  margin: 0 0 .35rem;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
-  color: var(--lp-navy);
-}
-
-.lp-feature__desc {
-  margin: 0;
-  font-size: .9rem;
-  line-height: 1.55;
-  color: var(--lp-text);
-}
-
-/* ------------------------------------------------------- Footer ---- */
+/* --------------------------------------------------------- Footer --- */
 
 .lp-footer {
-  margin-top: auto;
+  flex: 0 0 auto;
   background: var(--lp-surface);
 }
 
@@ -445,29 +401,54 @@ body.landing-page {
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
-  padding: 1.35rem 0;
-  font-size: .82rem;
+  padding: clamp(.7rem, 2vh, 1.2rem) 0;
+  font-size: .8rem;
   color: var(--lp-muted);
 }
 
-/* --------------------------------------------------------- Small --- */
+/* ============================== Fitting ==============================
+   Below desktop width the two columns can't both be useful, and on a
+   short window something has to give. These shed in order of how little
+   each is missed. The doors and the headline never go.
+   ===================================================================== */
 
-/* Below desktop the two hero columns would each be too narrow to read or
-   to show a face at a useful size — stack them instead. */
+/* One column: the slider would be too narrow to read beside the copy,
+   and stacking both would overflow the single screen. The slider is the
+   decorative half — the copy and the doors are the page. */
 @media (max-width: 899.98px) {
-  .lp-hero__grid { grid-template-columns: minmax(0, 1fr); }
-  .lp-slider__frame { aspect-ratio: 16 / 10; }
+  .lp-grid { grid-template-columns: minmax(0, 1fr); }
+  .lp-slider { display: none; }
+  .lp-title { max-width: 24ch; }
 }
 
 @media (max-width: 575.98px) {
   .lp-container { width: min(1080px, 100% - 2rem); }
-  .lp-nav__inner { height: 60px; }
-  .lp-door { padding: .9rem 1rem; gap: .75rem; }
-  .lp-slider__frame { aspect-ratio: 4 / 3; padding: 8px; }
-  .lp-slide { inset: 8px; }
-  /* The copyright is the part that has to stay; the byline would only
-     wrap onto its own line at this width. */
+  .lp-door { padding: .75rem .9rem; gap: .7rem; }
+  .lp-door__icon { width: 34px; height: 34px; font-size: 1.05rem; }
+  /* The copyright is what has to stay; the byline would only wrap. */
   .lp-footer__by { display: none; }
+}
+
+/* Short windows: drop the optional lines before anything can clip. */
+@media (max-height: 720px) {
+  .lp-hint { display: none; }
+}
+
+@media (max-height: 620px) {
+  .lp-lede { display: none; }
+}
+
+@media (max-height: 520px) {
+  .lp-eyebrow { display: none; }
+  .lp-doors__heading { margin-top: .9rem; }
+  .lp-door__desc { display: none; }
+}
+
+/* Very short (a laptop in a split window): the slider is the last thing
+   to go, after every line of optional text. */
+@media (max-height: 440px) {
+  .lp-grid { grid-template-columns: minmax(0, 1fr); }
+  .lp-slider { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

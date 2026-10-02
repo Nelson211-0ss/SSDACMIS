@@ -15,7 +15,8 @@ $pageTitle = $title ?? 'SSDACMIS';
   <?php /* Same families the login page loads (layouts/auth.php) so the two
            public pages share one typeface pairing as well as one palette. */ ?>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <?php /* No icon stylesheet: the page's icons are inline Feather SVG, so
+           there is one less render-blocking request before first paint. */ ?>
   <link href="<?= View::asset($base, 'assets/css/landing.css') ?>" rel="stylesheet">
 </head>
 <body class="landing-page">
