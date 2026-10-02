@@ -276,38 +276,36 @@ final class TermResultsService
                 $averages = [];
                 foreach ($memberRows as $meta) {
                     $sid = (int) $meta['student_id'];
-                    // Sum the PERCENTAGE of each graded subject (not the raw
-                    // total_marks) — a mid-only subject is stored out of 30, a
-                    // complete one out of 100, so summing raw totals directly
-                    // would silently corrupt the average the moment a student
-                    // has a mix of the two. mid_marks/end_marks (already
-                    // stored per row) tell us which denominator applied.
+                    // Raw marks scored across every subject in this period.
+                    // total_marks is already the stage's own figure (out of
+                    // 30 at mid-term, out of 100 at end of term), so summing
+                    // it directly is exactly "the total number of scores in
+                    // the subjects offered".
                     $sumRow = Database::query(
-                        'SELECT COUNT(*) AS n, COALESCE(SUM(
-                            CASE
-                                WHEN mid_marks IS NOT NULL AND end_marks IS NOT NULL THEN total_marks
-                                WHEN mid_marks IS NOT NULL THEN mid_marks / ' . AcademicMarking::MID_MAX . ' * 100
-                                WHEN end_marks IS NOT NULL THEN end_marks / ' . AcademicMarking::END_MAX . ' * 100
-                                ELSE NULL
-                            END
-                         ), 0) AS s
+                        'SELECT COUNT(*) AS n, COALESCE(SUM(total_marks), 0) AS s
                          FROM term_subject_results
                          WHERE student_id = ? AND academic_year = ? AND term = ? AND stage = ?
                            AND total_marks IS NOT NULL',
                         [$sid, $year, $term, $stage]
                     )->fetch();
                     $gradedCount = (int) ($sumRow['n'] ?? 0);
-                    $pctSum = (float) ($sumRow['s'] ?? 0);
-                    // Divide by the FULL curriculum count, not by how many
-                    // subjects are graded — an ungraded subject counts as 0
-                    // rather than being skipped, so the average reflects
-                    // every subject the student is meant to take. A student
-                    // with no marks in anything yet stays null ("—"), not 0%.
-                    $curriculumCount = $curriculumCounts[$sid] ?? 0;
-                    $avg = ($gradedCount > 0 && $curriculumCount > 0)
-                        ? round($pctSum / $curriculumCount, 2)
+                    $scored      = (float) ($sumRow['s'] ?? 0);
+
+                    // Divide by what full marks would have been for this
+                    // level — 1200 for Form 1/2, 800 for Form 3/4 at end of
+                    // term. The denominator is fixed, so an ungraded or
+                    // part-graded subject pulls the average down instead of
+                    // being skipped. This is the same call AcademicMarking::
+                    // buildScoreSheet() makes, so the stored average and the
+                    // one printed on a report card can never disagree.
+                    $averages[$sid] = $gradedCount > 0
+                        ? AcademicMarking::averagePercentage(
+                            $scored,
+                            $level,
+                            $stage,
+                            $curriculumCounts[$sid] ?? null
+                        )
                         : null;
-                    $averages[$sid] = $avg;
                 }
 
                 $rankInput = [];

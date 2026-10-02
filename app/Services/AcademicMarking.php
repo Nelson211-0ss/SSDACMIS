@@ -27,6 +27,25 @@ final class AcademicMarking
     /** End-of-term assessment: mid + end, subject max 100. */
     public const STAGE_END = 'endterm';
 
+    /**
+     * Subjects a student is expected to sit, by level. These set the
+     * denominator of the overall average:
+     *
+     *   Form 1 & 2 — 12 subjects, so an end-of-term average is the sum of
+     *                the subject scores out of 12 × 100 = 1200.
+     *   Form 3 & 4 — 8 subjects within the student's stream, out of
+     *                8 × 100 = 800.
+     *
+     * The denominator is FIXED by level, not by how many subjects happen to
+     * be marked: an unmarked or part-marked subject pulls the average down
+     * rather than being quietly left out of the sum.
+     *
+     * At mid-term each subject is out of 30 instead of 100, so the same
+     * counts give 360 and 240 — see expectedTotal().
+     */
+    public const LOWER_SUBJECT_COUNT = 12;   // Form 1, Form 2
+    public const UPPER_SUBJECT_COUNT = 8;    // Form 3, Form 4
+
     public const ERR_MID_HIGH = 'Mid-term marks cannot exceed 30';
     public const ERR_MID_LOW  = 'Mid-term marks cannot be below 0';
     public const ERR_END_HIGH = 'End-of-term marks cannot exceed 70';
@@ -58,6 +77,71 @@ final class AcademicMarking
         return self::normalizeStage($stage) === self::STAGE_MID
             ? (int) self::MID_MAX
             : (int) self::TOTAL_MAX;
+    }
+
+    /** Form 3 and Form 4 are the streamed, 8-subject levels. */
+    public static function isUpperLevel(?string $level): bool
+    {
+        return in_array(trim((string) $level), ['Form 3', 'Form 4'], true);
+    }
+
+    /**
+     * How many subjects the average is divided across for a level.
+     *
+     * $fallback is used only when the class has no recognised level (blank,
+     * or something outside Form 1–4). Falling back to what the student
+     * actually takes keeps an unconfigured class producing a sensible
+     * percentage instead of one measured against the wrong denominator.
+     */
+    public static function expectedSubjectCount(?string $level, ?int $fallback = null): int
+    {
+        $l = trim((string) $level);
+        if ($l === 'Form 1' || $l === 'Form 2') {
+            return self::LOWER_SUBJECT_COUNT;
+        }
+        if (self::isUpperLevel($l)) {
+            return self::UPPER_SUBJECT_COUNT;
+        }
+
+        return ($fallback !== null && $fallback > 0) ? $fallback : self::LOWER_SUBJECT_COUNT;
+    }
+
+    /**
+     * The score a student at this level would get for full marks in every
+     * subject — 1200 / 800 at end of term, 360 / 240 at mid-term.
+     */
+    public static function expectedTotal(?string $level, ?string $stage, ?int $fallbackCount = null): float
+    {
+        return self::expectedSubjectCount($level, $fallbackCount)
+             * (float) self::stageSubjectMax($stage);
+    }
+
+    /**
+     * The overall average: total scored across the student's subjects as a
+     * percentage of what full marks would have been.
+     *
+     *   Form 1 & 2 :  total / 1200 × 100
+     *   Form 3 & 4 :  total / 800  × 100
+     *
+     * Returns null when nothing is marked yet, so a student with no results
+     * shows "—" rather than 0%. Capped at 100 so a school whose curriculum
+     * is larger than the expected count can never report above full marks.
+     */
+    public static function averagePercentage(
+        ?float $totalScore,
+        ?string $level,
+        ?string $stage,
+        ?int $fallbackCount = null
+    ): ?float {
+        if ($totalScore === null) {
+            return null;
+        }
+        $expected = self::expectedTotal($level, $stage, $fallbackCount);
+        if ($expected <= 0) {
+            return null;
+        }
+
+        return round(min(100.0, ($totalScore / $expected) * 100), 2);
     }
 
     /**
@@ -237,6 +321,18 @@ final class AcademicMarking
      */
     public static function offeredSubjectsForStudent(int $studentId): array
     {
+        return self::curriculumForStudent($studentId)['subjects'];
+    }
+
+    /**
+     * The same curriculum lookup, plus the level and stream it was derived
+     * from — the average's denominator depends on the level, so callers
+     * need both without paying for a second query.
+     *
+     * @return array{level:string,stream:string,subjects:list<array<string,mixed>>}
+     */
+    public static function curriculumForStudent(int $studentId): array
+    {
         $student = Database::query(
             'SELECT s.stream, c.level, s.school_id
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
@@ -262,7 +358,11 @@ final class AcademicMarking
         }
         $sql .= " ORDER BY FIELD(category, 'core','science','arts','optional'), name";
 
-        return Database::query($sql, $params)->fetchAll();
+        return [
+            'level'    => $level,
+            'stream'   => $stream,
+            'subjects' => Database::query($sql, $params)->fetchAll(),
+        ];
     }
 
     /**
@@ -303,7 +403,9 @@ final class AcademicMarking
         ?string $stage = self::STAGE_END
     ): array {
         $stage = self::normalizeStage($stage);
-        $subjects = self::offeredSubjectsForStudent($studentId);
+        $curriculum = self::curriculumForStudent($studentId);
+        $level      = $curriculum['level'];
+        $subjects   = $curriculum['subjects'];
         if ($subjects === []) {
             return [
                 'groups' => [],
@@ -357,7 +459,6 @@ final class AcademicMarking
         $grouped = [];
         $totalSum = 0.0;
         $maxSum   = 0;
-        $pctSum   = 0.0;
         $subjectCount = 0;
 
         foreach ($subjects as $sub) {
@@ -371,7 +472,6 @@ final class AcademicMarking
             if ($total !== null && $pct !== null) {
                 $totalSum += $total;
                 $maxSum   += $max;
-                $pctSum   += $pct;
                 $subjectCount++;
             }
 
@@ -403,25 +503,34 @@ final class AcademicMarking
             }
         }
 
-        // `average` is a genuine 0–100 percentage — the mean of each graded
-        // subject's own percentage, never the raw totals, so it stays valid
-        // and comparable even when subjects are on different denominators
-        // (some /30 mid-only, some /100 complete). It's divided by the FULL
-        // curriculum count (count($subjects)), not by how many subjects are
-        // graded — an ungraded subject counts as 0 rather than being
-        // skipped, so a student isn't ranked only on their best few
-        // subjects while the rest are still ungraded. A student with no
-        // marks in anything yet stays null ("—"), not 0%.
-        $average = $subjectCount > 0 ? round($pctSum / count($subjects), 2) : null;
+        // The average is the total scored across every subject as a share of
+        // what full marks would have been for this level — 1200 for Form 1/2,
+        // 800 for Form 3/4 at end of term (see expectedTotal()).
+        //
+        // The denominator is fixed by level, not by how many subjects are
+        // marked, so an ungraded or half-graded subject pulls the average
+        // down rather than being left out of the sum. A student with nothing
+        // marked at all stays null ("—") rather than 0%.
+        $expectedTotal = self::expectedTotal($level, $stage, count($subjects));
+        $average = $subjectCount > 0
+            ? self::averagePercentage($totalSum, $level, $stage, count($subjects))
+            : null;
 
         return [
             'groups'   => $sorted,
             'total'    => $totalSum,
-            'maxTotal' => $maxSum,
+            // What the total is out of, so the report card reads "947/1200"
+            // against the same figure the average is calculated from.
+            'maxTotal' => $expectedTotal,
+            // The sum of the maxes of only the subjects that were actually
+            // marked — kept for callers that need to tell a part-marked
+            // sheet from a complete one.
+            'markedMax' => $maxSum,
             'count'    => $subjectCount,
             'average'  => $average,
             'grade'    => $average !== null ? self::letterGrade((float) $average) : '—',
             'stage'    => $stage,
+            'level'    => $level,
         ];
     }
 
