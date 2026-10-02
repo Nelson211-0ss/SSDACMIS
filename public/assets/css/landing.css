@@ -7,8 +7,8 @@
    takes what is left, and the type scales with the viewport so
    a short window shrinks rather than spills. The max-height
    rules at the bottom shed the optional parts in order — hint,
-   lede, eyebrow, then the slider. The two sign-in doors and the
-   headline are never among them.
+   then lede, then the eyebrow and the door descriptions. The two
+   sign-in doors and the headline are never among them.
 
    Borderless: nothing is outlined. The page sits on the same
    blue wash the login page paints behind its form, and panels
@@ -45,7 +45,6 @@
 
   /* Fills do all the separating; none of these is a border colour. */
   --lp-surface:          var(--lp-white);
-  --lp-track:            #8b95a5;   /* inactive dots — a control, owes 3:1 */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -179,14 +178,14 @@ body.landing-page {
   padding-block: clamp(.75rem, 3vh, 2.5rem);
 }
 
-.lp-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
-  align-items: center;
-  gap: clamp(1.5rem, 5vw, 4rem);
+/* One centred column, the same shape as the login page: with nothing
+   beside it, a left-aligned block would leave half the screen empty. */
+.lp-copy {
+  width: min(34rem, 100%);
+  margin-inline: auto;
+  min-width: 0;
+  text-align: center;
 }
-
-.lp-copy { min-width: 0; }
 
 .lp-eyebrow {
   margin: 0 0 .75rem;
@@ -283,6 +282,9 @@ body.landing-page {
   flex-direction: column;
   min-width: 0;
   flex: 1 1 auto;
+  /* The column around these is centred; inside a card the text reads
+     left-to-right from its icon, so it opts back out. */
+  text-align: left;
 }
 
 .lp-door__title {
@@ -320,102 +322,6 @@ body.landing-page {
 
 .lp-hint strong { color: var(--lp-text); font-weight: 600; }
 
-/* --------------------------------------------------------- Slider --- */
-
-.lp-slider {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: .9rem;
-}
-
-/* One tinted blue panel — no mat, no outline. */
-.lp-slider__frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  /* Never taller than the space the middle band actually has. */
-  max-height: min(46vh, 380px);
-  margin-inline: auto;
-  background: linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(56, 189, 248, .20));
-  border-radius: var(--lp-radius);
-  overflow: hidden;
-}
-
-.lp-slide {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: clamp(1rem, 3vh, 2rem);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: .85rem;
-  text-align: center;
-  opacity: 0;
-  transition: opacity .6s ease;
-}
-
-.lp-slide.is-active { opacity: 1; }
-
-.lp-slide__icon {
-  width: clamp(3rem, 7vh, 4.25rem);
-  height: clamp(3rem, 7vh, 4.25rem);
-  border-radius: var(--lp-radius);
-  background: var(--lp-surface);
-  color: var(--lp-blue);
-  display: grid;
-  place-items: center;
-  font-size: clamp(1.5rem, 3.4vh, 2rem);
-}
-
-.lp-slide__caption {
-  display: flex;
-  flex-direction: column;
-  gap: .2rem;
-}
-
-.lp-slide__title {
-  font-family: var(--lp-display);
-  font-size: clamp(1rem, 2vh, 1.15rem);
-  font-weight: 700;
-  letter-spacing: -.01em;
-  color: var(--lp-navy);
-}
-
-.lp-slide__desc {
-  max-width: 28ch;
-  font-size: clamp(.8rem, 1.5vh, .88rem);
-  line-height: 1.5;
-  color: var(--lp-text);
-}
-
-.lp-slider__dots {
-  display: flex;
-  justify-content: center;
-  gap: .4rem;
-}
-
-.lp-slider__dot {
-  width: 22px;
-  height: 4px;
-  padding: 0;
-  border: 0;
-  border-radius: 2px;
-  background: var(--lp-track);
-  cursor: pointer;
-  transition: background-color .15s ease;
-}
-
-.lp-slider__dot:hover { background: var(--lp-muted); }
-.lp-slider__dot.is-active { background: var(--lp-blue); }
-
-.lp-slider__dot:focus-visible {
-  outline: 2px solid var(--lp-blue);
-  outline-offset: 3px;
-}
-
 /* --------------------------------------------------------- Footer --- */
 
 .lp-footer {
@@ -440,15 +346,6 @@ body.landing-page {
    each is missed. The doors and the headline never go.
    ===================================================================== */
 
-/* One column: the slider would be too narrow to read beside the copy,
-   and stacking both would overflow the single screen. The slider is the
-   decorative half — the copy and the doors are the page. */
-@media (max-width: 899.98px) {
-  .lp-grid { grid-template-columns: minmax(0, 1fr); }
-  .lp-slider { display: none; }
-  .lp-title { max-width: 24ch; }
-}
-
 @media (max-width: 575.98px) {
   .lp-container { width: min(1080px, 100% - 2rem); }
   .lp-door { padding: .75rem .9rem; gap: .7rem; }
@@ -472,19 +369,10 @@ body.landing-page {
   .lp-door__desc { display: none; }
 }
 
-/* Very short (a laptop in a split window): the slider is the last thing
-   to go, after every line of optional text. */
-@media (max-height: 440px) {
-  .lp-grid { grid-template-columns: minmax(0, 1fr); }
-  .lp-slider { display: none; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lp-btn,
   .lp-door,
-  .lp-door__arrow,
-  .lp-slide,
-  .lp-slider__dot {
+  .lp-door__arrow {
     transition: none;
   }
   .lp-door:hover .lp-door__arrow { transform: none; }
