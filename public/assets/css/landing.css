@@ -10,10 +10,11 @@
    lede, eyebrow, then the slider. The two sign-in doors and the
    headline are never among them.
 
-   Flat and borderless: nothing is outlined. Panels are told
-   apart by fill alone — white against the soft canvas, blue
-   tint where the eye should land first. No gradients, no blur,
-   no shadows. Icons are inline Feather strokes.
+   Borderless: nothing is outlined. The page sits on the same
+   blue wash the login page paints behind its form, and panels
+   are told apart by fill alone — translucent white where text
+   lives, a blue gradient where the eye should land first.
+   Icons are inline Feather strokes.
    ============================================================ */
 
 :root {
@@ -24,11 +25,17 @@
      ---------------------------------------------------------------- */
   --lp-navy:      #0f172a;   /* headings */
   --lp-text:      #1e293b;   /* body copy */
-  --lp-muted:     #64748b;   /* labels, captions */
   --lp-blue:      #2563eb;   /* accent */
+  --lp-sky:       #38bdf8;   /* second stop of the blue gradients */
   --lp-blue-dark: #1d4ed8;   /* accent hover */
   --lp-bg:        #f8fafc;   /* soft canvas */
   --lp-white:     #ffffff;   /* cards, nav */
+
+  /* The login page uses #64748b for muted text, but its text sits on a
+     white card. Here labels sit straight on the blue wash, where #64748b
+     drops to 3.25:1 — below AA. One step darker clears 4.5:1 on the
+     strongest point of the gradient and on every panel over it. */
+  --lp-muted:     #475569;
 
   --lp-radius:    8px;
   --lp-radius-sm: 6px;
@@ -38,9 +45,6 @@
 
   /* Fills do all the separating; none of these is a border colour. */
   --lp-surface:          var(--lp-white);
-  --lp-surface-soft:     var(--lp-bg);
-  --lp-accent-soft:      #e5ecfd;   /* flat tint of --lp-blue over white */
-  --lp-accent-soft-deep: #d5e1fc;   /* the same tint, one step up, for hover */
   --lp-track:            #8b95a5;   /* inactive dots — a control, owes 3:1 */
 }
 
@@ -54,10 +58,19 @@ body.landing-page {
   font-size: 16px;
   line-height: 1.6;
   color: var(--lp-text);
-  background: var(--lp-surface);
   -webkit-font-smoothing: antialiased;
   /* The page is one screen; there is nothing below the fold to reach. */
   overflow: hidden;
+
+  /* The same wash the login page paints behind its form: a sky-blue
+     bloom top-left, a deeper blue top-right, a faint one rising from the
+     bottom, over a pale blue-to-white sweep. The page is exactly one
+     screen tall, so this needs no fixed layer of its own. */
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 15%, rgba(56, 189, 248, .20), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 85% 8%,  rgba(37, 99, 235, .14), transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(37, 99, 235, .08), transparent 55%),
+    linear-gradient(180deg, #f0f9ff 0%, var(--lp-bg) 40%, #ffffff 100%);
 }
 
 /* Shell: nav and footer keep their height, the middle absorbs the rest. */
@@ -86,7 +99,8 @@ body.landing-page {
 
 .lp-nav {
   flex: 0 0 auto;
-  background: var(--lp-surface);
+  /* No fill: the wash runs unbroken from the top of the page. */
+  background: transparent;
 }
 
 .lp-nav__inner {
@@ -114,7 +128,8 @@ body.landing-page {
   height: 32px;
   flex-shrink: 0;
   border-radius: var(--lp-radius-sm);
-  background: var(--lp-blue);
+  background: linear-gradient(135deg, var(--lp-blue), var(--lp-sky));
+  box-shadow: 0 8px 20px rgba(37, 99, 235, .32);
   color: var(--lp-white);
   display: grid;
   place-items: center;
@@ -134,14 +149,18 @@ body.landing-page {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color .15s ease, color .15s ease;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .15s ease, color .15s ease;
 }
 
 .lp-btn--primary {
-  background: var(--lp-blue);
+  background: linear-gradient(135deg, var(--lp-blue) 0%, var(--lp-blue-dark) 100%);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, .28);
   color: var(--lp-white);
 }
-.lp-btn--primary:hover { background: var(--lp-blue-dark); }
+.lp-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(37, 99, 235, .40);
+}
 
 .lp-btn:focus-visible,
 .lp-logo:focus-visible,
@@ -220,18 +239,27 @@ body.landing-page {
   align-items: center;
   gap: .85rem;
   padding: clamp(.7rem, 1.6vh, 1rem) 1.05rem;
-  background: var(--lp-surface-soft);
+  /* A faint version of the primary tint. White glass was invisible here:
+     the wash is already near-white where the doors sit, so a translucent
+     white panel left nothing for the eye to catch. */
+  background: linear-gradient(135deg, rgba(37, 99, 235, .05), rgba(56, 189, 248, .07));
   border-radius: var(--lp-radius);
   text-decoration: none;
   color: inherit;
   transition: background-color .15s ease;
 }
 
-.lp-door:hover { background: var(--lp-accent-soft); }
+.lp-door:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, .11), rgba(56, 189, 248, .14));
+}
 
 /* Staff is the way in for almost everyone, so it carries the tint. */
-.lp-door--primary { background: var(--lp-accent-soft); }
-.lp-door--primary:hover { background: var(--lp-accent-soft-deep); }
+.lp-door--primary {
+  background: linear-gradient(135deg, rgba(37, 99, 235, .13), rgba(56, 189, 248, .17));
+}
+.lp-door--primary:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, .20), rgba(56, 189, 248, .24));
+}
 
 .lp-door__icon {
   flex-shrink: 0;
@@ -309,7 +337,7 @@ body.landing-page {
   /* Never taller than the space the middle band actually has. */
   max-height: min(46vh, 380px);
   margin-inline: auto;
-  background: var(--lp-accent-soft);
+  background: linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(56, 189, 248, .20));
   border-radius: var(--lp-radius);
   overflow: hidden;
 }
@@ -392,7 +420,7 @@ body.landing-page {
 
 .lp-footer {
   flex: 0 0 auto;
-  background: var(--lp-surface);
+  background: transparent;
 }
 
 .lp-footer__inner {
