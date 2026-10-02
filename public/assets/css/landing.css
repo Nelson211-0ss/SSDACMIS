@@ -135,17 +135,8 @@ body.landing-page {
 }
 .lp-btn--primary:hover { background: var(--lp-blue-dark); }
 
-/* The secondary action is the same blue at tint strength, so the pair
-   reads as one family without an outline to separate them. */
-.lp-btn--ghost {
-  background: var(--lp-accent-soft);
-  color: var(--lp-blue-dark);
-}
-.lp-btn--ghost:hover { background: var(--lp-accent-soft-deep); }
-
 .lp-btn:focus-visible,
-.lp-logo:focus-visible,
-.lp-entry:focus-visible {
+.lp-logo:focus-visible {
   outline: 2px solid var(--lp-blue);
   outline-offset: 2px;
 }
@@ -199,12 +190,94 @@ body.landing-page {
   color: var(--lp-text);
 }
 
-.lp-hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .75rem;
-  margin-top: 2rem;
+/* ---------------------------------------------- Ways in (doors) ---- */
+
+/* The page asks one question — staff or parent — and answers it here,
+   in the hero, rather than at the foot of the page. */
+.lp-doors__heading {
+  margin: 2.25rem 0 .85rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--lp-muted);
 }
+
+.lp-doors {
+  display: grid;
+  gap: .75rem;
+}
+
+.lp-door {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1rem 1.1rem;
+  background: var(--lp-surface-soft);
+  border-radius: var(--lp-radius);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color .15s ease;
+}
+
+.lp-door:hover { background: var(--lp-accent-soft); }
+
+/* Staff is the way in for almost everyone, so it carries the tint. */
+.lp-door--primary { background: var(--lp-accent-soft); }
+.lp-door--primary:hover { background: var(--lp-accent-soft-deep); }
+
+.lp-door:focus-visible {
+  outline: 2px solid var(--lp-blue);
+  outline-offset: 2px;
+}
+
+.lp-door__emoji {
+  flex-shrink: 0;
+  font-size: 1.6rem;
+  line-height: 1;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+               "Segoe UI Symbol", sans-serif;
+}
+
+.lp-door__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lp-door__title {
+  font-family: var(--lp-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--lp-navy);
+}
+
+.lp-door__desc {
+  font-size: .86rem;
+  line-height: 1.45;
+  color: var(--lp-text);
+}
+
+.lp-door__arrow {
+  flex-shrink: 0;
+  color: var(--lp-muted);
+  transition: color .15s ease, transform .15s ease;
+}
+
+.lp-door:hover .lp-door__arrow {
+  color: var(--lp-blue);
+  transform: translateX(2px);
+}
+
+.lp-doors__hint {
+  margin: .85rem 0 0;
+  font-size: .82rem;
+  color: var(--lp-muted);
+}
+
+.lp-doors__hint strong { color: var(--lp-text); font-weight: 600; }
 
 /* ------------------------------------------------------- Slider ---- */
 
@@ -326,24 +399,22 @@ body.landing-page {
   list-style: none;
 }
 
-/* Cards sit on the white page, so the soft canvas colour is what
-   separates them — no outline needed. */
+/* White on the soft band — the inverse of the hero, where tinted cards
+   sit on white. Either way the fill is what separates them, with no
+   outline involved. */
 .lp-feature {
   padding: 1.35rem;
-  background: var(--lp-surface-soft);
+  background: var(--lp-surface);
   border-radius: var(--lp-radius);
 }
 
-.lp-feature__icon {
-  width: 38px;
-  height: 38px;
-  margin-bottom: .9rem;
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-accent-soft);
-  color: var(--lp-blue);
-  display: grid;
-  place-items: center;
-  font-size: 1.05rem;
+.lp-feature__emoji {
+  display: block;
+  margin-bottom: .75rem;
+  font-size: 1.75rem;
+  line-height: 1;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+               "Segoe UI Symbol", sans-serif;
 }
 
 .lp-feature__title {
@@ -359,82 +430,6 @@ body.landing-page {
   font-size: .9rem;
   line-height: 1.55;
   color: var(--lp-text);
-}
-
-/* ------------------------------------------------------ Sign in ---- */
-
-.lp-entries {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: 1rem;
-}
-
-.lp-entry {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 1.35rem;
-  background: var(--lp-surface);
-  border-radius: var(--lp-radius);
-  text-decoration: none;
-  color: inherit;
-  transition: background-color .15s ease;
-}
-
-/* These sit on the soft band, so white is the separation here. The
-   primary way in is tinted blue instead, which is also the hover state
-   for the other one. */
-.lp-entry:hover { background: var(--lp-accent-soft); }
-
-.lp-entry--primary { background: var(--lp-accent-soft); }
-.lp-entry--primary:hover { background: var(--lp-accent-soft-deep); }
-
-.lp-entry__icon {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: var(--lp-radius-sm);
-  background: var(--lp-accent-soft);
-  color: var(--lp-blue);
-  display: grid;
-  place-items: center;
-  font-size: 1.1rem;
-}
-
-.lp-entry--primary .lp-entry__icon {
-  background: var(--lp-blue);
-  color: var(--lp-white);
-}
-
-.lp-entry__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.lp-entry__title {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
-  color: var(--lp-navy);
-}
-
-.lp-entry__desc {
-  font-size: .86rem;
-  line-height: 1.45;
-  color: var(--lp-text);
-}
-
-.lp-entry__arrow {
-  flex-shrink: 0;
-  color: var(--lp-muted);
-  transition: color .15s ease, transform .15s ease;
-}
-
-.lp-entry:hover .lp-entry__arrow {
-  color: var(--lp-blue);
-  transform: translateX(2px);
 }
 
 /* ------------------------------------------------------- Footer ---- */
@@ -467,8 +462,7 @@ body.landing-page {
 @media (max-width: 575.98px) {
   .lp-container { width: min(1080px, 100% - 2rem); }
   .lp-nav__inner { height: 60px; }
-  .lp-hero__actions .lp-btn { flex: 1 1 100%; justify-content: center; }
-  .lp-entry { padding: 1.1rem; gap: .85rem; }
+  .lp-door { padding: .9rem 1rem; gap: .75rem; }
   .lp-slider__frame { aspect-ratio: 4 / 3; padding: 8px; }
   .lp-slide { inset: 8px; }
   /* The copyright is the part that has to stay; the byline would only
@@ -478,11 +472,11 @@ body.landing-page {
 
 @media (prefers-reduced-motion: reduce) {
   .lp-btn,
-  .lp-entry,
-  .lp-entry__arrow,
+  .lp-door,
+  .lp-door__arrow,
   .lp-slide,
   .lp-slider__dot {
     transition: none;
   }
-  .lp-entry:hover .lp-entry__arrow { transform: none; }
+  .lp-door:hover .lp-door__arrow { transform: none; }
 }
