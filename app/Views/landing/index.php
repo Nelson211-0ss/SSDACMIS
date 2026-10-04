@@ -113,6 +113,7 @@ $doors = [
       <p class="lp-eyebrow">SSD&#8209;ACMIS &middot; School Management System</p>
       <h1 class="lp-title">
         <?php foreach ($headline as $i => [$word, $mark]): ?>
+          <?php if (in_array($i, [2, 4], true)): ?><br class="lp-title__br"><?php endif; ?>
           <span class="lp-word<?= $mark ? ' lp-title__mark' : '' ?>" style="--i: <?= $i ?>"><?= View::e($word) ?></span>
         <?php endforeach; ?>
       </h1>

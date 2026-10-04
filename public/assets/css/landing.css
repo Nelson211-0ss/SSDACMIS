@@ -267,6 +267,9 @@ body.landing-page {
   display: inline-block;
 }
 
+/* Line breaks used only by the phone layout. */
+.lp-title__br { display: none; }
+
 .lp-lede {
   /* Narrower than the headline above it, so the line breaks fall where a
      reader would put them rather than leaving one word stranded. */
@@ -474,39 +477,44 @@ body.landing-page {
     margin-bottom: .9rem;
   }
 
+  /* Three deliberate lines: "Run the" / "Whole School" / "from one
+     place." The accent pair gets a line to itself and a little more size,
+     so it reads as the point of the sentence rather than two coloured
+     words lost mid-wrap. */
   .lp-title {
-    font-size: clamp(1.9rem, 9vw, 2.5rem);
-    line-height: 1.1;
+    font-size: clamp(2rem, 10vw, 2.7rem);
+    line-height: 1.08;
+    letter-spacing: -.035em;
+    text-shadow: 0 2px 18px rgba(2, 8, 32, .35);
   }
-
+  .lp-title__br { display: inline; }
+  .lp-title__mark { font-size: 1.12em; }
   .lp-lede {
     font-size: .98rem;
     line-height: 1.55;
     margin-top: 1rem;
   }
 
+  /* Two short buttons on one line, as on desktop. */
   .lp-doors {
     width: 100%;
     max-width: 22rem;
-    margin-top: 1.75rem;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .lp-door {
-    min-height: 3.25rem;
-    padding: .85rem 1.1rem;
+    margin-top: 1.6rem;
     gap: .6rem;
   }
 
-  .lp-door__title { font-size: 1rem; }
-  .lp-door__arrow { display: block; margin-left: auto; }
-  .lp-door__icon  { width: 1.15rem; height: 1.15rem; }
+  .lp-door {
+    padding: .7rem .6rem;
+    gap: .4rem;
+  }
+
+  .lp-door__title { font-size: .9rem; }
+  .lp-door__arrow { display: none; }
 
   .lp-door__note {
     display: block;
     margin-top: .4rem;
-    font-size: .78rem;
+    font-size: .72rem;
   }
 
   .lp-footer__inner {
