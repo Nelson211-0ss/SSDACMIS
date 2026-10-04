@@ -8191,3 +8191,77 @@ body {
 .app-shell .app-sidebar__section { color: var(--sidebar-text); }
 .app-shell .app-sidebar__sub { border-left: 1px solid var(--sidebar-border); margin-left: 1.1rem; padding-left: .4rem; }
 .app-sidebar__group details::details-content { transition: none; }
+
+/* ---------- Dark mode: legibility pass ----------
+   Bootstrap utilities that hard-code a light surface or dark ink, and the
+   accent as solid fill, all need a dark-aware answer. */
+.btn-primary { background: var(--accent-solid, var(--accent)); border-color: var(--accent-solid, var(--accent)); }
+.btn-primary:hover, .btn-primary:focus {
+  background: var(--accent-solid-hover, var(--accent-hover));
+  border-color: var(--accent-solid-hover, var(--accent-hover));
+}
+html[data-bs-theme="dark"] .bg-white,
+html[data-bs-theme="dark"] .bg-light,
+html[data-bs-theme="dark"] .table.bg-white {
+  background-color: var(--surface) !important;
+  color: var(--text);
+}
+html[data-bs-theme="dark"] .text-dark,
+html[data-bs-theme="dark"] .text-black { color: var(--text) !important; }
+html[data-bs-theme="dark"] .badge.bg-light,
+html[data-bs-theme="dark"] .badge.text-bg-light {
+  background-color: var(--surface-2) !important;
+  color: var(--text) !important;
+  border-color: var(--border-strong) !important;
+}
+html[data-bs-theme="dark"] .text-secondary,
+html[data-bs-theme="dark"] .text-body-secondary { color: var(--text-muted) !important; }
+html[data-bs-theme="dark"] .table-light,
+html[data-bs-theme="dark"] .table > thead.table-light > tr > th {
+  --bs-table-bg: var(--surface-2);
+  --bs-table-color: var(--text-muted);
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+}
+html[data-bs-theme="dark"] .form-control::placeholder,
+html[data-bs-theme="dark"] .form-select::placeholder { color: var(--text-subtle); opacity: 1; }
+html[data-bs-theme="dark"] .form-control:disabled,
+html[data-bs-theme="dark"] .form-control[readonly],
+html[data-bs-theme="dark"] .form-select:disabled {
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+}
+html[data-bs-theme="dark"] .input-group-text {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+}
+html[data-bs-theme="dark"] .form-control,
+html[data-bs-theme="dark"] .form-select {
+  color-scheme: dark;
+}
+html[data-bs-theme="dark"] .sa-status--on,
+html[data-bs-theme="dark"] .app-page .sa-status--on,
+html[data-bs-theme="dark"] .app-page .badge.app-status--on {
+  background: rgba(47, 158, 79, .20);
+  color: #6dd089;
+}
+html[data-bs-theme="dark"] .app-page .card-header-icon--blue   { background: rgba(47, 110, 216, .20); color: #7eaaf0; }
+html[data-bs-theme="dark"] .app-page .card-header-icon--green  { background: rgba(47, 158, 79, .20);  color: #6dd089; }
+html[data-bs-theme="dark"] .app-page .card-header-icon--orange { background: rgba(234, 122, 61, .18); color: #fbbf6b; }
+html[data-bs-theme="dark"] .app-page .card-header-icon--purple { background: rgba(124, 92, 229, .20); color: #b4a1f0; }
+html[data-bs-theme="dark"] .app-page .card-header-icon--teal   { background: rgba(13, 148, 136, .20); color: #5dc8be; }
+html[data-bs-theme="dark"] .app-page .card-header-icon--yellow { background: rgba(199, 148, 18, .20); color: #facc6e; }
+html[data-bs-theme="dark"] .kpi-card__icon--indigo { background: rgba(79, 70, 229, .22); color: #a5a0f5; }
+html[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-1,
+html[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-2,
+html[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-3 { background: var(--hover); }
+html[data-bs-theme="dark"] .btn-outline-secondary { color: var(--text-muted); border-color: var(--border-strong); }
+html[data-bs-theme="dark"] .btn-outline-secondary:hover { background: var(--hover); color: var(--text); }
+html[data-bs-theme="dark"] .btn-light { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
+html[data-bs-theme="dark"] .dropdown-menu,
+html[data-bs-theme="dark"] .modal-content { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+html[data-bs-theme="dark"] .dropdown-item { color: var(--text); }
+html[data-bs-theme="dark"] .dropdown-item:hover,
+html[data-bs-theme="dark"] .dropdown-item:focus { background: var(--hover); color: var(--text); }
+html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }

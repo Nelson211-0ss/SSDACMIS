@@ -208,6 +208,14 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
       --accent-hover: <?= View::e($theme['accent_hover']) ?>;
       --accent-soft:  <?= View::e($theme['accent_soft']) ?>;
       --accent-rgb:   <?= View::e($theme['accent_rgb']) ?>;
+      --accent-solid:       <?= View::e($theme['accent']) ?>;
+      --accent-solid-hover: <?= View::e($theme['accent_hover']) ?>;
+    }
+    /* On the near-black dark canvas a school's accent is lightened so links,
+       active icons and outlines stay readable; buttons keep the true colour. */
+    html[data-bs-theme="dark"] {
+      --accent:       color-mix(in srgb, <?= View::e($theme['accent']) ?> 62%, #fff);
+      --accent-hover: color-mix(in srgb, <?= View::e($theme['accent']) ?> 48%, #fff);
     }
   </style>
   <script>
