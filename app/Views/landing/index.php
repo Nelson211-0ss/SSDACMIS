@@ -11,11 +11,12 @@ $year   = date('Y');
  * would cross-fade to a blank frame rather than fail loudly.
  */
 $backdrops = array_values(array_filter([
-    'assets/img/login-slide-1.jpg',
-    'assets/img/login-slide-2.jpg',
-    'assets/img/login-slide-3.jpg',
-    'assets/img/login-slide-4.jpg',
-    'assets/img/login-hero.jpg',
+    // African classrooms and graduates only. Two of the bundled images are
+    // deliberately left out: login-slide-3 is a Western lecture hall and
+    // login-hero is an office team, neither of which is this school.
+    'assets/img/login-slide-1.jpg',   // primary-school classroom
+    'assets/img/login-slide-2.jpg',   // teacher with a class, reading
+    'assets/img/login-slide-4.jpg',   // two graduates in cap and gown
 ], static fn (string $rel): bool => is_file(dirname(__DIR__, 3) . '/public/' . $rel)));
 
 /**
@@ -90,7 +91,7 @@ $doors = [
   <?php endif; ?>
 
   <main class="lp-main">
-    <div class="lp-container lp-card">
+    <div class="lp-container lp-copy">
       <p class="lp-eyebrow">School Management System</p>
       <h1 class="lp-title">Run the whole school from one place.</h1>
       <p class="lp-lede">
