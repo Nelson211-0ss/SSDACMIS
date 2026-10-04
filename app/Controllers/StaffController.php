@@ -102,9 +102,11 @@ class StaffController extends Controller
 
     public function edit(string $id): string
     {
+        $schoolId = Auth::schoolId();
         $staff = Database::query(
-            "SELECT s.*, u.email, u.role FROM staff s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = ?",
-            [(int)$id]
+            "SELECT s.*, u.email, u.role FROM staff s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = ?"
+            . ($schoolId !== null ? ' AND s.school_id = ?' : ''),
+            $schoolId !== null ? [(int)$id, $schoolId] : [(int)$id]
         )->fetch();
         if (!$staff) { http_response_code(404); return $this->view('errors/404'); }
         $rows = Database::query(
@@ -123,7 +125,11 @@ class StaffController extends Controller
     {
         $this->validateCsrf();
         $d = $this->payload();
-        $row = Database::query("SELECT user_id FROM staff WHERE id = ?", [(int)$id])->fetch();
+        $schoolId = Auth::schoolId();
+        $row = Database::query(
+            "SELECT user_id FROM staff WHERE id = ?" . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $schoolId !== null ? [(int)$id, $schoolId] : [(int)$id]
+        )->fetch();
         if (!$row) { http_response_code(404); return $this->view('errors/404'); }
 
         Database::query(
@@ -152,7 +158,11 @@ class StaffController extends Controller
     public function destroy(string $id): string
     {
         $this->validateCsrf();
-        $row = Database::query("SELECT user_id, first_name, last_name FROM staff WHERE id = ?", [(int)$id])->fetch();
+        $schoolId = Auth::schoolId();
+        $row = Database::query(
+            "SELECT user_id, first_name, last_name FROM staff WHERE id = ?" . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $schoolId !== null ? [(int)$id, $schoolId] : [(int)$id]
+        )->fetch();
         if ($row) {
             $name = trim($row['first_name'] . ' ' . $row['last_name']);
             Database::query("DELETE FROM staff WHERE id = ?", [(int)$id]);
@@ -177,7 +187,8 @@ class StaffController extends Controller
             'phone'       => trim((string)$this->input('phone')),
             'position'    => trim((string)$this->input('position')),
             'hire_date'   => $this->input('hire_date'),
-            'role'        => in_array($this->input('role'), ['admin','school_admin','staff'], true) ? $this->input('role') : 'staff',
+            // Only the super admin may mint another super admin.
+            'role'        => in_array($this->input('role'), Auth::role() === 'admin' ? ['admin','school_admin','staff'] : ['school_admin','staff'], true) ? $this->input('role') : 'staff',
             'subject_ids' => $subjectIds,
             'password'    => trim((string) $this->input('password', '')),
         ];
@@ -231,9 +242,14 @@ HTML;
         $pdo = Database::connection();
         $pdo->prepare("DELETE FROM staff_subjects WHERE staff_id = ?")->execute([$staffId]);
         if (!$subjectIds) return;
-        $ins = $pdo->prepare("INSERT IGNORE INTO staff_subjects (staff_id, subject_id) VALUES (?, ?)");
+        // Only subjects belonging to the staff member's own school may be linked.
+        $ins = $pdo->prepare(
+            "INSERT IGNORE INTO staff_subjects (staff_id, subject_id)
+             SELECT ?, sub.id FROM subjects sub
+             WHERE sub.id = ? AND sub.school_id = (SELECT st.school_id FROM staff st WHERE st.id = ?)"
+        );
         foreach ($subjectIds as $sid) {
-            $ins->execute([$staffId, (int) $sid]);
+            $ins->execute([$staffId, (int) $sid, $staffId]);
         }
     }
 }

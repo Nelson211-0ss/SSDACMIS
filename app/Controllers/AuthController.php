@@ -1,8 +1,10 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
+use App\Core\Database;
 use App\Core\Flash;
 
 /**
@@ -53,8 +55,24 @@ class AuthController extends Controller
         return 'Too many failed sign-in attempts. Try again in ' . $mins . ' minute' . ($mins === 1 ? '' : 's') . '.';
     }
 
-    private function recordFailure(): void
+    private function recordFailure(string $who = ''): void
     {
+        // Logged against the school of the account being guessed, when there
+        // is one, so that school's admin sees attempts on their own accounts
+        // and no one else's.
+        if ($who !== '') {
+            $schoolId = null;
+            try {
+                $row = Database::query(
+                    'SELECT id, school_id, name, role FROM users WHERE email = ? LIMIT 1',
+                    [$who]
+                )->fetch();
+                $schoolId = $row && $row['role'] !== 'admin' && $row['school_id'] !== null
+                    ? (int) $row['school_id'] : null;
+            } catch (\Throwable $e) {
+            }
+            ActivityLog::record('login_failed', 'user', null, 'Failed sign-in for "' . mb_substr($who, 0, 120) . '"', [], $schoolId);
+        }
         $slot = $this->throttleSlot();
         $t    = $_SESSION[$slot] ?? ['attempts' => 0, 'locked_until' => 0];
         $t['attempts'] = (int) $t['attempts'] + 1;
@@ -172,7 +190,7 @@ class AuthController extends Controller
 
         $slot = Auth::attemptUnified($email, $password);
         if ($slot === null) {
-            $this->recordFailure();
+            $this->recordFailure($email);
 
             return $this->view('auth/login', ['error' => 'Invalid credentials.', 'old' => compact('email')]);
         }

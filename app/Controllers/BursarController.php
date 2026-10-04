@@ -157,11 +157,14 @@ class BursarController extends Controller
         ['year' => $year, 'term' => $term] = FeesService::activePeriod();
         $map = FeesService::structureMap($year);
 
+        $schoolId = Auth::schoolId();
         $studentCounts = Database::query(
             "SELECT c.level, s.section, COUNT(*) AS n
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
-             WHERE c.level IN ('Form 1','Form 2','Form 3','Form 4')
-             GROUP BY c.level, s.section"
+             WHERE c.level IN ('Form 1','Form 2','Form 3','Form 4')"
+             . ($schoolId !== null ? ' AND s.school_id = ?' : '') . "
+             GROUP BY c.level, s.section",
+            $schoolId !== null ? [$schoolId] : []
         )->fetchAll();
 
         $counts = [];
@@ -295,8 +298,8 @@ class BursarController extends Controller
                     s.gender, s.dob, s.guardian_name, s.guardian_phone, s.photo_path,
                     c.level, c.name AS class_name
              FROM students s LEFT JOIN classes c ON c.id = s.class_id
-             WHERE s.id = ? LIMIT 1",
-            [$studentId]
+             WHERE s.id = ?" . (Auth::schoolId() !== null ? ' AND s.school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [$studentId, Auth::schoolId()] : [$studentId]
         )->fetch();
 
         if (!$student) {
@@ -450,8 +453,8 @@ class BursarController extends Controller
              LEFT JOIN classes c ON c.id = s.class_id
              LEFT JOIN student_fees sf ON sf.id = p.student_fee_id
              LEFT JOIN users u   ON u.id = p.recorded_by
-             WHERE p.id = ? LIMIT 1",
-            [(int) $id]
+             WHERE p.id = ?" . (Auth::schoolId() !== null ? ' AND p.school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$row) {
             http_response_code(404);
@@ -607,6 +610,8 @@ class BursarController extends Controller
             "c.level IN ('Form 1','Form 2','Form 3','Form 4')",
         ];
         $args = [$year, $term];
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) { $where[] = 'sf.school_id = ?'; $args[] = $schoolId; }
         if ($level !== '') {
             $where[] = 'c.level = ?';
             $args[]  = $level;
@@ -723,6 +728,8 @@ class BursarController extends Controller
             "c.level IN ('Form 1','Form 2','Form 3','Form 4')",
         ];
         $args  = [$year, $term];
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) { $where[] = 'sf.school_id = ?'; $args[] = $schoolId; }
         if ($level !== '') { $where[] = 'c.level = ?'; $args[] = $level; }
         if ($type === 'paid') {
             $where[] = "sf.status = 'paid'";

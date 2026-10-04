@@ -134,8 +134,8 @@ class ParentAccountController extends Controller
     public function edit(string $id): string
     {
         $parentAccount = Database::query(
-            "SELECT id, name, email, status, school_id FROM users WHERE id = ? AND role = 'parent' LIMIT 1",
-            [(int) $id]
+            "SELECT id, name, email, status, school_id FROM users WHERE id = ? AND role = 'parent'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$parentAccount) {
             http_response_code(404);
@@ -166,8 +166,8 @@ class ParentAccountController extends Controller
     {
         $this->validateCsrf();
         $parentAccount = Database::query(
-            "SELECT id, email, school_id FROM users WHERE id = ? AND role = 'parent' LIMIT 1",
-            [(int) $id]
+            "SELECT id, email, school_id FROM users WHERE id = ? AND role = 'parent'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$parentAccount) {
             http_response_code(404);
@@ -227,8 +227,8 @@ class ParentAccountController extends Controller
     {
         $this->validateCsrf();
         $parentAccount = Database::query(
-            "SELECT id, name FROM users WHERE id = ? AND role = 'parent' LIMIT 1",
-            [(int) $id]
+            "SELECT id, name FROM users WHERE id = ? AND role = 'parent'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$parentAccount) {
             http_response_code(404);

@@ -108,8 +108,8 @@ class HodAccountController extends Controller
     public function edit(string $id): string
     {
         $hod = Database::query(
-            "SELECT id, name, email, department, status FROM users WHERE id = ? AND role = 'hod' LIMIT 1",
-            [(int) $id]
+            "SELECT id, name, email, department, status FROM users WHERE id = ? AND role = 'hod'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$hod) {
             http_response_code(404);
@@ -124,8 +124,8 @@ class HodAccountController extends Controller
     {
         $this->validateCsrf();
         $hod = Database::query(
-            "SELECT id, email FROM users WHERE id = ? AND role = 'hod' LIMIT 1",
-            [(int) $id]
+            "SELECT id, email FROM users WHERE id = ? AND role = 'hod'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$hod) {
             http_response_code(404);
@@ -198,8 +198,8 @@ class HodAccountController extends Controller
     {
         $this->validateCsrf();
         $hod = Database::query(
-            "SELECT id, name FROM users WHERE id = ? AND role = 'hod' LIMIT 1",
-            [(int) $id]
+            "SELECT id, name FROM users WHERE id = ? AND role = 'hod'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$hod) {
             http_response_code(404);

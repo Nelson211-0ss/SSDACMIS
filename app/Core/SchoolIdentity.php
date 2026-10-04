@@ -61,6 +61,22 @@ final class SchoolIdentity
         $schoolId = Auth::schoolId();
         if ($schoolId !== null) {
             try {
+                // The global `settings` identity predates multi-tenancy and
+                // belongs to the original (lowest-id) school only. Every other
+                // school starts blank so it never inherits that school's
+                // motto, contacts, head teacher, logo or signature.
+                $legacyId = (int) (Database::query('SELECT MIN(id) AS id FROM schools')->fetch()['id'] ?? 0);
+                if ($schoolId !== $legacyId) {
+                    $bag['school_motto']                 = '';
+                    $bag['school_address']               = '';
+                    $bag['school_phone']                 = '';
+                    $bag['school_email']                 = '';
+                    $bag['school_logo']                  = null;
+                    $bag['school_headteacher_name']      = '';
+                    $bag['school_headteacher_title']     = 'Head Teacher';
+                    $bag['school_headteacher_signature'] = null;
+                }
+
                 $row = Database::query(
                     'SELECT name, code, email, phone, address,
                             motto, logo, headteacher_name, headteacher_title,

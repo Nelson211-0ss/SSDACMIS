@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\AcademicYear;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -30,9 +31,9 @@ class ParentController extends Controller
              FROM parent_students ps
              JOIN students s ON s.id = ps.student_id
              LEFT JOIN classes c ON c.id = s.class_id
-             WHERE ps.parent_user_id = ?
+             WHERE ps.parent_user_id = ? AND s.school_id = ?
              ORDER BY s.first_name, s.last_name",
-            [(int) $u['id']]
+            [(int) $u['id'], (int) Auth::schoolId()]
         )->fetchAll();
     }
 
@@ -40,9 +41,12 @@ class ParentController extends Controller
     private function ownsChild(int $studentId): bool
     {
         $u = Auth::user();
+        // The linked student must also belong to the parent's own school.
         $r = Database::query(
-            "SELECT 1 FROM parent_students WHERE parent_user_id = ? AND student_id = ? LIMIT 1",
-            [(int) $u['id'], $studentId]
+            "SELECT 1 FROM parent_students ps
+             JOIN students s ON s.id = ps.student_id AND s.school_id = ?
+             WHERE ps.parent_user_id = ? AND ps.student_id = ? LIMIT 1",
+            [(int) Auth::schoolId(), (int) $u['id'], $studentId]
         )->fetch();
         return (bool) $r;
     }
@@ -97,7 +101,7 @@ class ParentController extends Controller
             [$studentId]
         )->fetch();
 
-        $year = (string) ($this->input('year') ?: FeesService::currentYear());
+        $year = AcademicYear::resolve((string) $this->input('year', ''));
 
         $bills = [];
         foreach (FeesService::TERMS as $term) {

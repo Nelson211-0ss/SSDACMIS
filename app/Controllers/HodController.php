@@ -453,11 +453,14 @@ class HodController extends Controller
             return '';
         }
 
+        $schoolId = Auth::schoolId();
         $classes = Database::query(
             "SELECT c.id, c.name, c.level, c.admission_prefix,
                     (SELECT COUNT(*) FROM students st WHERE st.class_id = c.id) AS student_count
-             FROM classes c
-             ORDER BY c.level, c.name"
+             FROM classes c"
+            . ($schoolId !== null ? ' WHERE c.school_id = ?' : '')
+            . " ORDER BY c.level, c.name",
+            $schoolId !== null ? [$schoolId] : []
         )->fetchAll();
 
         $classFilter = (int) $this->input('class_id');
@@ -468,9 +471,9 @@ class HodController extends Controller
                         c.id AS class_id, c.name AS class_name, c.level
                  FROM students s
                  LEFT JOIN classes c ON c.id = s.class_id
-                 WHERE s.class_id = ?
+                 WHERE s.class_id = ?" . ($schoolId !== null ? ' AND s.school_id = ?' : '') . "
                  ORDER BY s.first_name, s.last_name",
-                [$classFilter]
+                $schoolId !== null ? [$classFilter, $schoolId] : [$classFilter]
             )->fetchAll();
         } else {
             $students = Database::query(
@@ -478,8 +481,10 @@ class HodController extends Controller
                         s.section, s.stream, s.guardian_name, s.guardian_phone, s.photo_path,
                         c.id AS class_id, c.name AS class_name, c.level
                  FROM students s
-                 LEFT JOIN classes c ON c.id = s.class_id
-                 ORDER BY c.level, c.name, s.first_name, s.last_name"
+                 LEFT JOIN classes c ON c.id = s.class_id"
+                . ($schoolId !== null ? ' WHERE s.school_id = ?' : '') . "
+                 ORDER BY c.level, c.name, s.first_name, s.last_name",
+                $schoolId !== null ? [$schoolId] : []
             )->fetchAll();
         }
 

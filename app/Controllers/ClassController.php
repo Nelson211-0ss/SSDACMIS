@@ -145,6 +145,18 @@ class ClassController extends Controller
         $this->validateCsrf();
         $teacherId = (int) $this->input('class_teacher_id');
         $schoolId = Auth::schoolId();
+        if ($teacherId) {
+            // The teacher must belong to the same school as the class.
+            $ok = Database::query(
+                "SELECT 1 FROM classes c JOIN staff t ON t.school_id = c.school_id
+                 WHERE c.id = ? AND t.id = ?" . ($schoolId !== null ? ' AND c.school_id = ?' : '') . " LIMIT 1",
+                $schoolId !== null ? [(int) $id, $teacherId, $schoolId] : [(int) $id, $teacherId]
+            )->fetch();
+            if (!$ok) {
+                Flash::set('danger', 'That teacher or class is not in your school.');
+                $this->redirect('/classes'); return '';
+            }
+        }
         $sql = "UPDATE classes SET class_teacher_id = ? WHERE id = ?";
         $params = [$teacherId ?: null, (int) $id];
         if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }

@@ -17,6 +17,9 @@ class AttendanceController extends Controller
         $classes  = Database::query("SELECT id, name FROM classes{$ssf} ORDER BY name", $ssp)->fetchAll();
         $classId  = (int) ($this->input('class_id') ?: ($classes[0]['id'] ?? 0));
         $date     = $this->input('date') ?: date('Y-m-d');
+        if ($classId && $schoolId !== null && !in_array($classId, array_map('intval', array_column($classes, 'id')), true)) {
+            $classId = 0;
+        }
 
         if ($classId) {
             $stuParams = [$classId];
@@ -51,6 +54,17 @@ class AttendanceController extends Controller
 
         if (!$classId || !$date) { Flash::set('danger', 'Class and date are required.'); $this->redirect('/attendance'); return ''; }
 
+        $schoolId = Auth::schoolId();
+        $class = Database::query(
+            "SELECT school_id FROM classes WHERE id = ?" . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $schoolId !== null ? [$classId, $schoolId] : [$classId]
+        )->fetch();
+        if (!$class) { Flash::set('danger', 'That class is not in your school.'); $this->redirect('/attendance'); return ''; }
+        // Only students of this class (and therefore this school) may be marked.
+        $validIds = array_flip(array_map('intval', Database::query(
+            "SELECT id FROM students WHERE class_id = ? AND school_id = ?", [$classId, (int) $class['school_id']]
+        )->fetchAll(\PDO::FETCH_COLUMN)));
+
         $pdo = Database::connection();
         $pdo->beginTransaction();
         try {
@@ -58,6 +72,7 @@ class AttendanceController extends Controller
             $stmt = $pdo->prepare("INSERT INTO attendance (class_id, student_id, date, status) VALUES (?, ?, ?, ?)");
             foreach ((array)$marks as $studentId => $status) {
                 if (!in_array($status, ['present','absent','late'], true)) continue;
+                if (!isset($validIds[(int) $studentId])) continue;
                 $stmt->execute([$classId, (int)$studentId, $date, $status]);
             }
             $pdo->commit();

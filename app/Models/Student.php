@@ -279,8 +279,8 @@ class Student
     public static function nextAdmissionNo(int $classId, int $schoolId): ?string
     {
         $row = Database::query(
-            "SELECT admission_prefix FROM classes WHERE id = ?",
-            [$classId]
+            "SELECT admission_prefix FROM classes WHERE id = ? AND school_id = ?",
+            [$classId, $schoolId]
         )->fetch();
         if (!$row || $row['admission_prefix'] === '') return null;
         $prefix = (string) $row['admission_prefix'];

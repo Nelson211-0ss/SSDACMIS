@@ -6,7 +6,7 @@ use App\Core\App;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
-use App\Core\Settings;
+use App\Core\SchoolIdentity;
 use App\Services\AcademicMarking;
 use App\Services\TermResultsService;
 
@@ -95,11 +95,14 @@ class ResultsController extends Controller
             if (!$sid) {
                 return [];
             }
+            $schoolId = Auth::schoolId();
             $rows = Database::query(
-                'SELECT DISTINCT class_id FROM teaching_assignments WHERE staff_id = ?
+                'SELECT DISTINCT ta.class_id FROM teaching_assignments ta
+                 JOIN classes c ON c.id = ta.class_id AND c.school_id = ?
+                 WHERE ta.staff_id = ?
                  UNION
-                 SELECT id AS class_id FROM classes WHERE class_teacher_id = ?',
-                [$sid, $sid]
+                 SELECT id AS class_id FROM classes WHERE class_teacher_id = ? AND school_id = ?',
+                [$schoolId, $sid, $sid, $schoolId]
             )->fetchAll();
 
             return array_map(static fn ($r) => (int) $r['class_id'], $rows);
@@ -158,7 +161,7 @@ class ResultsController extends Controller
             'classes'    => $classes,
             'midMax'     => AcademicMarking::MID_MAX,
             'endMax'     => AcademicMarking::END_MAX,
-            'schoolName' => Settings::get('school_name') ?: App::config('app.name'),
+            'schoolName' => SchoolIdentity::name() ?: App::config('app.name'),
         ]);
     }
 
@@ -252,7 +255,7 @@ class ResultsController extends Controller
             'cells'       => $cells,
             'midMax'      => AcademicMarking::MID_MAX,
             'endMax'      => AcademicMarking::END_MAX,
-            'schoolName'  => Settings::get('school_name') ?: App::config('app.name'),
+            'schoolName'  => SchoolIdentity::name() ?: App::config('app.name'),
         ]);
     }
 
@@ -385,7 +388,7 @@ class ResultsController extends Controller
             'bySchool'   => $bySchool,
             'totals'     => $totals,
             'otherCount' => $otherCount,
-            'schoolName' => Settings::get('school_name') ?: App::config('app.name'),
+            'schoolName' => SchoolIdentity::name() ?: App::config('app.name'),
         ]);
     }
 

@@ -75,6 +75,10 @@ class TeachingController extends Controller
             $this->redirect('/teaching'); return '';
         }
         $schoolId = Auth::schoolId() ?? 1;
+        if (!Database::query("SELECT 1 FROM staff WHERE id = ? AND school_id = ?", [$staffId, $schoolId])->fetch()) {
+            Flash::set('danger', 'That teacher is not in your school.');
+            $this->redirect('/teaching'); return '';
+        }
         Database::query(
             "INSERT IGNORE INTO department_heads (school_id, staff_id, category) VALUES (?, ?, ?)",
             [$schoolId, $staffId, $category]
@@ -89,9 +93,10 @@ class TeachingController extends Controller
         $this->validateCsrf();
         $staffId  = (int) $this->input('staff_id');
         $category = (string) $this->input('category');
+        $schoolId = Auth::schoolId();
         Database::query(
-            "DELETE FROM department_heads WHERE staff_id = ? AND category = ?",
-            [$staffId, $category]
+            "DELETE FROM department_heads WHERE staff_id = ? AND category = ?" . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $schoolId !== null ? [$staffId, $category, $schoolId] : [$staffId, $category]
         );
         ActivityLog::record('delete', 'department_head', $staffId, "Removed department head (staff #{$staffId}) for {$category} department");
         Flash::set('success', 'Department head removed.');
@@ -111,6 +116,16 @@ class TeachingController extends Controller
         }
 
         $schoolId = Auth::schoolId() ?? 1;
+        $own = Database::query(
+            "SELECT (SELECT COUNT(*) FROM staff WHERE id = ? AND school_id = ?)
+                  + (SELECT COUNT(*) FROM classes WHERE id = ? AND school_id = ?)
+                  + (SELECT COUNT(*) FROM subjects WHERE id = ? AND school_id = ?)",
+            [$staffId, $schoolId, $classId, $schoolId, $subjectId, $schoolId]
+        )->fetchColumn();
+        if ((int) $own !== 3) {
+            Flash::set('danger', 'Teacher, class and subject must all belong to your school.');
+            $this->redirect('/teaching'); return '';
+        }
         try {
             Database::query(
                 "INSERT IGNORE INTO teaching_assignments (school_id, staff_id, class_id, subject_id)
@@ -128,7 +143,11 @@ class TeachingController extends Controller
     public function destroy(string $id): string
     {
         $this->validateCsrf();
-        Database::query("DELETE FROM teaching_assignments WHERE id = ?", [(int) $id]);
+        $schoolId = Auth::schoolId();
+        Database::query(
+            "DELETE FROM teaching_assignments WHERE id = ?" . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $schoolId !== null ? [(int) $id, $schoolId] : [(int) $id]
+        );
         ActivityLog::record('delete', 'teaching_assignment', (int) $id, "Removed teaching assignment #{$id}");
         Flash::set('success', 'Assignment removed.');
         $this->redirect('/teaching'); return '';

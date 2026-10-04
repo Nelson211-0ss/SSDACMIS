@@ -81,6 +81,7 @@ class Auth
 
         if (!$user || $user['status'] !== 'active') return false;
         if (!password_verify($password, $user['password'])) return false;
+        if ($user['role'] !== 'admin' && empty($user['school_id'])) return false;
 
         unset($user['password']);
 
@@ -121,6 +122,9 @@ class Auth
             return null;
         }
         if (!password_verify($password, $user['password'])) {
+            return null;
+        }
+        if ($user['role'] !== 'admin' && empty($user['school_id'])) {
             return null;
         }
 
@@ -177,6 +181,7 @@ class Auth
         if (count($rows) !== 1) return false;
         $user = $rows[0];
         if ($user['status'] !== 'active') return false;
+        if (empty($user['school_id'])) return false;
 
         if (empty($_SESSION['_regenerated_for'])
             || $_SESSION['_regenerated_for'] !== 'parent') {
@@ -263,9 +268,12 @@ class Auth
         $u = self::user();
         if (!$u) return null;
         if ($u['role'] === 'admin') return null;
+        // A non-admin account with no school (e.g. its school was deleted and
+        // users.school_id was SET NULL) must NOT fall through to the
+        // super-admin "no filter" scope. 0 matches no school's rows.
         return isset($u['school_id']) && $u['school_id'] !== null
             ? (int) $u['school_id']
-            : null;
+            : 0;
     }
 
     public static function logout(): void
@@ -332,6 +340,7 @@ class Auth
         self::enforceBursarScope();
         self::enforceParentScope();
         if ($roles !== null && !in_array(self::role(), $roles, true)) {
+            ActivityLog::record('denied', null, null, 'Blocked from ' . ($_SERVER['REQUEST_URI'] ?? '') . ' (role ' . self::role() . ')');
             http_response_code(403);
             echo View::render('errors/403');
             exit;

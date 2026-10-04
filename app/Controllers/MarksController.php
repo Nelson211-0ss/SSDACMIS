@@ -116,14 +116,30 @@ class MarksController extends Controller
         )->fetchAll();
     }
 
+    /** True iff the class belongs to the actor's school (always true for the super admin). */
+    private function classInScope(int $classId): bool
+    {
+        $schoolId = Auth::schoolId();
+        if ($schoolId === null) return true;
+        return (bool) Database::query(
+            "SELECT 1 FROM classes WHERE id = ? AND school_id = ? LIMIT 1",
+            [$classId, $schoolId]
+        )->fetch();
+    }
+
     /** True iff the current actor may enter marks for (class, subject). */
     private function canGrade(int $classId, int $subjectId): bool
     {
+        // Class and subject must both belong to the actor's own school.
+        if (!$this->classInScope($classId)) return false;
+        $schoolId = Auth::schoolId();
+        $subSf = $schoolId !== null ? ' AND school_id = ?' : '';
+        $subSp = $schoolId !== null ? [$subjectId, $schoolId] : [$subjectId];
         // Anything the school no longer offers is off-limits — even for admins
         // and HODs — so grades are never recorded against a hidden subject.
         $sub = Database::query(
-            "SELECT category, is_offered FROM subjects WHERE id = ?",
-            [$subjectId]
+            "SELECT category, is_offered FROM subjects WHERE id = ?{$subSf}",
+            $subSp
         )->fetch();
         if (!$sub || (int) $sub['is_offered'] !== 1) return false;
         if ($this->isAdmin()) return true;
@@ -233,6 +249,7 @@ class MarksController extends Controller
 
     private function canGradeDepartment(int $classId, string $category): bool
     {
+        if (!$this->classInScope($classId)) return false;
         if ($this->isAdmin()) return true;
         if ($this->isSharedHodAccount()) {
             return in_array($category, ['core', 'science', 'arts', 'optional'], true);

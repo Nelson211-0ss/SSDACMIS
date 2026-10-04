@@ -42,10 +42,14 @@ class FeeController extends Controller
         $bill     = null;
         $payments = [];
         if ($student) {
-            FeesService::ensureStudentFee((int) $student['id'], $year);
+            foreach (FeesService::TERMS as $term) {
+                FeesService::ensureStudentFee((int) $student['id'], $year, $term);
+            }
             $bill = Database::query(
-                "SELECT total_amount, paid_amount, status
-                 FROM student_fees WHERE student_id = ? AND academic_year = ? LIMIT 1",
+                "SELECT SUM(total_amount) AS total_amount, SUM(paid_amount) AS paid_amount,
+                        CASE WHEN SUM(paid_amount) >= SUM(total_amount) THEN 'paid'
+                             WHEN SUM(paid_amount) > 0 THEN 'partial' ELSE 'unpaid' END AS status
+                 FROM student_fees WHERE student_id = ? AND academic_year = ?",
                 [(int) $student['id'], $year]
             )->fetch() ?: null;
 

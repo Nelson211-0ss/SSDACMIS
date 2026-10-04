@@ -83,11 +83,14 @@ class ReportController extends Controller
         if ($this->isStaff()) {
             $sid = $this->staffId();
             if (!$sid) return [];
+            $schoolId = Auth::schoolId();
             $rows = Database::query(
-                "SELECT DISTINCT class_id FROM teaching_assignments WHERE staff_id = ?
+                "SELECT DISTINCT ta.class_id FROM teaching_assignments ta
+                 JOIN classes c ON c.id = ta.class_id AND c.school_id = ?
+                 WHERE ta.staff_id = ?
                  UNION
-                 SELECT id AS class_id FROM classes WHERE class_teacher_id = ?",
-                [$sid, $sid]
+                 SELECT id AS class_id FROM classes WHERE class_teacher_id = ? AND school_id = ?",
+                [$schoolId, $sid, $sid, $schoolId]
             )->fetchAll();
             return array_map(fn ($r) => (int) $r['class_id'], $rows);
         }
@@ -96,6 +99,15 @@ class ReportController extends Controller
 
     private function canSeeStudent(int $studentId): bool
     {
+        // Tenant boundary: a school-scoped user never sees another school's student.
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) {
+            $own = Database::query(
+                "SELECT 1 FROM students WHERE id = ? AND school_id = ? LIMIT 1",
+                [$studentId, $schoolId]
+            )->fetch();
+            if (!$own) return false;
+        }
         if ($this->isAdmin()) return true;
         if ($this->isStudent()) {
             $u = Auth::user();
@@ -133,6 +145,15 @@ class ReportController extends Controller
 
     private function canSeeClass(int $classId): bool
     {
+        // Tenant boundary: a school-scoped user never sees another school's class.
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) {
+            $own = Database::query(
+                "SELECT 1 FROM classes WHERE id = ? AND school_id = ? LIMIT 1",
+                [$classId, $schoolId]
+            )->fetch();
+            if (!$own) return false;
+        }
         if ($this->isAdmin()) return true;
         if ($this->isStudent()) return false;
         if ($this->isHod()) return true;

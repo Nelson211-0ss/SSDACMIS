@@ -154,7 +154,10 @@ class SubjectController extends Controller
     {
         $this->validateCsrf();
         $schoolId = Auth::schoolId();
-        $subject = Database::query("SELECT name FROM subjects WHERE id = ?", [(int) $id])->fetch();
+        $subject = Database::query(
+            "SELECT name FROM subjects WHERE id = ?" . ($schoolId !== null ? ' AND school_id = ?' : ''),
+            $schoolId !== null ? [(int) $id, $schoolId] : [(int) $id]
+        )->fetch();
         $name = $subject['name'] ?? "#{$id}";
         if ($schoolId !== null) {
             Database::query("DELETE FROM subjects WHERE id = ? AND school_id = ?", [(int) $id, $schoolId]);

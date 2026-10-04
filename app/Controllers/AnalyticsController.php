@@ -91,10 +91,11 @@ class AnalyticsController extends Controller
             return Database::query(
                 'SELECT DISTINCT c.id, c.name, c.level
                  FROM classes c
-                 WHERE c.class_teacher_id = ?
-                    OR c.id IN (SELECT class_id FROM teaching_assignments WHERE staff_id = ?)
+                 WHERE c.school_id = ?
+                   AND (c.class_teacher_id = ?
+                    OR c.id IN (SELECT class_id FROM teaching_assignments WHERE staff_id = ?))
                  ORDER BY c.level, c.name',
-                [$sid, $sid]
+                [$schoolId, $sid, $sid]
             )->fetchAll();
         }
 

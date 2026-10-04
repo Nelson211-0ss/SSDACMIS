@@ -150,7 +150,10 @@ class StudentController extends Controller
 
         $filterClass = null;
         if ($classId > 0) {
-            $filterClass = Database::query('SELECT id, name, level FROM classes WHERE id = ?', [$classId])->fetch();
+            $filterClass = Database::query(
+                'SELECT id, name, level FROM classes WHERE id = ?' . ($selectedSchoolId !== null ? ' AND school_id = ?' : ''),
+                $selectedSchoolId !== null ? [$classId, $selectedSchoolId] : [$classId]
+            )->fetch();
             if (!$filterClass) {
                 Flash::set('danger', 'That class does not exist.');
                 $this->redirect('/students/print');
@@ -458,6 +461,16 @@ class StudentController extends Controller
             $data['school_id'] = (int) $this->input('school_id', 1) ?: 1;
         } else {
             $data['school_id'] = Auth::schoolId() ?? 1;
+        }
+
+        // The class must belong to the school the student is being admitted to.
+        if (!Database::query(
+            "SELECT 1 FROM classes WHERE id = ? AND school_id = ?",
+            [(int) $data['class_id'], (int) $data['school_id']]
+        )->fetch()) {
+            Flash::set('danger', 'The selected class does not belong to this school.');
+            $this->redirect($backToCreate);
+            return '';
         }
 
         $generated = Student::nextAdmissionNo((int) $data['class_id'], (int) $data['school_id']);
@@ -1049,9 +1062,20 @@ class StudentController extends Controller
         ]);
     }
 
+    /** Student::find() constrained to the viewer's school (super admin: any). */
+    private function findInScope(int $id): ?array
+    {
+        $student = Student::find($id);
+        $schoolId = Auth::schoolId();
+        if ($student && $schoolId !== null && (int) ($student['school_id'] ?? 0) !== $schoolId) {
+            return null;
+        }
+        return $student;
+    }
+
     public function edit(string $id): string
     {
-        $student = Student::find((int) $id);
+        $student = $this->findInScope((int) $id);
         if (!$student) { http_response_code(404); return $this->view('errors/404'); }
 
         $isAdmin  = Auth::role() === 'admin';
@@ -1084,8 +1108,18 @@ class StudentController extends Controller
     {
         $this->validateCsrf();
         $data = $this->payload();
-        $existing = Student::find((int) $id);
+        $existing = $this->findInScope((int) $id);
         if (!$existing) { http_response_code(404); return $this->view('errors/404'); }
+
+        // A class id from the request must belong to the student's own school.
+        if ((int) $data['class_id'] > 0 && !Database::query(
+            "SELECT 1 FROM classes WHERE id = ? AND school_id = ?",
+            [(int) $data['class_id'], (int) $existing['school_id']]
+        )->fetch()) {
+            Flash::set('danger', 'The selected class does not belong to this school.');
+            $this->redirect('/students/' . (int) $id . '/edit');
+            return '';
+        }
 
         if ($data['admission_no'] === '') {
             $data['admission_no'] = $existing['admission_no'];
@@ -1132,7 +1166,7 @@ class StudentController extends Controller
     {
         $this->validateCsrf();
 
-        $existing = Student::find((int) $id);
+        $existing = $this->findInScope((int) $id);
         if (!$existing) {
             http_response_code(404);
             return $this->view('errors/404');

@@ -96,8 +96,8 @@ class BursarAccountController extends Controller
     public function edit(string $id): string
     {
         $bursar = Database::query(
-            "SELECT id, name, email, status FROM users WHERE id = ? AND role = 'bursar' LIMIT 1",
-            [(int) $id]
+            "SELECT id, name, email, status FROM users WHERE id = ? AND role = 'bursar'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$bursar) {
             http_response_code(404);
@@ -110,8 +110,8 @@ class BursarAccountController extends Controller
     {
         $this->validateCsrf();
         $bursar = Database::query(
-            "SELECT id, email FROM users WHERE id = ? AND role = 'bursar' LIMIT 1",
-            [(int) $id]
+            "SELECT id, email FROM users WHERE id = ? AND role = 'bursar'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$bursar) {
             http_response_code(404);
@@ -176,8 +176,8 @@ class BursarAccountController extends Controller
     {
         $this->validateCsrf();
         $bursar = Database::query(
-            "SELECT id, name FROM users WHERE id = ? AND role = 'bursar' LIMIT 1",
-            [(int) $id]
+            "SELECT id, name FROM users WHERE id = ? AND role = 'bursar'" . (Auth::schoolId() !== null ? ' AND school_id = ?' : '') . " LIMIT 1",
+            Auth::schoolId() !== null ? [(int) $id, Auth::schoolId()] : [(int) $id]
         )->fetch();
         if (!$bursar) {
             http_response_code(404);

@@ -712,6 +712,15 @@ if (!$tableExists('activity_log')) {
 } else {
     $out[] = "  --  activity_log already exists";
 }
+foreach ([
+    'request_method' => "ALTER TABLE activity_log ADD COLUMN request_method VARCHAR(8) NULL AFTER ip_address",
+    'request_uri'    => "ALTER TABLE activity_log ADD COLUMN request_uri VARCHAR(255) NULL AFTER request_method",
+    'user_agent'     => "ALTER TABLE activity_log ADD COLUMN user_agent VARCHAR(255) NULL AFTER request_uri",
+] as $col => $sql) {
+    if (!$columnExists('activity_log', $col)) {
+        $run($sql, "activity_log.$col column added");
+    }
+}
 
 /* -- Academic years become flat calendar years --------------------------
  * Historically stored as "2025/2026"; every picker now offers "2025",

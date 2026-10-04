@@ -31,6 +31,11 @@ class GradeController extends Controller
             $studentId = $row['id'] ?? 0;
         }
 
+        if ($studentId && $schoolId !== null) {
+            $own = Database::query("SELECT 1 FROM students WHERE id = ? AND school_id = ?", [$studentId, $schoolId])->fetch();
+            if (!$own) $studentId = 0;
+        }
+
         $grades = $studentId
             ? Database::query(
                 "SELECT g.*, sub.name AS subject_name FROM grades g

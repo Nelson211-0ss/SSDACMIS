@@ -10,6 +10,8 @@ $actionBadge = [
     'export' => 'bg-warning-subtle text-warning-emphasis',
     'login'  => 'bg-info-subtle text-info-emphasis',
     'logout' => 'bg-secondary-subtle text-secondary-emphasis',
+    'login_failed' => 'bg-danger-subtle text-danger-emphasis',
+    'denied' => 'bg-danger-subtle text-danger-emphasis',
 ];
 
 $pageTitle    = 'Activity Log';
@@ -25,7 +27,7 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
       <select name="action" class="form-select form-select-sm">
         <option value="">All</option>
         <?php foreach ($actionTypes as $a): ?>
-          <option value="<?= View::e($a) ?>" <?= $action === $a ? 'selected' : '' ?>><?= View::e(ucfirst($a)) ?></option>
+          <option value="<?= View::e($a) ?>" <?= $action === $a ? 'selected' : '' ?>><?= View::e(ucfirst(str_replace('_', ' ', $a))) ?></option>
         <?php endforeach; ?>
       </select>
     </div>
@@ -46,6 +48,21 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
       <label class="form-label small mb-1">To</label>
       <input type="date" name="to" value="<?= View::e($to) ?>" class="form-control form-control-sm">
     </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label small mb-1">Search</label>
+      <input type="search" name="q" value="<?= View::e($q) ?>" placeholder="User, description or IP" class="form-control form-control-sm">
+    </div>
+    <?php if ($isSuperAdmin): ?>
+    <div class="col-12 col-md-3">
+      <label class="form-label small mb-1">School</label>
+      <select name="school_id" class="form-select form-select-sm">
+        <option value="0">All schools</option>
+        <?php foreach ($schools as $sc): ?>
+          <option value="<?= (int) $sc['id'] ?>" <?= (int) $filterSchool === (int) $sc['id'] ? 'selected' : '' ?>><?= View::e($sc['name']) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <?php endif; ?>
     <div class="col-12 col-md-3 d-flex gap-2">
       <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
       <a href="<?= $base ?>/activity-log" class="btn btn-outline-secondary btn-sm">Reset</a>
@@ -84,7 +101,7 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
           <?php endif; ?>
           <td>
             <span class="badge <?= $actionBadge[$log['action']] ?? 'bg-secondary' ?>">
-              <?= View::e(ucfirst((string) $log['action'])) ?>
+              <?= View::e(ucfirst(str_replace('_', ' ', (string) $log['action']))) ?>
             </span>
           </td>
           <td>
@@ -95,15 +112,25 @@ include dirname(__DIR__) . '/_partials/app_page_header.php';
             <?php endif; ?>
           </td>
           <td><?= View::e($log['description'] ?? '') ?></td>
-          <td class="text-muted small"><?= View::e($log['ip_address'] ?? '—') ?></td>
+          <td class="text-muted small" title="<?= View::e(trim(($log['request_method'] ?? '') . ' ' . ($log['request_uri'] ?? '') . "
+" . ($log['user_agent'] ?? ''))) ?>"><?= View::e($log['ip_address'] ?? '—') ?></td>
         </tr>
       <?php endforeach; endif; ?>
       </tbody>
     </table>
   </div>
-  <?php if ($truncated): ?>
-    <p class="text-muted small p-3 mb-0">
-      Showing the latest <?= (int) $listLimit ?> of <?= (int) $total ?> matching entries. Narrow the filters above to see older activity.
-    </p>
+  <?php if ($pages > 1): ?>
+    <?php $qs = $_GET; unset($qs['page']); ?>
+    <div class="d-flex justify-content-between align-items-center p-3">
+      <span class="text-muted small"><?= (int) $total ?> entries · page <?= (int) $page ?> of <?= (int) $pages ?></span>
+      <div class="d-flex gap-2">
+        <?php if ($page > 1): ?>
+          <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/activity-log?<?= View::e(http_build_query($qs + ['page' => $page - 1])) ?>">Previous</a>
+        <?php endif; ?>
+        <?php if ($page < $pages): ?>
+          <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/activity-log?<?= View::e(http_build_query($qs + ['page' => $page + 1])) ?>">Next</a>
+        <?php endif; ?>
+      </div>
+    </div>
   <?php endif; ?>
 </div>

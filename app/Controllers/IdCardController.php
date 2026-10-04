@@ -17,7 +17,7 @@ class IdCardController extends Controller
      */
     private function deniedForSchool(int $schoolId): bool
     {
-        return Auth::role() === 'school_admin' && Auth::schoolId() !== $schoolId;
+        return Auth::schoolId() !== null && Auth::schoolId() !== $schoolId;
     }
 
     /** GET /schools/{id}/id-card-theme */

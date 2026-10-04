@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Core\AcademicYear;
+use App\Core\Auth;
 use App\Core\Database;
 
 /**
@@ -108,11 +109,20 @@ class FeesService
      */
     public static function knownYears(): array
     {
-        $rows = Database::query(
-            "SELECT academic_year FROM fees_structure
-             UNION
-             SELECT academic_year FROM student_fees"
-        )->fetchAll();
+        // Only this school's years — never another school's billing history.
+        $sid = Auth::schoolId();
+        $rows = $sid === null
+            ? Database::query(
+                "SELECT academic_year FROM fees_structure
+                 UNION
+                 SELECT academic_year FROM student_fees"
+            )->fetchAll()
+            : Database::query(
+                "SELECT academic_year FROM fees_structure WHERE school_id = ?
+                 UNION
+                 SELECT academic_year FROM student_fees WHERE school_id = ?",
+                [$sid, $sid]
+            )->fetchAll();
 
         $years = [];
         // Legacy "YYYY/YYYY" rows are folded onto their flat year so the
@@ -137,9 +147,11 @@ class FeesService
      */
     public static function structureMap(string $year): array
     {
+        $sid = Auth::schoolId();
         $rows = Database::query(
-            "SELECT level, section, amount FROM fees_structure WHERE academic_year = ?",
-            [$year]
+            "SELECT level, section, amount FROM fees_structure WHERE academic_year = ?"
+            . ($sid !== null ? ' AND school_id = ?' : ''),
+            $sid !== null ? [$year, $sid] : [$year]
         )->fetchAll();
 
         $map = [];
@@ -168,11 +180,15 @@ class FeesService
         if (!in_array($section, self::SECTIONS, true)) return;
         if ($amount < 0) $amount = 0.0;
 
+        // The school always comes from the session, never the request.
+        $sid = Auth::schoolId();
+        if (!$sid) return;
+
         Database::query(
-            "INSERT INTO fees_structure (level, section, academic_year, amount)
-             VALUES (?, ?, ?, ?)
+            "INSERT INTO fees_structure (school_id, level, section, academic_year, amount)
+             VALUES (?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE amount = VALUES(amount)",
-            [$level, $section, $year, $amount]
+            [$sid, $level, $section, $year, $amount]
         );
     }
 
@@ -216,13 +232,20 @@ class FeesService
      */
     public static function syncAllStudents(string $year): int
     {
+        // Billing is per school: the structure and the students synced are
+        // always the signed-in user's own school.
+        $schoolId = Auth::schoolId();
+        if (!$schoolId) return 0;
+
         $structure = self::structureMap($year);
 
         $students = Database::query(
             "SELECT s.id, s.school_id, s.section, c.level
              FROM students s
              LEFT JOIN classes c ON c.id = s.class_id
-             WHERE c.level IN ('Form 1','Form 2','Form 3','Form 4')"
+             WHERE c.level IN ('Form 1','Form 2','Form 3','Form 4')
+               AND s.school_id = ?",
+            [$schoolId]
         )->fetchAll();
 
         if (empty($students)) return 0;
@@ -232,8 +255,8 @@ class FeesService
         $existingRows = Database::query(
             "SELECT id, student_id, term, total_amount, paid_amount
              FROM student_fees
-             WHERE academic_year = ?",
-            [$year]
+             WHERE academic_year = ? AND school_id = ?",
+            [$year, $schoolId]
         )->fetchAll();
 
         $existing = [];
@@ -309,23 +332,24 @@ class FeesService
             throw new \DomainException('Invalid term selection.');
         }
 
+        // The student must belong to the signed-in user's school. Look up the
+        // class level + section too so we know which structure cell applies.
+        $schoolId = Auth::schoolId();
+        $stu = Database::query(
+            "SELECT s.school_id, s.section, c.level
+             FROM students s LEFT JOIN classes c ON c.id = s.class_id
+             WHERE s.id = ?" . ($schoolId !== null ? ' AND s.school_id = ?' : '') . " LIMIT 1",
+            $schoolId !== null ? [$studentId, $schoolId] : [$studentId]
+        )->fetch();
+        if (!$stu) {
+            throw new \RuntimeException('Student not found.');
+        }
+
         $row = Database::query(
             "SELECT id FROM student_fees WHERE student_id = ? AND academic_year = ? AND term = ? LIMIT 1",
             [$studentId, $year, $term]
         )->fetch();
         if ($row) return (int) $row['id'];
-
-        // Look up the student's class level + section so we know which
-        // structure cell applies.
-        $stu = Database::query(
-            "SELECT s.school_id, s.section, c.level
-             FROM students s LEFT JOIN classes c ON c.id = s.class_id
-             WHERE s.id = ? LIMIT 1",
-            [$studentId]
-        )->fetch();
-        if (!$stu) {
-            throw new \RuntimeException('Student not found.');
-        }
 
         $structure = self::structureMap($year);
         $yearly    = (float) ($structure[(string) $stu['level']][(string) $stu['section']] ?? 0);
@@ -414,7 +438,7 @@ class FeesService
 
             $stuRow = $pdo->prepare("SELECT school_id FROM students WHERE id = ? LIMIT 1");
             $stuRow->execute([$studentId]);
-            $stuSchoolId = (int) ($stuRow->fetchColumn() ?: 1);
+            $stuSchoolId = (int) $stuRow->fetchColumn();
 
             $ins = $pdo->prepare(
                 "INSERT INTO payments (school_id, student_fee_id, student_id, amount, payment_date, receipt_no, recorded_by, notes)
@@ -452,18 +476,26 @@ class FeesService
      */
     public static function nextReceiptNumber(): string
     {
+        // The suggested sequence follows THIS school's own receipts, so it never
+        // exposes how many payments another school has taken. receipt_no is
+        // still globally unique, so skip any number another school holds.
+        $sid = Auth::schoolId();
         $row = Database::query(
             "SELECT receipt_no FROM payments
-             WHERE receipt_no LIKE ?
+             WHERE receipt_no LIKE ?" . ($sid !== null ? ' AND school_id = ?' : '') . "
              ORDER BY id DESC LIMIT 1",
-            ['RCT-' . date('Y') . '-%']
+            $sid !== null ? ['RCT-' . date('Y') . '-%', $sid] : ['RCT-' . date('Y') . '-%']
         )->fetch();
 
         $next = 1;
         if ($row && preg_match('/RCT-\d{4}-(\d+)$/', (string) $row['receipt_no'], $m)) {
             $next = ((int) $m[1]) + 1;
         }
-        return sprintf('RCT-%s-%06d', date('Y'), $next);
+        do {
+            $candidate = sprintf('RCT-%s-%06d', date('Y'), $next++);
+            $taken = Database::query("SELECT 1 FROM payments WHERE receipt_no = ? LIMIT 1", [$candidate])->fetchColumn();
+        } while ($taken);
+        return $candidate;
     }
 
     /* ------------------------------------------------------------------ */
