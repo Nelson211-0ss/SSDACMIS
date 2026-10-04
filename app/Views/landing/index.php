@@ -110,7 +110,7 @@ $doors = [
 
   <main class="lp-main">
     <div class="lp-container lp-copy">
-      <p class="lp-eyebrow">SSD&#8209;ACMIS &middot; School Management System</p>
+      <p class="lp-eyebrow">SSD ACMIS &middot; School Management System</p>
       <h1 class="lp-title">
         <?php foreach ($headline as $i => [$word, $mark]): ?>
           <?php if (in_array($i, [2, 4], true)): ?><br class="lp-title__br"><?php endif; ?>
@@ -118,7 +118,7 @@ $doors = [
         <?php endforeach; ?>
       </h1>
       <p class="lp-lede">
-        Admissions, academics, examinations and fees &mdash; one record per
+        Admissions, academics, examinations and fees. One record per
         student, from the day they join to their final report card.
       </p>
 
@@ -148,7 +148,7 @@ $doors = [
 
   <footer class="lp-footer">
     <div class="lp-container lp-footer__inner">
-      <span>&copy; <?= (int) $year ?> SSD-ACMIS</span>
+      <span>&copy; <?= (int) $year ?> SSD ACMIS</span>
       <span class="lp-footer__by">Built by Nelson O. Ochan</span>
     </div>
   </footer>

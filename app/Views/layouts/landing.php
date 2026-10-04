@@ -7,7 +7,7 @@ $pageTitle = $title ?? 'SSDACMIS';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="SSD-ACMIS — a school management system for admissions, academics, exams, report cards, and fees.">
+  <meta name="description" content="SSD ACMIS, a school management system for admissions, academics, exams, report cards, and fees.">
   <title><?= View::e($pageTitle) ?></title>
   <?php $schoolLogo = null; require __DIR__ . '/../partials/favicon.php'; ?>
   <link rel="preconnect" href="https://fonts.googleapis.com">
