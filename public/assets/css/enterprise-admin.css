@@ -924,6 +924,10 @@ html[data-bs-theme="dark"] .app-shell--enterprise {
 
   --sidebar-bg: #0d0d0d;
   --sidebar-border: #1a1a1a;
+  --sidebar-text: #94a3b8;
+  --sidebar-text-strong: #f1f5f9;
+  --sidebar-text-subtle: #64748b;
+  --sidebar-icon: #94a3b8;
   --sidebar-hover-bg: rgba(var(--accent-rgb), 0.1);
   --sidebar-active-bg: var(--accent);
   --sidebar-active-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);

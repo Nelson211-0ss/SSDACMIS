@@ -8158,8 +8158,8 @@ body {
 .app-sidebar__group details > summary::-webkit-details-marker { display: none; }
 .app-sidebar__chevron { margin-left: auto; font-size: .75rem; transition: transform .15s; }
 .app-sidebar__group details[open] > summary .app-sidebar__chevron { transform: rotate(180deg); }
-.app-sidebar__group-toggle.has-active { color: var(--sidebar-active-text); }
-.app-sidebar__group-toggle.has-active > i:first-child { color: var(--sidebar-active-icon); }
+.app-sidebar__group-toggle.has-active { color: var(--sidebar-text-strong); font-weight: 600; }
+.app-shell .app-sidebar__group-toggle.has-active > i:first-child { color: var(--accent); }
 .app-sidebar__sub { list-style: none; margin: .125rem 0 .25rem; padding: 0 0 0 1rem; }
 .app-sidebar__sub .app-sidebar__link { padding-left: .75rem; }
 @media (min-width: 992px) {
