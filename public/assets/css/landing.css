@@ -511,11 +511,7 @@ body.landing-page {
   .lp-door__title { font-size: .9rem; }
   .lp-door__arrow { display: none; }
 
-  .lp-door__note {
-    display: block;
-    margin-top: .4rem;
-    font-size: .72rem;
-  }
+  .lp-door__note { display: none; }
 
   .lp-footer__inner {
     justify-content: center;
