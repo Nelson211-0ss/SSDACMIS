@@ -5,6 +5,20 @@ $layout = 'landing';
 $year   = date('Y');
 
 /**
+ * Backdrop slider. Classroom photographs that ship with the project, so
+ * there is nothing to upload and no learner's face on a page that needs
+ * no sign-in. Filtered against the filesystem because a missing file
+ * would cross-fade to a blank frame rather than fail loudly.
+ */
+$backdrops = array_values(array_filter([
+    'assets/img/login-slide-1.jpg',
+    'assets/img/login-slide-2.jpg',
+    'assets/img/login-slide-3.jpg',
+    'assets/img/login-slide-4.jpg',
+    'assets/img/login-hero.jpg',
+], static fn (string $rel): bool => is_file(dirname(__DIR__, 3) . '/public/' . $rel)));
+
+/**
  * Feather icons (feathericons.com, MIT), inlined.
  *
  * Inline rather than the feather JS or an icon font: this page has to
@@ -57,8 +71,26 @@ $doors = [
 ?>
 <div class="lp">
 
+  <?php if ($backdrops): ?>
+    <?php /* Decorative only — the page says nothing that depends on them,
+             so the whole thing is hidden from assistive tech and every
+             image carries an empty alt. */ ?>
+    <div class="lp-bg" data-lp-bg aria-hidden="true">
+      <?php /* Painted as background-image rather than <img>: a backdrop has
+               no content role, and background-size:cover does the same job
+               as object-fit without needing a replaced element sized to the
+               viewport. The URL rides in a custom property so the only
+               inline style is data, not presentation. */ ?>
+      <?php foreach ($backdrops as $i => $src): ?>
+        <div class="lp-bg__img<?= $i === 0 ? ' is-active' : '' ?>" data-lp-bg-img
+             style="--lp-bg-src: url('<?= View::e($base . '/' . $src) ?>')"></div>
+      <?php endforeach; ?>
+      <div class="lp-bg__scrim"></div>
+    </div>
+  <?php endif; ?>
+
   <main class="lp-main">
-    <div class="lp-container lp-copy">
+    <div class="lp-container lp-card">
       <p class="lp-eyebrow">School Management System</p>
       <h1 class="lp-title">Run the whole school from one place.</h1>
       <p class="lp-lede">
@@ -94,4 +126,41 @@ $doors = [
   </footer>
 
 </div>
+
+<?php if (count($backdrops) > 1): ?>
+<script>
+(function () {
+  'use strict';
+  var bg = document.querySelector('[data-lp-bg]');
+  if (!bg) return;
+
+  var imgs = Array.prototype.slice.call(bg.querySelectorAll('[data-lp-bg-img]'));
+  if (imgs.length < 2) return;
+
+  // Backdrops are ambient, so they move slower than a content carousel
+  // would and there are no controls to interrupt.
+  var INTERVAL = 6000;
+  var index = 0;
+  var timer = null;
+
+  function show(next) {
+    index = (next + imgs.length) % imgs.length;
+    imgs.forEach(function (img, i) { img.classList.toggle('is-active', i === index); });
+  }
+
+  function start() { stop(); timer = window.setInterval(function () { show(index + 1); }, INTERVAL); }
+  function stop()  { if (timer) { window.clearInterval(timer); timer = null; } }
+
+  // No sense burning a timer on a tab nobody is looking at.
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { stop(); } else { start(); }
+  });
+
+  // Auto-advance is motion; honour the OS setting and hold the first frame.
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (reduce && reduce.matches) return;
+  start();
+})();
+</script>
+<?php endif; ?>
 

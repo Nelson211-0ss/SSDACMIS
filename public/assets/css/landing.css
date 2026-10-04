@@ -37,6 +37,7 @@
   --lp-muted:     #475569;
 
   --lp-radius:    8px;
+  --lp-radius-lg: 14px;   /* the hero card, which is much larger */
   --lp-radius-sm: 6px;
 
   --lp-font:    'Inter', system-ui, sans-serif;
@@ -73,6 +74,7 @@ body.landing-page {
 
 /* Shell: nav and footer keep their height, the middle absorbs the rest. */
 .lp {
+  position: relative;
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -93,23 +95,70 @@ body.landing-page {
   flex-shrink: 0;
 }
 
+/* ------------------------------------------------------- Backdrop --- */
+
+/* Sits behind everything; the shell above it is transparent. */
+.lp-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.lp-bg__img {
+  position: absolute;
+  inset: 0;
+  background-image: var(--lp-bg-src);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  /* Slow, because this is ambient rather than something to read. */
+  transition: opacity 1.2s ease;
+}
+
+.lp-bg__img.is-active { opacity: 1; }
+
+/* Darkest at the top and bottom, lightest through the middle where the
+   card sits, so the photograph still shows but the footer always has
+   something to stand on. .65 at the foot keeps white text at 5.5:1 even
+   where a photo is pure white. */
+.lp-bg__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, .55) 0%,
+    rgba(15, 23, 42, .30) 42%,
+    rgba(15, 23, 42, .65) 100%
+  );
+}
+
+/* -+ Card -+ */
+
+/* Everything the page says lives on this, so the type keeps the same
+   colours it had on white and none of it depends on the photograph. */
+.lp-card {
+  width: min(34rem, 100%);
+  margin-inline: auto;
+  min-width: 0;
+  padding: clamp(1.4rem, 4vh, 2.4rem) clamp(1.25rem, 3vw, 2.25rem);
+  background: var(--lp-white);
+  border-radius: var(--lp-radius-lg);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, .28);
+  text-align: center;
+}
+
 /* ----------------------------------------------------------- Main --- */
 
 .lp-main {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   min-height: 0;          /* lets the shell clip instead of growing */
   display: flex;
   align-items: center;
   padding-block: clamp(.75rem, 3vh, 2.5rem);
-}
-
-/* One centred column, the same shape as the login page: with nothing
-   beside it, a left-aligned block would leave half the screen empty. */
-.lp-copy {
-  width: min(34rem, 100%);
-  margin-inline: auto;
-  min-width: 0;
-  text-align: center;
 }
 
 .lp-eyebrow {
@@ -255,6 +304,8 @@ body.landing-page {
 /* --------------------------------------------------------- Footer --- */
 
 .lp-footer {
+  position: relative;
+  z-index: 1;
   flex: 0 0 auto;
   background: transparent;
 }
@@ -267,7 +318,8 @@ body.landing-page {
   gap: .5rem;
   padding: clamp(.7rem, 2vh, 1.2rem) 0;
   font-size: .8rem;
-  color: var(--lp-muted);
+  /* On the photograph now, over the darkest part of the scrim. */
+  color: rgba(255, 255, 255, .92);
 }
 
 /* ============================== Fitting ==============================
