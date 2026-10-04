@@ -16,9 +16,7 @@
    At .78 a white caption still clears 4.5:1 even where a photo
    happens to be pure white, so nothing below goes lighter than
    86% white. The blue is #1e3a8a; a lighter one cannot hold
-   that floor at any alpha that still shows the photograph. The
-   gradient warms to red at the head and orange at the foot,
-   both darker than the blue, so the ends gain contrast.
+   that floor at any alpha that still shows the photograph.
 
    Borderless: nothing is outlined. The two sign-in buttons sit
    on one line and are told apart by fill — accent yellow for
@@ -33,19 +31,13 @@
      Change a value here and change it there too, or they drift.
      ---------------------------------------------------------------- */
   --lp-navy:      #0f172a;
-  /* The overlay, in three colours. A brighter blue cannot work here:
+  /* The overlay. One colour: the page is blue, and the red and orange
+     in the system's palette belong on the application's own controls,
+     not smeared across a photograph. A brighter blue cannot work here —
      #2563eb never reaches 4.5:1 for white type at any usable alpha,
      because over a white patch of photograph it stays too light.
-     #1e3a8a clears it from .77 up, and holds the middle band where
-     every word on the page sits.
-
-     The ends are warm — red-900 and orange-900, the darkest steps of
-     the two ramps in app.css. Both are darker than the blue, so the
-     eyebrow at the top and the footer at the foot read better against
-     them than against the blue they replace, not worse. */
-  --lp-scrim:       30, 58, 138;   /* blue-900   */
-  --lp-scrim-warm: 127, 29,  29;   /* red-900    */
-  --lp-scrim-ember:124, 45,  18;   /* orange-900 */
+     #1e3a8a clears it from .77 up. */
+  --lp-scrim:     30, 58, 138;
   --lp-text:      #1e293b;
   --lp-white:     #ffffff;
 
@@ -171,10 +163,9 @@ body.landing-page {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(var(--lp-scrim-warm), .88) 0%,
-    rgba(var(--lp-scrim), .79) 38%,
-    rgba(var(--lp-scrim), .78) 62%,
-    rgba(var(--lp-scrim-ember), .88) 100%
+    rgba(var(--lp-scrim), .84) 0%,
+    rgba(var(--lp-scrim), .78) 45%,
+    rgba(var(--lp-scrim), .86) 100%
   );
 }
 

@@ -57,37 +57,112 @@ $parentNav = [
 // Sixth element (optional) is the permission key the item needs. An item
 // with one is hidden as soon as the role — or that individual account —
 // loses the permission, so the sidebar matches what the routes allow.
+//
+// The list is grouped. A group renders as a dropdown; an entry with no
+// group renders as a plain link. Grouping is by what a person is doing —
+// people, teaching, numbers, running the place — rather than by which
+// controller happens to serve the page.
+//
+// A group left with only ONE visible item renders as a plain link. A
+// student sees four items in total; wrapping each in its own dropdown
+// would be worse than not grouping at all.
 $mainNav = [
-    ['Overview',      'bi-speedometer2',      '/dashboard',     ['admin','school_admin','staff','student'], '/dashboard'],
-    ['Schools',       'bi-building-gear',     '/schools',       ['admin'],                                  '/schools',      'schools.manage'],
-    ['Students',      'bi-people',            '/students',      ['admin','school_admin','staff'],           '/students',     'students.view'],
-    ['Staff',         'bi-person-badge',      '/staff',         ['admin','school_admin'],                   '/staff',        'staff.manage'],
-    ['Users',         'bi-person-gear',       '/users',         ['admin','school_admin'],                   '/users',        'users.manage'],
-    ['HODs',          'bi-mortarboard-fill',  '/hods',          ['admin','school_admin'],                   '/hods',         'accounts.hod'],
-    ['Bursars',       'bi-cash-coin',         '/bursars',       ['admin','school_admin'],                   '/bursars',      'accounts.bursar'],
-    ['Parents',       'bi-person-hearts',     '/parents',       ['admin','school_admin'],                   '/parents',      'accounts.parent'],
-    ['Classes',       'bi-grid',              '/classes',       ['admin','school_admin','staff'],           '/classes',      'classes.view'],
-    ['Subjects',      'bi-book',              '/subjects',      ['admin','school_admin','staff'],           '/subjects',     'subjects.view'],
-    ['Teaching',      'bi-diagram-3',         '/teaching',      ['admin','school_admin'],                   '/teaching',     'teaching.manage'],
-    ['Marks',         'bi-pencil-square',     '/marks',         ['admin','school_admin','staff'],           '/marks',        'marks.enter'],
-    ['Results',       'bi-graph-up-arrow',    '/results',       ['admin','school_admin','staff'],           '/results',      'results.view'],
-    ['Analytics',     'bi-bar-chart-line',    '/analytics',     ['admin','school_admin','staff'],           '/analytics',    'analytics.view'],
-    ['Reports',       'bi-file-earmark-text', '/reports',       ['admin','school_admin','staff','student'], '/reports',      'reports.view'],
-    ['Attendance',    'bi-calendar-check',    '/attendance',    ['admin','school_admin','staff'],           '/attendance',   'attendance.manage'],
+    ['kind' => 'link', 'item' =>
+        ['Overview', 'bi-speedometer2', '/dashboard', ['admin','school_admin','staff','student'], '/dashboard']],
+
+    ['kind' => 'group', 'label' => 'People', 'icon' => 'bi-people-fill', 'items' => [
+        ['Students', 'bi-people',           '/students', ['admin','school_admin','staff'], '/students', 'students.view'],
+        ['Staff',    'bi-person-badge',     '/staff',    ['admin','school_admin'],         '/staff',    'staff.manage'],
+        ['Users',    'bi-person-gear',      '/users',    ['admin','school_admin'],         '/users',    'users.manage'],
+        ['HODs',     'bi-mortarboard-fill', '/hods',     ['admin','school_admin'],         '/hods',     'accounts.hod'],
+        ['Bursars',  'bi-cash-coin',        '/bursars',  ['admin','school_admin'],         '/bursars',  'accounts.bursar'],
+        ['Parents',  'bi-person-hearts',    '/parents',  ['admin','school_admin'],         '/parents',  'accounts.parent'],
+    ]],
+
+    ['kind' => 'group', 'label' => 'Academics', 'icon' => 'bi-journal-bookmark', 'items' => [
+        ['Classes',    'bi-grid',           '/classes',    ['admin','school_admin','staff'], '/classes',    'classes.view'],
+        ['Subjects',   'bi-book',           '/subjects',   ['admin','school_admin','staff'], '/subjects',   'subjects.view'],
+        ['Teaching',   'bi-diagram-3',      '/teaching',   ['admin','school_admin'],         '/teaching',   'teaching.manage'],
+        ['Marks',      'bi-pencil-square',  '/marks',      ['admin','school_admin','staff'], '/marks',      'marks.enter'],
+        ['Results',    'bi-graph-up-arrow', '/results',    ['admin','school_admin','staff'], '/results',    'results.view'],
+        ['Attendance', 'bi-calendar-check', '/attendance', ['admin','school_admin','staff'], '/attendance', 'attendance.manage'],
+    ]],
+
+    ['kind' => 'group', 'label' => 'Insights', 'icon' => 'bi-bar-chart-line', 'items' => [
+        ['Analytics', 'bi-bar-chart-line',    '/analytics', ['admin','school_admin','staff'],           '/analytics', 'analytics.view'],
+        ['Reports',   'bi-file-earmark-text', '/reports',   ['admin','school_admin','staff','student'], '/reports',   'reports.view'],
+    ]],
+
     // Fees Management Module is bursar-only and lives under /bursar/*.
     // Students still see /fees as a read-only "My fees" page.
-    ['My Fees',       'bi-cash-coin',         '/fees',          ['student'],                                '/fees'],
-    ['Announcements', 'bi-megaphone',         '/announcements', ['admin','school_admin','staff','student'], '/announcements'],
-    ['Settings',      'bi-gear',              '/settings',      ['admin'],                                  '/settings',     'settings.manage'],
-    ['Activity Log',  'bi-clock-history',     '/activity-log',  ['admin','school_admin'],                   '/activity-log', 'activity.view'],
+    ['kind' => 'link', 'item' =>
+        ['My Fees', 'bi-cash-coin', '/fees', ['student'], '/fees']],
+
+    ['kind' => 'link', 'item' =>
+        ['Announcements', 'bi-megaphone', '/announcements', ['admin','school_admin','staff','student'], '/announcements']],
+
+    ['kind' => 'group', 'label' => 'Administration', 'icon' => 'bi-sliders2', 'items' => [
+        ['Schools',      'bi-building-gear', '/schools',      ['admin'],                '/schools',      'schools.manage'],
+        ['Settings',     'bi-gear',          '/settings',     ['admin'],                '/settings',     'settings.manage'],
+        ['Activity Log', 'bi-clock-history', '/activity-log', ['admin','school_admin'], '/activity-log', 'activity.view'],
+    ]],
 ];
 
 // school_admin has no /schools access (that's super-admin only), so their
 // own school's ID card theme needs a direct link rather than going through
-// the Schools list.
+// the Schools list. It belongs with the other administration items.
 if ($role === 'school_admin' && Auth::schoolId() !== null) {
     $ownSchoolThemeHref = '/schools/' . Auth::schoolId() . '/id-card-theme';
-    $mainNav[] = ['ID Card Theme', 'bi-palette2', $ownSchoolThemeHref, ['school_admin'], $ownSchoolThemeHref];
+    foreach ($mainNav as $navIdx => $navEntry) {
+        if (($navEntry['kind'] ?? '') === 'group' && $navEntry['label'] === 'Administration') {
+            $mainNav[$navIdx]['items'][] =
+                ['ID Card Theme', 'bi-palette2', $ownSchoolThemeHref, ['school_admin'], $ownSchoolThemeHref];
+            break;
+        }
+    }
+}
+
+/* Resolve the whole menu before any of it reaches the markup: what this
+   account may see, which entry is the current page, and which groups are
+   therefore open. The template then only has to draw it. */
+$navVisible = static function (array $item) use ($role): bool {
+    if (!in_array($role, $item[3], true)) {
+        return false;
+    }
+    $perm = $item[5] ?? null;
+    return $perm === null || Permission::allows($perm);
+};
+$navIsActive = static function (array $item) use ($relPath): bool {
+    return $relPath === $item[2]
+        || str_starts_with($relPath, rtrim($item[4], '/') . '/');
+};
+
+$navTree = [];
+foreach ($mainNav as $navEntry) {
+    if (($navEntry['kind'] ?? '') === 'link') {
+        if ($navVisible($navEntry['item'])) {
+            $navTree[] = ['link', $navEntry['item'], $navIsActive($navEntry['item'])];
+        }
+        continue;
+    }
+
+    $groupItems = array_values(array_filter($navEntry['items'], $navVisible));
+    if ($groupItems === []) {
+        continue;
+    }
+    if (count($groupItems) === 1) {
+        $navTree[] = ['link', $groupItems[0], $navIsActive($groupItems[0])];
+        continue;
+    }
+
+    $groupOpen = false;
+    $groupRows = [];
+    foreach ($groupItems as $groupItem) {
+        $itemActive = $navIsActive($groupItem);
+        $groupOpen  = $groupOpen || $itemActive;
+        $groupRows[] = [$groupItem, $itemActive];
+    }
+    $navTree[] = ['group', $navEntry['label'], $navEntry['icon'], $groupRows, $groupOpen];
 }
 
 $initial = strtoupper(mb_substr($auth['name'] ?? '?', 0, 1));
