@@ -10,12 +10,13 @@
    lede, then the eyebrow. The two sign-in buttons and the
    headline are never among them.
 
-   Photographs cross-fade behind everything, under a navy
+   Photographs cross-fade behind everything, under a blue
    overlay. There is no card: the type sits straight on the
    photograph, which is why the overlay is as strong as it is.
-   At .68 a white caption still clears 4.5:1 even where a photo
+   At .78 a white caption still clears 4.5:1 even where a photo
    happens to be pure white, so nothing below goes lighter than
-   86% white.
+   86% white. The blue is #1e3a8a; a lighter one cannot hold
+   that floor at any alpha that still shows the photograph.
 
    Borderless: nothing is outlined. The two sign-in buttons sit
    on one line and are told apart by fill — solid blue for the
@@ -30,6 +31,10 @@
      Change a value here and change it there too, or they drift.
      ---------------------------------------------------------------- */
   --lp-navy:      #0f172a;
+  /* The overlay. A brighter blue cannot work here: #2563eb never reaches
+     4.5:1 for white type at any usable alpha, because over a white patch of
+     photograph it stays too light. #1e3a8a clears it from .77 up. */
+  --lp-scrim:     30, 58, 138;
   --lp-text:      #1e293b;
   --lp-blue:      #2563eb;
   --lp-blue-dark: #1d4ed8;
@@ -58,8 +63,9 @@ body.landing-page {
   line-height: 1.6;
   color: var(--lp-on-dark);
   /* Shown only in the moment before the first photograph paints, and if
-     one never does. */
-  background: var(--lp-navy);
+     one never does. The overlay colour, so that frame is not a different
+     hue from the one that replaces it. */
+  background: rgb(var(--lp-scrim));
   -webkit-font-smoothing: antialiased;
   /* The page is one screen; there is nothing below the fold to reach. */
   overflow: hidden;
@@ -115,15 +121,17 @@ body.landing-page {
 .lp-bg__img.is-active { opacity: 1; }
 
 /* The overlay every word on the page depends on. Slightly deeper at the
-   top and bottom for depth, never lighter than .68 anywhere type sits. */
+   top and bottom for depth, never lighter than .78 anywhere type sits —
+   the floor at which 86%-white still clears 4.5:1 over a white patch of
+   photograph, which is the worst case a backdrop can present. */
 .lp-bg__scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(15, 23, 42, .78) 0%,
-    rgba(15, 23, 42, .68) 45%,
-    rgba(15, 23, 42, .80) 100%
+    rgba(var(--lp-scrim), .84) 0%,
+    rgba(var(--lp-scrim), .78) 45%,
+    rgba(var(--lp-scrim), .86) 100%
   );
 }
 
@@ -219,7 +227,11 @@ body.landing-page {
   padding: clamp(.65rem, 1.6vh, .9rem) .85rem;
   border-radius: var(--lp-radius-lg);
   text-decoration: none;
-  transition: background-color .15s ease, transform .15s ease;
+  /* Not a border — the page has none. On a blue overlay the blue button
+     is close in luminance to a sunlit patch of photograph behind it, so
+     it is lifted off rather than outlined. */
+  box-shadow: 0 6px 18px rgba(2, 8, 32, .34);
+  transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease;
 }
 
 .lp-door:focus-visible {
@@ -227,7 +239,10 @@ body.landing-page {
   outline-offset: 3px;
 }
 
-.lp-door:hover { transform: translateY(-1px); }
+.lp-door:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(2, 8, 32, .4);
+}
 
 /* Staff is the way in for almost everyone, so it is the filled one. Both
    buttons are opaque, so what the photograph is doing underneath them
