@@ -8152,3 +8152,18 @@ body {
     transition: none;
   }
 }
+
+/* Sidebar groups (details/summary dropdowns) */
+.app-sidebar__group details > summary { list-style: none; cursor: pointer; }
+.app-sidebar__group details > summary::-webkit-details-marker { display: none; }
+.app-sidebar__chevron { margin-left: auto; font-size: .75rem; transition: transform .15s; }
+.app-sidebar__group details[open] > summary .app-sidebar__chevron { transform: rotate(180deg); }
+.app-sidebar__group-toggle.has-active { color: var(--sidebar-active-text); }
+.app-sidebar__group-toggle.has-active > i:first-child { color: var(--sidebar-active-icon); }
+.app-sidebar__sub { list-style: none; margin: .125rem 0 .25rem; padding: 0 0 0 1rem; }
+.app-sidebar__sub .app-sidebar__link { padding-left: .75rem; }
+@media (min-width: 992px) {
+  /* Icon-only mode: drop the group header and show its items as icons. */
+  html.is-sidebar-collapsed .app-sidebar__group-toggle { display: none; }
+  html.is-sidebar-collapsed .app-sidebar__group details > .app-sidebar__sub { display: block; padding-left: 0; margin: 0; }
+}

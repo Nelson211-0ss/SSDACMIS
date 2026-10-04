@@ -100,6 +100,10 @@
 
   function applySidebarCollapsed(collapsed) {
     document.documentElement.classList.toggle('is-sidebar-collapsed', collapsed);
+    // Icon-only mode flattens groups, so their items must not stay hidden.
+    if (collapsed) {
+      document.querySelectorAll('.app-sidebar__group details').forEach(function (d) { d.open = true; });
+    }
     if (collapseIcon) {
       collapseIcon.className = collapsed
         ? 'bi bi-layout-sidebar'
