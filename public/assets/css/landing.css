@@ -421,25 +421,106 @@ body.landing-page {
    ===================================================================== */
 
 @media (max-width: 575.98px) {
-  .lp-container { width: min(1080px, 100% - 2rem); }
-  .lp-doors { gap: .5rem; }
-  .lp-door { padding: .7rem .5rem; gap: .4rem; }
-  .lp-door__arrow { display: none; }   /* the width goes to the label */
-  /* The copyright is what has to stay; the byline would only wrap. */
+  .lp-container { width: min(1080px, 100% - 2.5rem); }
+  /* The byline would only wrap; the copyright is what has to stay. */
   .lp-footer__by { display: none; }
 }
 
-@media (max-height: 700px) {
+/* Height-shedding is for desktop windows only. A phone scrolls instead
+   (see below), so it keeps every line of copy. */
+@media (min-width: 576px) and (max-height: 700px) {
   .lp-door__note { display: none; }
 }
 
-@media (max-height: 620px) {
+@media (min-width: 576px) and (max-height: 620px) {
   .lp-lede { display: none; }
 }
 
-@media (max-height: 520px) {
+@media (min-width: 576px) and (max-height: 520px) {
   .lp-eyebrow { display: none; }
   .lp-doors { margin-top: 1rem; }
+}
+
+/* ============================== Phones ===============================
+   One screen is a desktop promise. On a phone the content is laid out for
+   a thumb: headline sized to the width, the two ways in stacked as full
+   width buttons with a comfortable tap height, and the page allowed to
+   scroll when a short or landscape screen cannot hold it all.
+   ===================================================================== */
+@media (max-width: 575.98px), (max-height: 480px) and (max-width: 991.98px) {
+  body.landing-page { overflow-x: hidden; overflow-y: auto; }
+
+  .lp {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  /* Nothing is shed here; the page scrolls instead. */
+  .lp-eyebrow, .lp-lede { display: block; }
+
+  /* The backdrop stays put behind the scrolling copy. */
+  .lp-bg { position: fixed; }
+
+  .lp-main {
+    padding-top: max(2.5rem, env(safe-area-inset-top));
+    padding-bottom: 1.5rem;
+  }
+
+  .lp-eyebrow {
+    font-size: .68rem;
+    letter-spacing: .08em;
+    margin-bottom: .9rem;
+  }
+
+  .lp-title {
+    font-size: clamp(1.9rem, 9vw, 2.5rem);
+    line-height: 1.1;
+  }
+
+  .lp-lede {
+    font-size: .98rem;
+    line-height: 1.55;
+    margin-top: 1rem;
+  }
+
+  .lp-doors {
+    width: 100%;
+    max-width: 22rem;
+    margin-top: 1.75rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .lp-door {
+    min-height: 3.25rem;
+    padding: .85rem 1.1rem;
+    gap: .6rem;
+  }
+
+  .lp-door__title { font-size: 1rem; }
+  .lp-door__arrow { display: block; margin-left: auto; }
+  .lp-door__icon  { width: 1.15rem; height: 1.15rem; }
+
+  .lp-door__note {
+    display: block;
+    margin-top: .4rem;
+    font-size: .78rem;
+  }
+
+  .lp-footer__inner {
+    justify-content: center;
+    text-align: center;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Very narrow phones (320px class). */
+@media (max-width: 359.98px) {
+  .lp-container { width: calc(100% - 1.75rem); }
+  .lp-title { font-size: 1.75rem; }
+  .lp-eyebrow { font-size: .62rem; }
 }
 
 /* Someone who has asked for less motion gets the finished page, not a
