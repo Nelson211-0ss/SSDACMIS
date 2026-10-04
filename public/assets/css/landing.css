@@ -40,6 +40,13 @@
   --lp-blue-dark: #1d4ed8;
   --lp-white:     #ffffff;
 
+  /* The one warm colour on the page, for the two words the headline turns
+     on. Orange cannot be used here: over a sunlit patch of photograph the
+     overlay lightens to #5065a4, where #f97316 falls to 2.0:1 and even
+     amber-500 only reaches 2.6:1. This yellow holds 4.25:1 there, against
+     a 3:1 floor for text this size. */
+  --lp-accent:    #fde047;
+
   /* Type on the photograph. Nothing lighter than .86: below that a
      caption drops under 4.5:1 against a bright patch of photo. */
   --lp-on-dark:      #ffffff;
@@ -174,6 +181,13 @@ body.landing-page {
   letter-spacing: -.03em;
   color: var(--lp-on-dark);
   text-wrap: balance;
+}
+
+/* Two words in the headline, not a highlighter: colour alone carries no
+   meaning here, so nothing is lost to a reader who cannot separate it
+   from the white around it. */
+.lp-title__mark {
+  color: var(--lp-accent);
 }
 
 .lp-lede {

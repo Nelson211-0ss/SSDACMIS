@@ -99,7 +99,7 @@ $doors = [
   <main class="lp-main">
     <div class="lp-container lp-copy">
       <p class="lp-eyebrow">SSD&#8209;ACMIS &middot; School Management System</p>
-      <h1 class="lp-title">Run the whole school from one place.</h1>
+      <h1 class="lp-title">Run the <span class="lp-title__mark">Whole School</span> from one place.</h1>
       <p class="lp-lede">
         Admissions, academics, examinations and fees &mdash; one record per
         student, from the day they join to their final report card.
