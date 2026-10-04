@@ -114,17 +114,42 @@ body.landing-page {
    the viewport. The URL arrives in --lp-bg-src from the markup. */
 .lp-bg__img {
   position: absolute;
-  inset: 0;
+  /* Inset by a little less than the drift travels, so the frame never
+     exposes an edge as it moves. */
+  inset: -2%;
   background-image: var(--lp-bg-src);
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
   opacity: 0;
-  /* Slow, because this is ambient rather than something to read. */
-  transition: opacity 1.2s ease;
+  /* Slow, and eased out rather than in-out, so the incoming photograph
+     arrives without a visible start. */
+  transition: opacity 1.6s cubic-bezier(.33, 0, .2, 1);
+  will-change: opacity, transform;
 }
 
-.lp-bg__img.is-active { opacity: 1; }
+/* A slow push in and across while a photograph is on screen, so the
+   backdrop is never a still frame waiting to be swapped. It runs a
+   little longer than the interval between swaps, so it is always cut
+   off mid-move rather than visibly stopping. */
+.lp-bg__img.is-active {
+  opacity: 1;
+  animation: lp-drift 9s cubic-bezier(.4, 0, .5, 1) forwards;
+}
+
+/* Every other one travels the other way, so three photographs on a loop
+   do not read as the same move repeated. */
+.lp-bg__img:nth-child(even).is-active { animation-name: lp-drift-alt; }
+
+@keyframes lp-drift {
+  from { transform: scale(1.02) translate3d(0, 0, 0); }
+  to   { transform: scale(1.12) translate3d(-1.4%, -1.2%, 0); }
+}
+
+@keyframes lp-drift-alt {
+  from { transform: scale(1.12) translate3d(1.4%, .8%, 0); }
+  to   { transform: scale(1.02) translate3d(0, 0, 0); }
+}
 
 /* The overlay every word on the page depends on. Slightly deeper at the
    top and bottom for depth, never lighter than .78 anywhere type sits —
@@ -140,6 +165,49 @@ body.landing-page {
     rgba(var(--lp-scrim), .86) 100%
   );
 }
+
+/* ===================== Entrance =====================================
+   Everything arrives once, from slightly below and slightly out of
+   focus. The blur is what keeps it from reading as a plain slide: it
+   resolves as the element settles, the way a camera finds focus.
+
+   Each is a one-shot animation with fill-mode both, so the page is
+   never left in a half-finished state if something interrupts it, and
+   nothing depends on JavaScript to become visible.
+   ==================================================================== */
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+    filter: blur(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+.lp-eyebrow,
+.lp-word,
+.lp-lede,
+.lp-door-item,
+.lp-footer__inner {
+  animation: lp-rise .85s cubic-bezier(.22, .68, .3, 1) both;
+}
+
+/* The order things are meant to be read in. */
+.lp-eyebrow      { animation-delay: .10s; }
+.lp-word         { animation-delay: calc(.22s + var(--i) * .065s); }
+.lp-lede         { animation-delay: .72s; }
+.lp-door-item    { animation-delay: calc(.88s + var(--d, 0) * .09s); }
+.lp-door-item:nth-child(2) { --d: 1; }
+.lp-footer__inner { animation-delay: 1.15s; }
+
+/* The backdrop is the one thing already there when the words arrive. */
+.lp-bg { animation: lp-bg-in 1.5s ease both; }
+@keyframes lp-bg-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* ------------------------------------------------------------- Main --- */
 
@@ -187,6 +255,13 @@ body.landing-page {
    from the white around it. */
 .lp-title__mark {
   color: var(--lp-accent);
+}
+
+/* Each headline word is its own box so it can arrive on its own beat.
+   inline-block keeps the line breaks and the spaces between words
+   exactly where they would be otherwise. */
+.lp-word {
+  display: inline-block;
 }
 
 .lp-lede {
@@ -364,12 +439,36 @@ body.landing-page {
   .lp-doors { margin-top: 1rem; }
 }
 
+/* Someone who has asked for less motion gets the finished page, not a
+   faster version of the animation: every entrance is cancelled rather
+   than shortened, and the backdrop holds a still frame. Written as a
+   blanket rule so a new animation cannot be added without being covered
+   by it. */
 @media (prefers-reduced-motion: reduce) {
+  .lp-bg,
+  .lp-bg__img,
+  .lp-bg__img.is-active,
+  .lp-eyebrow,
+  .lp-word,
+  .lp-lede,
+  .lp-door-item,
+  .lp-footer__inner {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
   .lp-bg__img,
   .lp-door,
   .lp-door__arrow {
     transition: none;
   }
+
+  /* .is-active still has to win over the base rule that hides it. */
+  .lp-bg__img { opacity: 0; }
+  .lp-bg__img.is-active { opacity: 1; }
+
   .lp-door:hover { transform: none; }
   .lp-door:hover .lp-door__arrow { transform: none; }
 }

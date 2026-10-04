@@ -58,6 +58,18 @@ $feather = static function (string $name, string $class = ''): string {
  * of their own, and that a parent signs in with a number rather than an
  * email. Everything else a button could have said has been cut.
  */
+/**
+ * The headline, word by word, so each can be revealed a beat after the one
+ * before it. Kept as data rather than hand-written spans: the accent falls
+ * on two words, and splitting a string on spaces in the template would put
+ * the markup and the wording in two places.
+ */
+$headline = [
+    ['Run', false], ['the', false],
+    ['Whole', true], ['School', true],
+    ['from', false], ['one', false], ['place.', false],
+];
+
 $doors = [
     [
         'href'    => $base . '/login',
@@ -99,7 +111,11 @@ $doors = [
   <main class="lp-main">
     <div class="lp-container lp-copy">
       <p class="lp-eyebrow">SSD&#8209;ACMIS &middot; School Management System</p>
-      <h1 class="lp-title">Run the <span class="lp-title__mark">Whole School</span> from one place.</h1>
+      <h1 class="lp-title">
+        <?php foreach ($headline as $i => [$word, $mark]): ?>
+          <span class="lp-word<?= $mark ? ' lp-title__mark' : '' ?>" style="--i: <?= $i ?>"><?= View::e($word) ?></span>
+        <?php endforeach; ?>
+      </h1>
       <p class="lp-lede">
         Admissions, academics, examinations and fees &mdash; one record per
         student, from the day they join to their final report card.
