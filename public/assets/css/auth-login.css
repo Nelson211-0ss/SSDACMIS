@@ -5,8 +5,15 @@
   --lp-sky: #38bdf8;
   --lp-bg: #f8fafc;
   --lp-text: #1e293b;
-  --lp-muted: #64748b;
+  /* slate-600, not the slate-500 this was. Against the darkest point of
+     the wash behind it, #64748b is 3.22:1 — below the 4.5:1 label text
+     needs. #475569 is 5.12:1. */
+  --lp-muted: #475569;
   --lp-white: #ffffff;
+  /* --lp-blue is the brand fill — logo chip, focus ring, checkbox — where
+     contrast rules for components, not text. Link text needs its own,
+     darker value: #2563eb is 3.49:1 on the wash, #1e40af is 5.89:1. */
+  --lp-link: #1e40af;
   --lp-radius: 8px;
   --lp-radius-sm: 6px;
   --lp-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.12);
@@ -42,11 +49,23 @@ body.auth-page--login .auth-credit {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* The same three colours the landing page's overlay uses — red at the
+     head, blue across the middle, orange at the foot — but as a light
+     wash rather than a dark one. This page stays light because its form
+     has no card: dark text sits straight on this background, so it can
+     never go dark enough to need one.
+
+     Alphas are held at .12, which is as strong as they go: if all three
+     tints overlapped the stack would bottom out at #e2c1bf, where the
+     muted colour above is 4.55:1 and the link 5.24:1. At .16 the muted
+     colour drops to 4.07:1 and fails. They do not in fact all overlap —
+     red sits top-left, blue top-right, orange at the foot — so the real
+     worst case is lighter than the one these were chosen against. */
   background:
-    radial-gradient(ellipse 70% 55% at 15% 15%, rgba(56, 189, 248, 0.2), transparent 55%),
-    radial-gradient(ellipse 60% 45% at 85% 8%, rgba(37, 99, 235, 0.14), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(37, 99, 235, 0.08), transparent 55%),
-    linear-gradient(180deg, #f0f9ff 0%, var(--lp-bg) 40%, #fff 100%);
+    radial-gradient(ellipse 70% 55% at 15% 15%, rgba(220, 38, 38, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 85% 8%, rgba(37, 99, 235, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 45% at 50% 100%, rgba(234, 88, 12, 0.12), transparent 55%),
+    linear-gradient(180deg, #fff7ed 0%, var(--lp-bg) 40%, #fff 100%);
 }
 
 .auth-login__nav {
@@ -86,7 +105,7 @@ body.auth-page--login .auth-credit {
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.32);
 }
 
-.auth-login__logo-accent { color: var(--lp-blue); }
+.auth-login__logo-accent { color: var(--lp-link); }
 
 .auth-login__nav-link {
   display: inline-flex;
@@ -364,7 +383,7 @@ body.auth-page--login .auth-credit {
 .auth-login__forgot {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--lp-blue);
+  color: var(--lp-link);
   text-decoration: none;
 }
 
@@ -410,7 +429,7 @@ body.auth-page--login .auth-credit {
 }
 
 .auth-login__help a {
-  color: var(--lp-blue);
+  color: var(--lp-link);
   font-weight: 600;
   text-decoration: none;
 }
