@@ -669,9 +669,14 @@ foreach ($schoolBrandingCols as $col => $sql) {
     }
 }
 
-/* -- Per-school ID card color theme ------------------------------------ */
+/* -- Per-school colour themes ------------------------------------------
+   id_card_theme colours printed ID cards only. theme_accent colours the
+   application itself for that school's users; left NULL, the school
+   follows the global `theme_accent` setting, which is what every
+   existing install does today. */
 $schoolIdCardCols = [
     'id_card_theme' => "ALTER TABLE schools ADD COLUMN id_card_theme VARCHAR(30) NULL AFTER headteacher_signature",
+    'theme_accent'  => "ALTER TABLE schools ADD COLUMN theme_accent VARCHAR(30) NULL AFTER id_card_theme",
 ];
 foreach ($schoolIdCardCols as $col => $sql) {
     if (!$columnExists('schools', $col)) {

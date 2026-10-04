@@ -14,6 +14,9 @@ class Settings
     /** @var array<string,string>|null Cached per-request snapshot. */
     private static ?array $cache = null;
 
+    /** Resolved theme for this request; see activeTheme(). */
+    private static ?array $themeCache = null;
+
     /**
      * After a successful ensure, skip repeating CREATE TABLE — DDL implicitly commits
      * and must not run mid-transaction (e.g. TermResultsService::syncClass).
@@ -146,13 +149,16 @@ class Settings
             'accent_rgb'   => '101, 163, 13',
             'sidebar_bg'   => '#3f6212',
         ],
+        /* orange-700, not the orange-600 this used to be: --accent is
+           rendered as link text, and #ea580c is 3.56:1 on white — below
+           the 4.5:1 body text needs. #c2410c is 5.18:1. */
         'orange' => [
             'label'        => 'Orange',
-            'accent'       => '#ea580c',
-            'accent_hover' => '#c2410c',
+            'accent'       => '#c2410c',
+            'accent_hover' => '#9a3412',
             'accent_soft'  => '#fff7ed',
-            'accent_rgb'   => '234, 88, 12',
-            'sidebar_bg'   => '#9a3412',
+            'accent_rgb'   => '194, 65, 12',
+            'sidebar_bg'   => '#7c2d12',
         ],
         'ruby' => [
             'label'        => 'Ruby',
@@ -238,6 +244,10 @@ class Settings
     public static function flush(): void
     {
         self::$cache = null;
+        // The theme is derived from the settings bag, so it goes stale
+        // with it — flushing one without the other would leave a page
+        // rendering the colour that was just replaced.
+        self::$themeCache = null;
     }
 
     /** All available theme presets, keyed by id. */
@@ -247,13 +257,69 @@ class Settings
     }
 
     /**
-     * The active theme palette, falling back to 'blue' if the stored value
-     * has been removed from the catalogue.
+     * The active theme palette for the current request.
+     *
+     * A school that has chosen its own accent brands the application for
+     * its own users; one that has not follows the global `theme_accent`
+     * setting, which is what every install did before per-school themes
+     * existed. Falls back to 'blue' if a stored key has since been
+     * removed from the catalogue.
+     *
+     * Cached per request: this is read once per page by the layout, but
+     * the per-school lookup is a query and callers should not have to
+     * know that.
      */
     public static function activeTheme(): array
     {
-        $key = self::get('theme_accent', 'blue');
-        return self::THEMES[$key] ?? self::THEMES['blue'];
+        if (self::$themeCache !== null) {
+            return self::$themeCache;
+        }
+
+        $key = '';
+
+        $schoolId = Auth::schoolId();
+        if ($schoolId !== null) {
+            try {
+                $row = Database::query(
+                    'SELECT theme_accent FROM schools WHERE id = ? LIMIT 1',
+                    [$schoolId]
+                )->fetch();
+                $key = trim((string) ($row['theme_accent'] ?? ''));
+            } catch (Throwable $e) {
+                // Column not migrated yet, or the DB is unavailable — fall
+                // through to the global setting rather than failing a page
+                // render over a colour.
+                $key = '';
+            }
+        }
+
+        if ($key === '' || !isset(self::THEMES[$key])) {
+            $key = (string) self::get('theme_accent', 'blue');
+        }
+
+        return self::$themeCache = (self::THEMES[$key] ?? self::THEMES['blue']);
+    }
+
+    /**
+     * The key of the theme activeTheme() resolved to, for preselecting the
+     * picker. Matching on the palette rather than re-running the lookup
+     * keeps the two from ever disagreeing about what is active.
+     */
+    public static function activeThemeKey(): string
+    {
+        $active = self::activeTheme();
+        foreach (self::THEMES as $key => $theme) {
+            if ($theme === $active) {
+                return $key;
+            }
+        }
+        return 'blue';
+    }
+
+    /** Drop the per-request theme cache (after a school or setting changes). */
+    public static function flushTheme(): void
+    {
+        self::$themeCache = null;
     }
 
     /**

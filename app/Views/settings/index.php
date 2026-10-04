@@ -6,7 +6,11 @@ $layout = 'app';
 $title  = 'Settings';
 
 $current     = $settings ?? [];
-$themeKey    = $current['theme_accent'] ?? 'blue';
+/* Resolved by the controller, not read from the settings bag: a school
+   with its own accent overrides the global one, and the picker has to
+   show what is actually in effect. */
+$themeKey    = $themeKey ?? ($current['theme_accent'] ?? 'blue');
+$themeScope  = $themeScope ?? 'global';
 $schoolName  = $current['school_name'] ?? '';
 $schoolMotto = $current['school_motto'] ?? '';
 $logoPath    = $current['school_logo'] ?? '';
@@ -233,6 +237,15 @@ $themesJson = json_encode(
           <p class="text-muted small mb-3">
             Pick an accent color. Buttons, links, and active navigation will match.
             The sidebar stays a clean white panel across all themes.
+          </p>
+
+          <p class="text-muted small mb-3">
+            <?php if ($themeScope === 'school'): ?>
+              This colour applies to <strong><?= View::e($schoolName !== '' ? $schoolName : 'your school') ?></strong>
+              only &mdash; everyone signing in to it sees it. Other schools keep their own.
+            <?php else: ?>
+              This is the default every school that has not chosen its own colour follows.
+            <?php endif; ?>
           </p>
 
           <div class="theme-picker">

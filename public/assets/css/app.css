@@ -24,10 +24,56 @@
   --text-muted:    #6b7280;
   --text-subtle:   #9ca3af;
 
+  /* ----------------------------------------------------------------
+     Red and orange ramps.
+
+     Steps are not interchangeable, and the measured numbers are the
+     reason these exist as a scale rather than as one value each:
+
+       as TEXT on --surface (#fff) or --bg (#f4f5f7)
+         red    600  4.83 on white but 4.43 on --bg — fails the canvas
+         red    700+ passes on both
+         orange 600  3.56 on white — fails outright
+         orange 700+ passes on both
+
+     So 700 is the lightest step either colour may be used as text, and
+     --red-text / --orange-text exist so that choice is not re-made at
+     every call site. 50–200 are fills behind dark text; 400–600 are for
+     bars, dots and borders, where 3:1 is the bar and both clear it.
+     ---------------------------------------------------------------- */
+  --red-50:  #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+  --red-rgb: 220, 38, 38;
+  --red-text: var(--red-700);
+
+  --orange-50:  #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-200: #fed7aa;
+  --orange-300: #fdba74;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+  --orange-900: #7c2d12;
+  --orange-rgb: 234, 88, 12;
+  --orange-text: var(--orange-700);
+
   /* Status colors (used very sparingly) */
   --success: #16a34a;
+  /* Amber rather than orange, and deliberately so: this is the long-
+     standing warning colour and changing it would repaint every warning
+     in the app. The orange ramp above is a separate palette. */
   --warning: #d97706;
-  --danger:  #dc2626;
+  --danger:  var(--red-600);
   --info:    #0891b2;
 
   /* Elevation - very subtle */

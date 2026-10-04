@@ -2,7 +2,9 @@
 namespace App\Controllers;
 
 use App\Core\ActivityLog;
+use App\Core\Auth;
 use App\Core\Controller;
+use App\Core\Database;
 use App\Core\Flash;
 use App\Core\Settings;
 
@@ -36,8 +38,13 @@ class SettingsController extends Controller
     public function index(): string
     {
         return $this->view('settings/index', [
-            'settings' => Settings::all(),
-            'themes'   => Settings::themes(),
+            'settings'   => Settings::all(),
+            'themes'     => Settings::themes(),
+            // Resolved rather than read straight from the settings bag: a
+            // school with its own accent must see that one selected, not
+            // the global default it overrides.
+            'themeKey'   => Settings::activeThemeKey(),
+            'themeScope' => Auth::schoolId() === null ? 'global' : 'school',
         ]);
     }
 
@@ -70,12 +77,23 @@ class SettingsController extends Controller
         Settings::set('school_headteacher_name',  mb_substr($htName,  0, 120));
         Settings::set('school_headteacher_title', mb_substr($htTitle, 0, 60));
 
-        // Theme picker.
+        // Theme picker. A school-scoped admin is branding their own school;
+        // the super admin is setting the default every school without a
+        // choice of its own follows.
         $themeKey = (string) $this->input('theme_accent', 'blue');
         if (!array_key_exists($themeKey, Settings::themes())) {
             $themeKey = 'blue';
         }
-        Settings::set('theme_accent', $themeKey);
+        $themeSchoolId = Auth::schoolId();
+        if ($themeSchoolId !== null) {
+            Database::query(
+                'UPDATE schools SET theme_accent = ? WHERE id = ?',
+                [$themeKey, $themeSchoolId]
+            );
+        } else {
+            Settings::set('theme_accent', $themeKey);
+        }
+        Settings::flushTheme();
 
         // Optional: clear current logo before doing anything else.
         if ($this->input('remove_logo') === '1') {
