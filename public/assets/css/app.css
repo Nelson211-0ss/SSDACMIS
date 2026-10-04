@@ -8167,3 +8167,27 @@ body {
   html.is-sidebar-collapsed .app-sidebar__group-toggle { display: none; }
   html.is-sidebar-collapsed .app-sidebar__group details > .app-sidebar__sub { display: block; padding-left: 0; margin: 0; }
 }
+
+/* Sidebar: no motion, and clearly legible items (wins over enterprise-admin.css). */
+.app-sidebar .app-sidebar__link,
+.app-sidebar .app-sidebar__link i,
+.app-sidebar .app-sidebar__chevron,
+.app-shell--enterprise .app-sidebar__link,
+.app-shell--enterprise .app-sidebar__link i {
+  transition: none !important;
+  transform: none !important;
+}
+.app-shell .app-sidebar__link {
+  color: var(--sidebar-text-strong);
+  font-size: .9rem;
+  font-weight: 500;
+  opacity: 1;
+}
+.app-shell .app-sidebar__link i { color: var(--sidebar-text-strong); opacity: .85; }
+.app-shell .app-sidebar__link:hover { transform: none; }
+.app-shell .app-sidebar__link.is-active,
+.app-shell .app-sidebar__link.is-active i { color: var(--sidebar-active-icon); }
+.app-shell .app-sidebar__link.is-active { color: var(--sidebar-active-text); font-weight: 600; }
+.app-shell .app-sidebar__section { color: var(--sidebar-text); }
+.app-shell .app-sidebar__sub { border-left: 1px solid var(--sidebar-border); margin-left: 1.1rem; padding-left: .4rem; }
+.app-sidebar__group details::details-content { transition: none; }

@@ -90,6 +90,16 @@
     });
   }
 
+  // --- Sidebar groups: opening one closes the others -----------------
+  document.querySelectorAll('.app-sidebar__group details').forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (!d.open || document.documentElement.classList.contains('is-sidebar-collapsed')) return;
+      document.querySelectorAll('.app-sidebar__group details').forEach(function (o) {
+        if (o !== d) o.open = false;
+      });
+    });
+  });
+
   // --- Desktop sidebar collapse (icons only, per portal) -----------------
   var collapseBtn  = document.querySelector('[data-sidebar-collapse]');
   var collapseIcon = document.querySelector('[data-sidebar-collapse-icon]');
