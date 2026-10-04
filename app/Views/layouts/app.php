@@ -375,18 +375,6 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
         <?php endforeach; ?>
       <?php endif; ?>
     </ul>
-
-    <div class="app-sidebar__footer">
-      <p class="app-sidebar__footer-school">
-        &copy; <?= date('Y') ?> <?= View::e($schoolName) ?>
-      </p>
-      <div class="app-sidebar__footer-credit">
-        <span class="app-sidebar__footer-credit-line">
-          <strong>SSD-ACMIS</strong><span class="app-sidebar__footer-credit-by"> by Nelson O. Ochan</span>
-        </span>
-        <span class="app-sidebar__footer-credit-org">SSD-iT Solutions</span>
-      </div>
-    </div>
   </aside>
   <div class="app-backdrop" data-sidebar-close></div>
 
