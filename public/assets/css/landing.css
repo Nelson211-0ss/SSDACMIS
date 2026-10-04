@@ -19,8 +19,8 @@
    that floor at any alpha that still shows the photograph.
 
    Borderless: nothing is outlined. The two sign-in buttons sit
-   on one line and are told apart by fill — solid blue for the
-   one almost everyone wants, solid white for the other. Each
+   on one line and are told apart by fill — accent yellow for
+   the one almost everyone wants, solid white for the other. Each
    carries a label and nothing else; what a visitor cannot guess
    about it is captioned underneath. Icons are inline Feather.
    ============================================================ */
@@ -36,8 +36,6 @@
      photograph it stays too light. #1e3a8a clears it from .77 up. */
   --lp-scrim:     30, 58, 138;
   --lp-text:      #1e293b;
-  --lp-blue:      #2563eb;
-  --lp-blue-dark: #1d4ed8;
   --lp-white:     #ffffff;
 
   /* The one warm colour on the page, for the two words the headline turns
@@ -45,7 +43,8 @@
      overlay lightens to #5065a4, where #f97316 falls to 2.0:1 and even
      amber-500 only reaches 2.6:1. This yellow holds 4.25:1 there, against
      a 3:1 floor for text this size. */
-  --lp-accent:    #fde047;
+  --lp-accent:      #fde047;
+  --lp-accent-dark: #facc15;
 
   /* Type on the photograph. Nothing lighter than .86: below that a
      caption drops under 4.5:1 against a bright patch of photo. */
@@ -258,14 +257,21 @@ body.landing-page {
   box-shadow: 0 10px 24px rgba(2, 8, 32, .4);
 }
 
-/* Staff is the way in for almost everyone, so it is the filled one. Both
-   buttons are opaque, so what the photograph is doing underneath them
-   never affects whether their labels can be read. */
+/* Staff is the way in for almost everyone, so it is the filled one, and
+   the fill is the page's accent yellow. Blue was the obvious choice and
+   the wrong one: on a blue overlay it reached only 1.08:1 against a
+   sunlit patch of photograph behind it. Yellow clears 4.25:1 there.
+
+   The label has to be dark — white on this yellow is 1.32:1. Navy gives
+   13.5:1, and 11.7:1 on the deeper hover yellow.
+
+   Both buttons are opaque, so what the photograph is doing underneath
+   them never affects whether their labels can be read. */
 .lp-door--primary {
-  background: var(--lp-blue);
-  color: var(--lp-white);
+  background: var(--lp-accent);
+  color: var(--lp-navy);
 }
-.lp-door--primary:hover { background: var(--lp-blue-dark); }
+.lp-door--primary:hover { background: var(--lp-accent-dark); }
 
 .lp-door:not(.lp-door--primary) {
   background: rgba(255, 255, 255, .94);
