@@ -6,9 +6,9 @@
    earns its height: the middle band takes what the footer does
    not, and the type scales with the viewport so a short window
    shrinks rather than spills. The max-height rules at the end
-   shed the optional parts in order — hint, then lede, then the
-   eyebrow and the door descriptions. The two sign-in doors and
-   the headline are never among them.
+   shed the optional parts in order — the door notes, then the
+   lede, then the eyebrow. The two sign-in buttons and the
+   headline are never among them.
 
    Photographs cross-fade behind everything, under a navy
    overlay. There is no card: the type sits straight on the
@@ -17,9 +17,11 @@
    happens to be pure white, so nothing below goes lighter than
    86% white.
 
-   Borderless: nothing is outlined. The two sign-in buttons are
-   told apart by fill — solid blue for the one almost everyone
-   wants, solid white for the other. Icons are inline Feather.
+   Borderless: nothing is outlined. The two sign-in buttons sit
+   on one line and are told apart by fill — solid blue for the
+   one almost everyone wants, solid white for the other. Each
+   carries a label and nothing else; what a visitor cannot guess
+   about it is captioned underneath. Icons are inline Feather.
    ============================================================ */
 
 :root {
@@ -167,32 +169,54 @@ body.landing-page {
 }
 
 .lp-lede {
-  margin: clamp(.6rem, 1.6vh, 1.1rem) 0 0;
+  /* Narrower than the headline above it, so the line breaks fall where a
+     reader would put them rather than leaving one word stranded. */
+  width: min(30rem, 100%);
+  margin: clamp(.6rem, 1.6vh, 1.1rem) auto 0;
   font-size: clamp(.92rem, 1.4vh, 1.05rem);
   color: var(--lp-on-dark-soft);
+  text-wrap: pretty;
 }
 
 /* ------------------------------------------------ Ways in (the doors) --- */
 
-.lp-doors__heading {
-  margin: clamp(1.1rem, 3vh, 2rem) 0 .7rem;
-  font-size: .76rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--lp-on-dark-soft);
+/* Read by a screen reader, never drawn: the two buttons below are labelled
+   "<role> sign in" and sit side by side, so sighted visitors already have
+   the heading's content. */
+.lp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
+/* Side by side, always — including on a phone. Two short labels in a row
+   read as one choice to make; stacked, they read as a list to work
+   through, and the second one looks like an afterthought. They stay
+   narrower than the copy above so they sit as a pair rather than as two
+   full-width bands. */
 .lp-doors {
+  width: min(28rem, 100%);
+  margin: clamp(1.1rem, 3.4vh, 2.1rem) auto 0;
   display: grid;
-  gap: .6rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
 }
 
 .lp-door {
   display: flex;
   align-items: center;
-  gap: .85rem;
-  padding: clamp(.7rem, 1.6vh, 1rem) 1.05rem;
+  justify-content: center;
+  gap: .5rem;
+  /* No icon chip and no sentence inside, so the button is only as tall as
+     its label needs. */
+  padding: clamp(.65rem, 1.6vh, .9rem) .85rem;
   border-radius: var(--lp-radius-lg);
   text-decoration: none;
   transition: background-color .15s ease, transform .15s ease;
@@ -221,55 +245,25 @@ body.landing-page {
 .lp-door:not(.lp-door--primary):hover { background: var(--lp-white); }
 
 .lp-door__icon {
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--lp-radius);
-  display: grid;
-  place-items: center;
-  font-size: 1.15rem;
-}
-
-.lp-door--primary .lp-door__icon {
-  background: rgba(255, 255, 255, .18);
-  color: var(--lp-white);
-}
-
-.lp-door:not(.lp-door--primary) .lp-door__icon {
-  background: rgba(37, 99, 235, .10);
-  color: var(--lp-blue);
-}
-
-.lp-door__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1 1 auto;
-  /* The column around these is centred; inside a button the text reads
-     left-to-right from its icon, so it opts back out. */
-  text-align: left;
+  width: 1.05rem;
+  height: 1.05rem;
+  opacity: .85;
 }
 
 .lp-door__title {
   font-family: var(--lp-display);
-  font-size: 1rem;
+  /* Narrows before it wraps: two lines of label would undo the point of
+     putting them on one line. */
+  font-size: clamp(.86rem, 2.6vw, 1rem);
   font-weight: 700;
   letter-spacing: -.01em;
+  white-space: nowrap;
 }
-
-.lp-door__desc {
-  font-size: .85rem;
-  line-height: 1.45;
-}
-
-.lp-door--primary .lp-door__desc { color: rgba(255, 255, 255, .88); }
-.lp-door:not(.lp-door--primary) .lp-door__desc { color: var(--lp-text); }
 
 .lp-door__arrow {
-  flex-shrink: 0;
-  width: 1.15rem;
-  height: 1.15rem;
-  opacity: .7;
+  width: .95rem;
+  height: .95rem;
+  opacity: .6;
   transition: opacity .15s ease, transform .15s ease;
 }
 
@@ -278,13 +272,16 @@ body.landing-page {
   transform: translateX(2px);
 }
 
-.lp-hint {
-  margin: .8rem 0 0;
-  font-size: .82rem;
+/* The one thing about each door a visitor cannot guess, directly under the
+   button it belongs to. */
+.lp-door__note {
+  margin: .5rem 0 0;
+  font-size: .8rem;
+  line-height: 1.35;
+  text-align: center;
   color: var(--lp-on-dark-soft);
+  text-wrap: balance;
 }
-
-.lp-hint strong { color: var(--lp-on-dark); font-weight: 600; }
 
 /* ----------------------------------------------------------- Footer --- */
 
@@ -312,14 +309,15 @@ body.landing-page {
 
 @media (max-width: 575.98px) {
   .lp-container { width: min(1080px, 100% - 2rem); }
-  .lp-door { padding: .75rem .9rem; gap: .7rem; }
-  .lp-door__icon { width: 34px; height: 34px; font-size: 1.05rem; }
+  .lp-doors { gap: .5rem; }
+  .lp-door { padding: .7rem .5rem; gap: .4rem; }
+  .lp-door__arrow { display: none; }   /* the width goes to the label */
   /* The copyright is what has to stay; the byline would only wrap. */
   .lp-footer__by { display: none; }
 }
 
-@media (max-height: 720px) {
-  .lp-hint { display: none; }
+@media (max-height: 700px) {
+  .lp-door__note { display: none; }
 }
 
 @media (max-height: 620px) {
@@ -328,8 +326,7 @@ body.landing-page {
 
 @media (max-height: 520px) {
   .lp-eyebrow { display: none; }
-  .lp-doors__heading { margin-top: .9rem; }
-  .lp-door__desc { display: none; }
+  .lp-doors { margin-top: 1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

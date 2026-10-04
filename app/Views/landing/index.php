@@ -51,20 +51,26 @@ $feather = static function (string $name, string $class = ''): string {
  * account to its own portal after sign-in), so listing them separately
  * would be three doors into the same room. Parents are genuinely separate
  * — they sign in with an admission number.
+ *
+ * Both labels are the same shape — a role plus "sign in" — so the choice
+ * can be made by comparing one word. The note under each is the one thing
+ * a visitor cannot guess: that a bursar or head of department has no door
+ * of their own, and that a parent signs in with a number rather than an
+ * email. Everything else a button could have said has been cut.
  */
 $doors = [
     [
         'href'    => $base . '/login',
         'icon'    => 'log-in',
         'title'   => 'Staff sign in',
-        'desc'    => 'Administrators, heads of department, teachers and bursars.',
+        'note'    => 'Teachers, HODs and bursars',
         'primary' => true,
     ],
     [
         'href'    => $base . '/parent/login',
         'icon'    => 'users',
-        'title'   => 'Parent portal',
-        'desc'    => 'Your child’s results, attendance and fees.',
+        'title'   => 'Parent sign in',
+        'note'    => 'With an admission number',
         'primary' => false,
     ],
 ];
@@ -92,30 +98,34 @@ $doors = [
 
   <main class="lp-main">
     <div class="lp-container lp-copy">
-      <p class="lp-eyebrow">School Management System</p>
+      <p class="lp-eyebrow">SSD&#8209;ACMIS &middot; School Management System</p>
       <h1 class="lp-title">Run the whole school from one place.</h1>
       <p class="lp-lede">
-        Admissions, academics, examinations and fees — one record per student,
-        from the day they join to their final report card.
+        Admissions, academics, examinations and fees &mdash; one record per
+        student, from the day they join to their final report card.
       </p>
 
-      <h2 class="lp-doors__heading" id="lp-doors-heading">Choose how you sign in</h2>
-      <div class="lp-doors" role="list" aria-labelledby="lp-doors-heading">
-        <?php foreach ($doors as $d): ?>
+      <?php /* The heading is read but not drawn. Two buttons sitting side by
+               side under a headline, each labelled "<role> sign in", already
+               say what a line of prose would have, and the page has one less
+               block of copy between arriving and getting in. */ ?>
+      <h2 class="lp-sr-only" id="lp-doors-heading">Choose how you sign in</h2>
+      <nav class="lp-doors" aria-labelledby="lp-doors-heading">
+        <?php foreach ($doors as $i => $d): ?>
+          <?php $noteId = 'lp-door-note-' . $i; ?>
+          <div class="lp-door-item">
             <a class="lp-door <?= !empty($d['primary']) ? 'lp-door--primary' : '' ?>"
-               role="listitem" href="<?= View::e($d['href']) ?>">
-              <span class="lp-door__icon"><?= $feather($d['icon']) ?></span>
-              <span class="lp-door__text">
-                <span class="lp-door__title"><?= View::e($d['title']) ?></span>
-                <span class="lp-door__desc"><?= View::e($d['desc']) ?></span>
-              </span>
+               href="<?= View::e($d['href']) ?>" aria-describedby="<?= $noteId ?>">
+              <?= $feather($d['icon'], 'lp-door__icon') ?>
+              <span class="lp-door__title"><?= View::e($d['title']) ?></span>
               <?= $feather('arrow-right', 'lp-door__arrow') ?>
             </a>
+            <?php /* Sits under its own button rather than in one shared line,
+                     so there is nothing to work out about which it describes. */ ?>
+            <p class="lp-door__note" id="<?= $noteId ?>"><?= View::e($d['note']) ?></p>
+          </div>
         <?php endforeach; ?>
-      </div>
-      <p class="lp-hint">
-        Not sure? <strong>Staff sign in</strong> covers everyone who works at the school.
-      </p>
+      </nav>
     </div>
   </main>
 
