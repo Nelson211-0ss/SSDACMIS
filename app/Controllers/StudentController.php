@@ -940,18 +940,15 @@ class StudentController extends Controller
             return '';
         }
 
-        $handle = fopen($file['tmp_name'], 'r');
-        if (!$handle) {
+        $opened = $this->openImportCsv((string) $file['tmp_name']);
+        if ($opened === null) {
             Flash::set('danger', 'Could not read the uploaded file.');
             $this->redirect($backToImport);
             return '';
         }
+        [$handle, $delimiter] = $opened;
 
-        // Strip a UTF-8 BOM if Excel added one, then read the header row.
-        $bom = fread($handle, 3);
-        if ($bom !== "\xEF\xBB\xBF") rewind($handle);
-
-        $header = fgetcsv($handle);
+        $header = fgetcsv($handle, 0, $delimiter, '"', '');
         if ($header === false || $header === [null]) {
             fclose($handle);
             Flash::set('danger', 'The file has no rows. Use the template as a starting point.');
@@ -973,7 +970,7 @@ class StudentController extends Controller
         $rowNum   = 1; // header occupies row 1
         $capped   = false;
 
-        while (($row = fgetcsv($handle)) !== false) {
+        while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
             $rowNum++;
             $blank = count(array_filter($row, static fn ($v) => trim((string) $v) !== '')) === 0;
             if ($blank) {
@@ -1023,20 +1020,32 @@ class StudentController extends Controller
                 continue;
             }
 
-            $studentId = Student::create([
-                'school_id'      => $schoolId ?: 1,
-                'admission_no'   => $admissionNo,
-                'first_name'     => $firstName,
-                'last_name'      => $lastName,
-                'gender'         => $gender,
-                'dob'            => $dob !== '' ? $dob : null,
-                'class_id'       => $classId,
-                'section'        => $section,
-                'stream'         => $resolvedStream,
-                'guardian_name'  => mb_strtoupper($assoc['guardian_name'] ?? '', 'UTF-8'),
-                'guardian_phone' => $assoc['guardian_phone'] ?? '',
-                'address'        => mb_strtoupper($assoc['address'] ?? '', 'UTF-8'),
-            ]);
+            // Clip to the column widths so an over-long cell can't fail the
+            // INSERT; any other DB error skips just this row.
+            try {
+                $studentId = Student::create([
+                    'school_id'      => $schoolId ?: 1,
+                    'admission_no'   => $admissionNo,
+                    'first_name'     => mb_substr($firstName, 0, 100, 'UTF-8'),
+                    'last_name'      => mb_substr($lastName, 0, 100, 'UTF-8'),
+                    'gender'         => $gender,
+                    'dob'            => $dob !== '' ? $dob : null,
+                    'class_id'       => $classId,
+                    'section'        => $section,
+                    'stream'         => $resolvedStream,
+                    'guardian_name'  => mb_substr(mb_strtoupper($assoc['guardian_name'] ?? '', 'UTF-8'), 0, 150, 'UTF-8'),
+                    'guardian_phone' => mb_substr($assoc['guardian_phone'] ?? '', 0, 50, 'UTF-8'),
+                    'address'        => mb_substr(mb_strtoupper($assoc['address'] ?? '', 'UTF-8'), 0, 255, 'UTF-8'),
+                ]);
+            } catch (\PDOException $e) {
+                $errors[] = [
+                    'row' => $rowNum, 'name' => $name,
+                    'reason' => $e->getCode() === '23000'
+                        ? "Admission number {$admissionNo} is already in use."
+                        : 'Could not be saved to the database.',
+                ];
+                continue;
+            }
             ActivityLog::record('create', 'student', $studentId, "Admitted student {$admissionNo} via CSV import");
             $imported[] = ['row' => $rowNum, 'name' => $name, 'admission_no' => $admissionNo];
         }
@@ -1060,6 +1069,53 @@ class StudentController extends Controller
             'errors'   => $errors,
             'classId'  => $classId,
         ]);
+    }
+
+    /**
+     * Load an uploaded CSV as UTF-8 into a temp stream ready for fgetcsv().
+     * Excel saves "CSV" in several shapes depending on version and locale:
+     * UTF-8 with a BOM, UTF-16 ("Unicode text"), Windows-1252, and with ";"
+     * or tab as the separator. All are normalised here so the parser sees
+     * plain UTF-8 and the INSERT never hits an invalid-string error.
+     *
+     * @return array{0: resource, 1: string}|null [stream, delimiter]
+     */
+    private function openImportCsv(string $path): ?array
+    {
+        $raw = @file_get_contents($path);
+        if ($raw === false) {
+            return null;
+        }
+
+        if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+            $raw = substr($raw, 3);
+        } elseif (str_starts_with($raw, "\xFF\xFE")) {
+            $raw = mb_convert_encoding(substr($raw, 2), 'UTF-8', 'UTF-16LE');
+        } elseif (str_starts_with($raw, "\xFE\xFF")) {
+            $raw = mb_convert_encoding(substr($raw, 2), 'UTF-8', 'UTF-16BE');
+        } elseif (!mb_check_encoding($raw, 'UTF-8')) {
+            $raw = mb_convert_encoding($raw, 'UTF-8', 'Windows-1252');
+        }
+
+        // Pick the separator that appears most on the header line.
+        $firstLine = strtok($raw, "\r\n");
+        $delimiter = ',';
+        $best      = 0;
+        foreach ([',', ';', "\t"] as $candidate) {
+            $count = substr_count((string) $firstLine, $candidate);
+            if ($count > $best) {
+                $best      = $count;
+                $delimiter = $candidate;
+            }
+        }
+
+        $handle = fopen('php://temp', 'w+');
+        if (!$handle) {
+            return null;
+        }
+        fwrite($handle, $raw);
+        rewind($handle);
+        return [$handle, $delimiter];
     }
 
     /** Student::find() constrained to the viewer's school (super admin: any). */
