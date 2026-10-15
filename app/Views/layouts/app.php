@@ -90,6 +90,7 @@ $mainNav = [
 
     ['kind' => 'group', 'label' => 'Insights', 'icon' => 'bi-bar-chart-line', 'items' => [
         ['Analytics', 'bi-bar-chart-line',    '/analytics', ['admin','school_admin','staff'],           '/analytics', 'analytics.view'],
+        ['Class Statistics', 'bi-pie-chart',  '/class-statistics', ['school_admin'],                 '/class-statistics'],
         ['Reports',   'bi-file-earmark-text', '/reports',   ['admin','school_admin','staff','student'], '/reports',   'reports.view'],
     ]],
 

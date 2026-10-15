@@ -197,6 +197,9 @@ $router->get('/hod/results/gender', 'ResultsController@genderPerformance', [$can
 $router->get('/analytics',     'AnalyticsController@index', [$canViewAnalytics]);
 $router->get('/hod/analytics', 'AnalyticsController@index', [$canViewAnalytics]);
 
+// Boys / girls enrolment per class — school admins only.
+$router->get('/class-statistics', 'ClassStatisticsController@index', [fn() => Auth::require(['school_admin'])]);
+
 // Reports (printable mid-term & end-term report cards)
 $router->get('/reports',                'ReportController@index',       [$auth]);
 // Registered before /reports/student/{id} etc. so the static path wins.
