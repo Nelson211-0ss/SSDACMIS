@@ -8265,3 +8265,230 @@ html[data-bs-theme="dark"] .dropdown-item { color: var(--text); }
 html[data-bs-theme="dark"] .dropdown-item:hover,
 html[data-bs-theme="dark"] .dropdown-item:focus { background: var(--hover); color: var(--text); }
 html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+/* --- Class statistics (boys / girls per class) ---------------------- */
+
+.cstats {
+  --boys:        0;
+  --girls:       0;
+  --c-boys:      #2563eb;
+  --c-boys-soft: #eff4ff;
+  --c-boys-text: #1d4ed8;
+  --c-girls:      #ec4899;
+  --c-girls-soft: #fdf2f8;
+  --c-girls-text: #be185d;
+  --c-other:     #9ca3af;
+}
+
+.cstats-text-boys  { color: var(--c-boys-text); }
+.cstats-text-girls { color: var(--c-girls-text); }
+
+.cstats-heading {
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 1.75rem 0 .75rem;
+}
+
+.cstats-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+.cstats-empty .bi { font-size: 2.25rem; display: block; margin-bottom: .5rem; color: var(--text-subtle); }
+
+/* Overview: donut on the left, tiles on the right. */
+.cstats-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.cstats-donut-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 1.25rem;
+}
+
+.cstats-donut {
+  width: 180px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--c-boys) 0 calc(var(--boys) * 1%),
+    var(--c-girls) 0 calc((var(--boys) + var(--girls)) * 1%),
+    var(--c-other) 0 100%
+  );
+  display: grid;
+  place-items: center;
+}
+.cstats-donut__hole {
+  width: 68%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.cstats-donut__num   { font-size: 1.75rem; font-weight: 700; line-height: 1; color: var(--text); }
+.cstats-donut__label { font-size: .75rem; color: var(--text-muted); margin-top: .25rem; }
+
+.cstats-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.cstats-legend li {
+  display: grid;
+  grid-template-columns: auto 1fr auto 4rem;
+  align-items: center;
+  gap: .6rem;
+  padding: .45rem 0;
+  border-top: 1px solid var(--border);
+  font-size: .9rem;
+}
+.cstats-legend li:first-child { border-top: 0; }
+.cstats-legend__name { color: var(--text-muted); }
+.cstats-legend__pct  { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.cstats-dot { width: .7rem; height: .7rem; border-radius: 50%; }
+.cstats-dot--boys  { background: var(--c-boys); }
+.cstats-dot--girls { background: var(--c-girls); }
+.cstats-dot--other { background: var(--c-other); }
+
+.cstats-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-content: start;
+}
+.cstats-tile {
+  display: flex;
+  gap: .9rem;
+  align-items: flex-start;
+  padding: 1.1rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+.cstats-tile > .bi {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: .5rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.cstats-tile > div { min-width: 0; }
+.cstats-tile--boys  > .bi { background: var(--c-boys-soft);  color: var(--c-boys-text); }
+.cstats-tile--girls > .bi { background: var(--c-girls-soft); color: var(--c-girls-text); }
+.cstats-tile--boys  { border-top: 3px solid var(--c-boys); }
+.cstats-tile--girls { border-top: 3px solid var(--c-girls); }
+.cstats-tile--wide  { grid-column: 1 / -1; }
+
+.cstats-tile__label { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.cstats-tile__value { font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+.cstats-tile__value--sm { font-size: 1.2rem; }
+.cstats-tile__sub   { font-size: .8rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Class cards */
+.cstats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+.cstats-card {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  padding: 1.1rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.cstats-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.cstats-card--empty { background: var(--surface-2); box-shadow: none; }
+.cstats-card--empty:hover { transform: none; box-shadow: none; }
+
+.cstats-card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+.cstats-card__title { min-width: 0; }
+.cstats-card__title h4 { font-size: 1rem; font-weight: 600; margin: 0; color: var(--text); }
+.cstats-card__title span { font-size: .75rem; color: var(--text-muted); }
+.cstats-card__total { text-align: right; line-height: 1.1; }
+.cstats-card__total strong { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.cstats-card__total span { font-size: .7rem; color: var(--text-muted); }
+.cstats-card__none { margin: 0; font-size: .85rem; color: var(--text-muted); }
+
+.cstats-bar {
+  display: flex;
+  height: .65rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  gap: 2px;
+}
+.cstats-bar span { display: block; height: 100%; }
+.cstats-bar__boys  { background: var(--c-boys); }
+.cstats-bar__girls { background: var(--c-girls); }
+.cstats-bar__other { background: var(--c-other); }
+
+.cstats-card__split { display: flex; justify-content: space-between; gap: 1rem; }
+.cstats-card__split > div { display: flex; flex-direction: column; }
+.cstats-card__label { font-size: .75rem; color: var(--text-muted); }
+.cstats-card__count { font-size: 1.25rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.cstats-card__pct   { font-size: .8rem; font-weight: 600; }
+
+.cstats-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .5rem;
+  padding-top: .65rem;
+  border-top: 1px dashed var(--border);
+  font-size: .75rem;
+}
+.cstats-card__other { color: var(--text-muted); }
+.cstats-flag { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; border-radius: 999px; font-weight: 600; }
+.cstats-flag--boys  { background: var(--c-boys-soft);  color: var(--c-boys-text); }
+.cstats-flag--girls { background: var(--c-girls-soft); color: var(--c-girls-text); }
+
+.cstats-table td, .cstats-table th { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cstats-table tfoot td {
+  font-weight: 700;
+  background: var(--surface-2);
+  border-top: 2px solid var(--border-strong);
+}
+
+@media (max-width: 991.98px) {
+  .cstats-overview { grid-template-columns: 1fr; }
+  .cstats-donut-card { flex-direction: row; justify-content: center; flex-wrap: wrap; }
+  .cstats-legend { width: auto; min-width: 220px; flex: 1; }
+}
+
+@media (max-width: 575.98px) {
+  .cstats-tiles { grid-template-columns: 1fr 1fr; gap: .65rem; }
+  .cstats-tile { padding: .85rem; gap: .6rem; }
+  .cstats-tile > .bi { display: none; }
+  .cstats-tile__value { font-size: 1.3rem; }
+  .cstats-donut { width: 150px; }
+  .cstats-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .cstats-card { break-inside: avoid; box-shadow: none; }
+  .cstats-donut, .cstats-bar span, .cstats-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
