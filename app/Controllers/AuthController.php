@@ -128,7 +128,13 @@ class AuthController extends Controller
             $this->redirect($this->homeAfterLogin());
         }
 
-        return $this->view('auth/login');
+        // Set by App::enforceIdleTimeout(), or ?expired=1 from the timeout dialog.
+        $timedOut = !empty($_SESSION['_timed_out']) || !empty($_GET['expired']);
+        unset($_SESSION['_timed_out']);
+
+        return $this->view('auth/login', [
+            'notice' => $timedOut ? 'Your session timed out because you were inactive. Please sign in again.' : null,
+        ]);
     }
 
     public function showBursarLogin(): void
@@ -147,7 +153,12 @@ class AuthController extends Controller
             $this->redirect('/parent');
         }
 
-        return $this->view('auth/parent_login');
+        $timedOut = !empty($_SESSION['_timed_out']) || !empty($_GET['expired']);
+        unset($_SESSION['_timed_out']);
+
+        return $this->view('auth/parent_login', [
+            'notice' => $timedOut ? 'Your session timed out because you were inactive. Please sign in again.' : null,
+        ]);
     }
 
     public function login(): string

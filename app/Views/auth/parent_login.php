@@ -45,6 +45,12 @@ $schoolName  = $schoolNameSetting;
         </p>
       </div>
 
+      <?php if (empty($error) && !empty($notice)): ?>
+        <div class="auth-login__alert" role="status">
+          <i class="bi bi-clock-history flex-shrink-0"></i>
+          <div><?= View::e($notice) ?></div>
+        </div>
+      <?php endif; ?>
       <?php if (!empty($error)): ?>
         <div class="auth-login__alert" role="alert">
           <i class="bi bi-exclamation-circle flex-shrink-0"></i>

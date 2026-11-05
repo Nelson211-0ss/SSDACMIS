@@ -23,6 +23,10 @@ $router->get('/logout',        'AuthController@logout');
 $router->get('/hod/logout',    'AuthController@logout');
 $router->get('/bursar/logout', 'AuthController@logout');
 $router->get('/parent/logout', 'AuthController@logout');
+// Session-timeout dialog: status reads the idle timer without extending it,
+// ping is the "Stay signed in" button (any request refreshes the timer).
+$router->get('/session/status', 'SessionController@status');
+$router->post('/session/ping',  'SessionController@ping');
 
 // Authenticated area
 $auth = fn() => Auth::require();

@@ -1001,6 +1001,14 @@ $sidebarScope  = Auth::portal() . ':' . $sidebarSchool;
 <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script defer src="<?= View::asset($base, 'assets/js/app.js') ?>"></script>
 <script defer src="<?= View::asset($base, 'assets/js/entity-modal.js') ?>"></script>
+<?php if (Auth::check()): ?>
+<script defer src="<?= View::asset($base, 'assets/js/session-timeout.js') ?>"
+        data-lifetime="<?= (int) \App\Core\App::config('session.lifetime') ?>"
+        data-status-url="<?= View::e($base) ?>/session/status"
+        data-ping-url="<?= View::e($base) ?>/session/ping"
+        data-login-url="<?= View::e($base) ?><?= Auth::portal() === 'parent' ? '/parent' : '' ?>/login?expired=1"
+        data-logout-url="<?= View::e($base . Auth::portalPrefix()) ?>/logout"></script>
+<?php endif; ?>
 <script>
   // Inline print: load any URL inside a hidden iframe and trigger the print
   // dialog from there, so receipts/reports never spawn a new tab or window
