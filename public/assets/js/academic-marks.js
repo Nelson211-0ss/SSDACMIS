@@ -377,7 +377,26 @@
     var clearBtn = form.querySelector('[data-sheet-search-clear]');
     var rows = Array.prototype.slice.call(form.querySelectorAll('tbody tr[data-row]'));
     var countEl = form.querySelector('[data-sheet-search-count]');
+    var missingBtn = form.querySelector('[data-sheet-missing]');
+    var missingCountEl = form.querySelector('[data-sheet-missing-count]');
+    var missingOnly = false;
     var emptyRow = null;
+
+    // A row is "missing" when any of its mark cells is still blank.
+    function rowMissing(tr) {
+      var cells = tr.querySelectorAll('.msheet-input');
+      for (var i = 0; i < cells.length; i++) {
+        if (String(cells[i].value || '').trim() === '') return true;
+      }
+      return false;
+    }
+
+    function refreshMissingCount() {
+      if (!missingCountEl) return;
+      var n = 0;
+      rows.forEach(function (tr) { if (rowMissing(tr)) n++; });
+      missingCountEl.textContent = String(n);
+    }
 
     function ensureEmptyRow() {
       if (emptyRow) return emptyRow;
@@ -393,25 +412,51 @@
       var td = document.createElement('td');
       td.colSpan = cols;
       td.className = 'text-center text-muted small py-3';
-      td.textContent = 'No students match that search.';
       emptyRow.appendChild(td);
       tbody.appendChild(emptyRow);
       return emptyRow;
     }
 
+    // Rows are re-filtered only when the search or the toggle changes, so a
+    // row doesn't vanish from under the cursor the moment its mark is typed.
     function apply() {
       var q = input.value.trim().toLowerCase();
+      var filtering = q !== '' || missingOnly;
       var visible = 0;
       rows.forEach(function (tr) {
         var haystack = tr.getAttribute('data-search') || '';
-        var match = q === '' || haystack.indexOf(q) !== -1;
+        var match = (q === '' || haystack.indexOf(q) !== -1) && (!missingOnly || rowMissing(tr));
         tr.style.display = match ? '' : 'none';
         if (match) visible++;
       });
       var empty = ensureEmptyRow();
-      if (empty) empty.style.display = (q !== '' && visible === 0) ? '' : 'none';
-      if (countEl) countEl.textContent = q === '' ? '' : (visible + ' of ' + rows.length + ' shown');
+      if (empty) {
+        empty.style.display = (filtering && visible === 0) ? '' : 'none';
+        empty.firstChild.textContent = (missingOnly && q === '')
+          ? 'Every student has marks entered.'
+          : (missingOnly ? 'No students with missing marks match that search.' : 'No students match that search.');
+      }
+      if (countEl) countEl.textContent = filtering ? (visible + ' of ' + rows.length + ' shown') : '';
       if (wrap) wrap.classList.toggle('has-value', input.value !== '');
+      refreshMissingCount();
+    }
+
+    if (missingBtn) {
+      missingBtn.addEventListener('click', function () {
+        missingOnly = !missingOnly;
+        missingBtn.classList.toggle('is-active', missingOnly);
+        missingBtn.setAttribute('aria-pressed', missingOnly ? 'true' : 'false');
+        var icon = missingBtn.querySelector('.bi');
+        if (icon) {
+          icon.classList.toggle('bi-funnel', !missingOnly);
+          icon.classList.toggle('bi-funnel-fill', missingOnly);
+        }
+        apply();
+      });
+      form.querySelectorAll('.msheet-input').forEach(function (inp) {
+        inp.addEventListener('input', refreshMissingCount);
+      });
+      refreshMissingCount();
     }
 
     input.addEventListener('input', apply);

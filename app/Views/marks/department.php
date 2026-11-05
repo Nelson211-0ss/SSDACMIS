@@ -108,6 +108,11 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                 <i class="bi bi-x-lg"></i>
               </button>
             </div>
+            <button type="button" class="marks-sheet-missing" data-sheet-missing aria-pressed="false"
+                    title="Show only students who still have a blank mark">
+              <i class="bi bi-funnel"></i> Missing marks
+              <span class="marks-sheet-missing__n" data-sheet-missing-count>0</span>
+            </button>
             <span class="marks-sheet-search__count" data-sheet-search-count></span>
           </div>
           <div class="marks-sheet-toolbar__status">
