@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Services\AcademicMarking;
+use App\Services\ClassRoster;
 
 /**
  * Report cards, issued per assessment stage (`stage` query parameter):
@@ -258,22 +259,28 @@ class ReportController extends Controller
             ));
         }
 
-        $scopeIds = array_map(static fn ($c) => (int) $c['id'], $classes);
+        // Each class's students as the class was in $year (after a promotion
+        // its current members belong to the next year). class_id is set to
+        // the class listed, which may differ from the student's class today.
         $students = [];
-        if ($scopeIds !== []) {
-            $sph    = implode(',', array_fill(0, count($scopeIds), '?'));
-            $params = $scopeIds;
+        foreach ($classes as $c) {
+            $cid = (int) $c['id'];
+            [$rosterSql, $params] = ClassRoster::where($cid, $year);
             $streamSql = '';
             if ($filterStream !== '') {
                 $streamSql = ' AND stream = ?';
                 $params[]  = $filterStream;
             }
-            $students = Database::query(
-                "SELECT id, admission_no, first_name, last_name, class_id, stream
-                 FROM students WHERE class_id IN ($sph){$streamSql}
-                 ORDER BY class_id, first_name, last_name",
+            $rows = Database::query(
+                "SELECT id, admission_no, first_name, last_name, stream
+                 FROM students WHERE {$rosterSql}{$streamSql}
+                 ORDER BY first_name, last_name",
                 $params
             )->fetchAll();
+            foreach ($rows as $r) {
+                $r['class_id'] = $cid;
+                $students[] = $r;
+            }
         }
 
         return $this->view('reports/index', $stageMeta + [
@@ -371,6 +378,24 @@ class ReportController extends Controller
 
         if (!$student) { http_response_code(404); return $this->view('errors/404'); }
 
+        // After a promotion (or graduation) the report for an earlier year
+        // belongs to the class the student was in THEN.
+        $yearClassId = ClassRoster::classOfStudent($studentId, $year);
+        if ($yearClassId !== null && $yearClassId !== (int) ($student['class_id'] ?? 0)) {
+            $yc = Database::query(
+                "SELECT c.id, c.name, t.first_name AS teacher_first, t.last_name AS teacher_last
+                 FROM classes c LEFT JOIN staff t ON t.id = c.class_teacher_id
+                 WHERE c.id = ?",
+                [$yearClassId]
+            )->fetch();
+            if ($yc) {
+                $student['class_id']      = (int) $yc['id'];
+                $student['class_name']    = $yc['name'];
+                $student['teacher_first'] = $yc['teacher_first'];
+                $student['teacher_last']  = $yc['teacher_last'];
+            }
+        }
+
         $sheet    = $this->studentScoreSheet($studentId, $year, $term, $stage);
         $position = $student['class_id']
             ? $this->classPosition($studentId, (int) $student['class_id'], $year, $term, $stage)
@@ -379,9 +404,10 @@ class ReportController extends Controller
         $classId = isset($student['class_id']) ? (int) $student['class_id'] : 0;
         $reportPeers = [];
         if ($classId > 0 && $this->canSeeClass($classId)) {
+            [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
             $reportPeers = Database::query(
-                'SELECT id, admission_no, first_name, last_name FROM students WHERE class_id = ? ORDER BY first_name, last_name',
-                [$classId]
+                "SELECT id, admission_no, first_name, last_name FROM students WHERE {$rosterSql} ORDER BY first_name, last_name",
+                $rosterParams
             )->fetchAll();
         } elseif ($this->isStudent()) {
             $reportPeers = [[
@@ -461,11 +487,12 @@ class ReportController extends Controller
         )->fetch();
         if (!$class) { http_response_code(404); return $this->view('errors/404'); }
 
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
         $students = Database::query(
             "SELECT id, admission_no, first_name, last_name, stream
-             FROM students WHERE class_id = ?
+             FROM students WHERE {$rosterSql}
              ORDER BY first_name, last_name",
-            [$classId]
+            $rosterParams
         )->fetchAll();
 
         $level       = trim((string) ($class['level'] ?? ''));
@@ -493,8 +520,8 @@ class ReportController extends Controller
                                  FROM grades g
                                  INNER JOIN subjects sub ON sub.id = g.subject_id AND sub.is_offered = 1" . ($schoolId !== null ? ' AND sub.school_id = ?' : '') . "
                                  WHERE g.academic_year = ? AND g.term = ?
-                                     AND g.student_id IN (SELECT id FROM students WHERE class_id = ?)";
-                        $rowsParams = $schoolId !== null ? [$schoolId, $year, $term, $classId] : [$year, $term, $classId];
+                                     AND g.student_id IN (SELECT id FROM students WHERE {$rosterSql})";
+                        $rowsParams = array_merge($schoolId !== null ? [$schoolId, $year, $term] : [$year, $term], $rosterParams);
                         $rows = Database::query($rowsSql, $rowsParams)->fetchAll();
             foreach ($rows as $r) {
                 $sid = (int) $r['student_id'];
@@ -653,16 +680,29 @@ class ReportController extends Controller
         $students = [];
         if ($scopeIds !== []) {
             $ph = implode(',', array_fill(0, count($scopeIds), '?'));
-            $students = Database::query(
-                "SELECT s.*, c.name AS class_name, c.level AS class_level, c.id AS class_id,
-                        t.first_name AS teacher_first, t.last_name AS teacher_last
-                 FROM students s
-                 LEFT JOIN classes c ON c.id = s.class_id
-                 LEFT JOIN staff   t ON t.id = c.class_teacher_id
-                 WHERE s.class_id IN ($ph)
-                 ORDER BY c.level, c.name, s.first_name, s.last_name",
+            $scopeClasses = Database::query(
+                "SELECT id FROM classes WHERE id IN ($ph) ORDER BY level, name",
                 $scopeIds
             )->fetchAll();
+            // Each class as it was in $year; the class columns come from the
+            // class being printed, not the student's class today.
+            foreach ($scopeClasses as $sc) {
+                $cid = (int) $sc['id'];
+                [$rosterSql, $rosterParams] = ClassRoster::where($cid, $year, 's');
+                $rows = Database::query(
+                    "SELECT s.*, c.name AS class_name, c.level AS class_level, c.id AS class_id,
+                            t.first_name AS teacher_first, t.last_name AS teacher_last
+                     FROM students s
+                     JOIN classes c ON c.id = ?
+                     LEFT JOIN staff t ON t.id = c.class_teacher_id
+                     WHERE {$rosterSql}
+                     ORDER BY s.first_name, s.last_name",
+                    array_merge([$cid], $rosterParams)
+                )->fetchAll();
+                foreach ($rows as $r) {
+                    $students[] = $r;
+                }
+            }
         }
 
         // Build every card's score sheet ONCE, then rank inside each cohort
@@ -777,15 +817,16 @@ class ReportController extends Controller
             return $this->view('errors/404');
         }
 
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year, 's');
         $rows = Database::query(
             "SELECT s.*, c.name AS class_name, c.id AS class_id,
                     t.first_name AS teacher_first, t.last_name AS teacher_last
              FROM students s
-             LEFT JOIN classes c ON c.id = s.class_id
+             JOIN classes c ON c.id = ?
              LEFT JOIN staff   t ON t.id = c.class_teacher_id
-             WHERE s.class_id = ?
+             WHERE {$rosterSql}
              ORDER BY s.first_name, s.last_name",
-            [$classId]
+            array_merge([$classId], $rosterParams)
         )->fetchAll();
 
         // Build each score sheet once and rank from those sheets, the same way

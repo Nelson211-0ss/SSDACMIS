@@ -29,7 +29,11 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
       <h4 class="mb-1"><i class="bi bi-person-vcard"></i> <?= View::e($fullName) ?></h4>
       <p class="text-muted small mb-0">
         <span class="badge-soft font-monospace"><?= View::e($student['admission_no'] ?? '') ?></span>
-        &middot; <?= View::e($student['level'] ?? '—') ?><?= $student['class_name'] ? ' (' . View::e($student['class_name']) . ')' : '' ?>
+        <?php if (($student['status'] ?? 'active') === 'graduated'): ?>
+          &middot; <span class="badge bg-success-subtle text-success-emphasis"><i class="bi bi-mortarboard"></i> Graduated</span>
+        <?php else: ?>
+          &middot; <?= View::e($student['level'] ?? '—') ?><?= $student['class_name'] ? ' (' . View::e($student['class_name']) . ')' : '' ?>
+        <?php endif; ?>
         &middot; <span class="badge <?= $section === 'boarding' ? 'bg-info-subtle text-info-emphasis' : 'bg-light text-secondary border' ?>"><?= View::studentEnumUpper('section', $section) ?></span>
         <?php if ($stream !== 'none'): ?>
           &middot; <span class="badge bg-warning-subtle text-warning-emphasis"><?= View::studentEnumUpper('stream', $stream) ?></span>
@@ -50,6 +54,9 @@ $activeStatus  = (string) ($activeBill['status'] ?? 'not_paid');
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/students"><i class="bi bi-arrow-left"></i> Back to students</a>
     <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
       <a class="btn btn-outline-primary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/edit"><i class="bi bi-pencil"></i> Edit</a>
+      <?php if (!empty($student['class_id'])): ?>
+        <a class="btn btn-outline-primary btn-sm" href="<?= $base ?>/promotions/class/<?= (int) $student['class_id'] ?>?student=<?= (int) $student['id'] ?>"><i class="bi bi-arrow-down-up"></i> Promote / repeat / demote</a>
+      <?php endif; ?>
     <?php endif; ?>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/admission-letter" data-inline-print><i class="bi bi-envelope-paper"></i> Admission letter</a>
     <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?>/students/<?= (int) $student['id'] ?>/id-card" data-inline-print><i class="bi bi-person-vcard"></i> Print ID card</a>

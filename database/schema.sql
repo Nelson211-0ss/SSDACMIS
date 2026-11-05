@@ -118,6 +118,8 @@ CREATE TABLE IF NOT EXISTS students (
     section         ENUM('day','boarding') NOT NULL DEFAULT 'day',
     -- Form 3 & Form 4 students choose a stream (Science or Arts); Form 1/2 = 'none'.
     stream          ENUM('none','science','arts') NOT NULL DEFAULT 'none',
+    -- 'graduated' once they finish the final class (class_id is then NULL).
+    status          VARCHAR(12)  NOT NULL DEFAULT 'active',
     guardian_name   VARCHAR(150) NULL,
     guardian_phone  VARCHAR(50)  NULL,
     address         VARCHAR(255) NULL,
@@ -470,6 +472,48 @@ CREATE TABLE IF NOT EXISTS term_student_results (
     KEY idx_tst_period (academic_year, term, stage),
     CONSTRAINT fk_tsi_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT fk_tsi_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ---------- Promotions ----------
+-- The class each student was in for an academic year, recorded when that
+-- year is promoted so past reports keep their real class lists.
+CREATE TABLE IF NOT EXISTS student_class_history (
+    id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id     INT UNSIGNED NOT NULL DEFAULT 1,
+    student_id    INT UNSIGNED NOT NULL,
+    academic_year VARCHAR(9)   NOT NULL,
+    class_id      INT UNSIGNED NOT NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uniq_history_student_year (student_id, academic_year),
+    KEY idx_history_class_year (class_id, academic_year),
+    KEY idx_history_school_year (school_id, academic_year),
+    CONSTRAINT fk_history_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_history_class   FOREIGN KEY (class_id)   REFERENCES classes(id)  ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Every promote / repeat / demote / graduate decision, grouped by batch so
+-- a whole run can be undone.
+CREATE TABLE IF NOT EXISTS student_promotions (
+    id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    school_id     INT UNSIGNED NOT NULL DEFAULT 1,
+    batch_id      VARCHAR(32)  NOT NULL,
+    student_id    INT UNSIGNED NOT NULL,
+    academic_year VARCHAR(9)   NOT NULL,
+    action        VARCHAR(12)  NOT NULL,
+    from_class_id INT UNSIGNED NULL,
+    to_class_id   INT UNSIGNED NULL,
+    from_stream   VARCHAR(10)  NOT NULL DEFAULT 'none',
+    performed_by  INT UNSIGNED NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    undone_at     TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (id),
+    KEY idx_promo_student_year (student_id, academic_year),
+    KEY idx_promo_batch (batch_id),
+    KEY idx_promo_school_year (school_id, academic_year),
+    CONSTRAINT fk_promo_student FOREIGN KEY (student_id)    REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_promo_from    FOREIGN KEY (from_class_id) REFERENCES classes(id)  ON DELETE SET NULL,
+    CONSTRAINT fk_promo_to      FOREIGN KEY (to_class_id)   REFERENCES classes(id)  ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ============================================================

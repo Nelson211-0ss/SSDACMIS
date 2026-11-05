@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Core\MarkEntryClassBuckets;
 use App\Core\Flash;
 use App\Services\AcademicMarking;
+use App\Services\ClassRoster;
 use App\Services\TermResultsService;
 
 /**
@@ -423,11 +424,13 @@ class MarksController extends Controller
         }
 
         $filter   = $this->streamFilterFor($classId, (string) ($subject['category'] ?? ''));
+        // The class as it was in $year (differs from today after a promotion).
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
         $students = Database::query(
             "SELECT id, admission_no, first_name, last_name, stream
-             FROM students WHERE class_id = ? {$filter['where']}
+             FROM students WHERE {$rosterSql} {$filter['where']}
              ORDER BY first_name, last_name",
-            array_merge([$classId], $filter['params'])
+            array_merge($rosterParams, $filter['params'])
         )->fetchAll();
 
         $existing    = [];
@@ -520,6 +523,8 @@ class MarksController extends Controller
         $subjectRow = Database::query("SELECT category FROM subjects WHERE id = ?", [$subjectId])->fetch();
         $subjectCat = (string) ($subjectRow['category'] ?? '');
         $filter     = $this->streamFilterFor($classId, $subjectCat);
+        // The class as it was in $year (differs from today after a promotion).
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
 
         if ((string) $this->input('dual_exam') === '1') {
             // "Both" is a filter choice available to anyone who can already
@@ -531,8 +536,8 @@ class MarksController extends Controller
             $endM = (array) ($_POST['scores_end'] ?? []);
 
             $stRows = Database::query(
-                "SELECT id, admission_no FROM students WHERE class_id = ? {$filter['where']}",
-                array_merge([$classId], $filter['params'])
+                "SELECT id, admission_no FROM students WHERE {$rosterSql} {$filter['where']}",
+                array_merge($rosterParams, $filter['params'])
             )->fetchAll();
 
             $validationErrors = [];
@@ -581,7 +586,7 @@ class MarksController extends Controller
                         score       = VALUES(score),
                         recorded_by = VALUES(recorded_by)"
                 );
-                $belong = $pdo->prepare("SELECT 1 FROM students WHERE id = ? AND class_id = ? {$filter['where']}");
+                $belong = $pdo->prepare("SELECT 1 FROM students WHERE id = ? AND {$rosterSql} {$filter['where']}");
 
                 foreach ($stRows as $st) {
                     $sid = (int) $st['id'];
@@ -592,7 +597,7 @@ class MarksController extends Controller
                             $skipped++;
                             continue;
                         }
-                        $belong->execute(array_merge([$sid, $classId], $filter['params']));
+                        $belong->execute(array_merge([$sid], $rosterParams, $filter['params']));
                         if (!$belong->fetchColumn()) {
                             $skipped++;
                             continue;
@@ -638,8 +643,8 @@ class MarksController extends Controller
         }
 
         $stuRows = Database::query(
-            "SELECT id, admission_no FROM students WHERE class_id = ? {$filter['where']}",
-            array_merge([$classId], $filter['params'])
+            "SELECT id, admission_no FROM students WHERE {$rosterSql} {$filter['where']}",
+            array_merge($rosterParams, $filter['params'])
         )->fetchAll();
         $admById = [];
         foreach ($stuRows as $sr) {
@@ -694,7 +699,7 @@ class MarksController extends Controller
                     score       = VALUES(score),
                     recorded_by = VALUES(recorded_by)"
             );
-            $belong = $pdo->prepare("SELECT 1 FROM students WHERE id = ? AND class_id = ? {$filter['where']}");
+            $belong = $pdo->prepare("SELECT 1 FROM students WHERE id = ? AND {$rosterSql} {$filter['where']}");
 
             foreach ($scores as $studentId => $rawScore) {
                 $sid = (int) $studentId;
@@ -707,7 +712,7 @@ class MarksController extends Controller
                     $skipped++;
                     continue;
                 }
-                $belong->execute(array_merge([$sid, $classId], $filter['params']));
+                $belong->execute(array_merge([$sid], $rosterParams, $filter['params']));
                 if (!$belong->fetchColumn()) {
                     $skipped++;
                     continue;
@@ -784,9 +789,11 @@ class MarksController extends Controller
 
         $subjectRow = Database::query("SELECT category FROM subjects WHERE id = ?", [$subjectId])->fetch();
         $filter = $this->streamFilterFor($classId, (string) ($subjectRow['category'] ?? ''));
+        // The class as it was in $year (differs from today after a promotion).
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
         $belongs = Database::query(
-            "SELECT 1 FROM students WHERE id = ? AND class_id = ? {$filter['where']}",
-            array_merge([$studentId, $classId], $filter['params'])
+            "SELECT 1 FROM students WHERE id = ? AND {$rosterSql} {$filter['where']}",
+            array_merge([$studentId], $rosterParams, $filter['params'])
         )->fetch();
         if (!$belongs) {
             http_response_code(422);
@@ -888,11 +895,13 @@ class MarksController extends Controller
             array_merge([$category], $sp)
         )->fetchAll();
         $filter   = $this->streamFilterFor($classId, $category);
+        // The class as it was in $year (differs from today after a promotion).
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
         $students = Database::query(
             "SELECT id, admission_no, first_name, last_name, stream
-             FROM students WHERE class_id = ? {$filter['where']}
+             FROM students WHERE {$rosterSql} {$filter['where']}
              ORDER BY first_name, last_name",
-            array_merge([$classId], $filter['params'])
+            array_merge($rosterParams, $filter['params'])
         )->fetchAll();
 
         // Existing scores keyed as $existing[student_id][subject_id] = score
@@ -984,14 +993,16 @@ class MarksController extends Controller
         $allowedSubs = array_map('intval', $allowedSubs);
         $allowedSet  = array_flip($allowedSubs);
         $filter      = $this->streamFilterFor($classId, $category);
+        // The class as it was in $year (differs from today after a promotion).
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
 
         $userId = (int) (Auth::user()['id'] ?? 0);
         $redirQ = "class_id=$classId&category=" . rawurlencode($category)
             . "&year=" . rawurlencode($year) . "&term=" . rawurlencode($term);
 
         $admRows = Database::query(
-            "SELECT id, admission_no FROM students WHERE class_id = ? {$filter['where']}",
-            array_merge([$classId], $filter['params'])
+            "SELECT id, admission_no FROM students WHERE {$rosterSql} {$filter['where']}",
+            array_merge($rosterParams, $filter['params'])
         )->fetchAll();
         $admById = [];
         foreach ($admRows as $ar) {
@@ -1066,16 +1077,16 @@ class MarksController extends Controller
                     score       = VALUES(score),
                     recorded_by = VALUES(recorded_by)"
             );
-            $belong = $pdo->prepare("SELECT 1 FROM students WHERE id = ? AND class_id = ? {$filter['where']}");
+            $belong = $pdo->prepare("SELECT 1 FROM students WHERE id = ? AND {$rosterSql} {$filter['where']}");
 
-            $applyMatrix = function (array $matrix, string $examType) use ($classId, $year, $term, $allowedSet, $upsert, $belong, $userId, $filter, &$saved, &$skipped) {
+            $applyMatrix = function (array $matrix, string $examType) use ($classId, $rosterParams, $year, $term, $allowedSet, $upsert, $belong, $userId, $filter, &$saved, &$skipped) {
                 foreach ($matrix as $studentId => $perSubject) {
                     $sid = (int) $studentId;
                     if ($sid <= 0 || !is_array($perSubject)) {
                         $skipped++;
                         continue;
                     }
-                    $belong->execute(array_merge([$sid, $classId], $filter['params']));
+                    $belong->execute(array_merge([$sid], $rosterParams, $filter['params']));
                     if (!$belong->fetchColumn()) {
                         $skipped += count($perSubject);
                         continue;

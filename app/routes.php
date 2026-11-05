@@ -116,6 +116,11 @@ $router->post('/students/import',           'StudentController@importStore',    
 $router->post('/students',             'StudentController@store',  [$canManageStudents]);
 // Registered after all the static /students/... GET routes above so it
 // doesn't swallow them (Router matches GET routes in insertion order).
+// End-of-year promotions: promote / repeat / demote / graduate, per class or student.
+$router->get('/promotions',                 'PromotionController@index',      [$canManageStudents]);
+$router->get('/promotions/class/{id}',      'PromotionController@classForm',  [$canManageStudents]);
+$router->post('/promotions/class/{id}',     'PromotionController@classStore', [$canManageStudents]);
+$router->post('/promotions/undo/{batch}',   'PromotionController@undo',       [$canManageStudents]);
 $router->get('/students/{id}',         'StudentController@show',   [$canViewStudents]);
 $router->get('/students/{id}/edit',    'StudentController@edit',   [$canManageStudents]);
 $router->post('/students/{id}',        'StudentController@update', [$canManageStudents]);

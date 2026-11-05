@@ -72,6 +72,7 @@ $mainNav = [
 
     ['kind' => 'group', 'label' => 'People', 'icon' => 'bi-people-fill', 'items' => [
         ['Students', 'bi-people',           '/students', ['admin','school_admin','staff'], '/students', 'students.view'],
+        ['Promotions', 'bi-arrow-up-circle', '/promotions', ['admin','school_admin'],       '/promotions', 'students.manage'],
         ['Staff',    'bi-person-badge',     '/staff',    ['admin','school_admin'],         '/staff',    'staff.manage'],
         ['Users',    'bi-person-gear',      '/users',    ['admin','school_admin'],         '/users',    'users.manage'],
         ['HODs',     'bi-mortarboard-fill', '/hods',     ['admin','school_admin'],         '/hods',     'accounts.hod'],

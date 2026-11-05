@@ -32,7 +32,13 @@ if (empty($students)): ?>
               </a>
             </td>
             <td class="d-none d-md-table-cell"><span class="badge bg-secondary-subtle text-secondary-emphasis"><?= View::studentEnumUpper('gender', $s['gender'] ?? '') ?></span></td>
-            <td class="small"><?= View::upper($s['class_name'] ?? '') ?: '—' ?></td>
+            <td class="small">
+              <?php if (($s['status'] ?? 'active') === 'graduated'): ?>
+                <span class="badge bg-success-subtle text-success-emphasis"><i class="bi bi-mortarboard"></i> GRADUATED</span>
+              <?php else: ?>
+                <?= View::upper($s['class_name'] ?? '') ?: '—' ?>
+              <?php endif; ?>
+            </td>
             <td class="d-none d-lg-table-cell"><span class="badge <?= $section === 'boarding' ? 'bg-info-subtle text-info-emphasis' : 'bg-light text-secondary border' ?>"><?= View::studentEnumUpper('section', $section) ?></span></td>
             <td class="d-none d-xl-table-cell">
               <?php if ($stream === 'none'): ?>

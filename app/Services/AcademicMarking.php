@@ -331,16 +331,19 @@ final class AcademicMarking
      *
      * @return array{level:string,stream:string,subjects:list<array<string,mixed>>}
      */
-    public static function curriculumForStudent(int $studentId): array
+    public static function curriculumForStudent(int $studentId, ?string $year = null): array
     {
+        // For a year that has been promoted, use the class (and stream) the
+        // student had THAT year, not today's.
+        $placement = $year !== null ? ClassRoster::placement($studentId, $year) : null;
         $student = Database::query(
             'SELECT s.stream, c.level, s.school_id
-             FROM students s LEFT JOIN classes c ON c.id = s.class_id
+             FROM students s LEFT JOIN classes c ON c.id = ' . ($placement ? '?' : 's.class_id') . '
              WHERE s.id = ?',
-            [$studentId]
+            $placement ? [$placement['class_id'], $studentId] : [$studentId]
         )->fetch();
         $level  = trim((string) ($student['level'] ?? ''));
-        $stream = (string) ($student['stream'] ?? 'none');
+        $stream = (string) (($placement['stream'] ?? null) ?: ($student['stream'] ?? 'none'));
         $schoolId = isset($student['school_id']) ? (int) $student['school_id'] : null;
 
         $sql = 'SELECT id, name, code, category FROM subjects WHERE is_offered = 1';
@@ -403,7 +406,7 @@ final class AcademicMarking
         ?string $stage = self::STAGE_END
     ): array {
         $stage = self::normalizeStage($stage);
-        $curriculum = self::curriculumForStudent($studentId);
+        $curriculum = self::curriculumForStudent($studentId, $year);
         $level      = $curriculum['level'];
         $subjects   = $curriculum['subjects'];
         if ($subjects === []) {
@@ -586,24 +589,28 @@ final class AcademicMarking
         ?string $stage = self::STAGE_END
     ): array {
         $stage = self::normalizeStage($stage);
+        // Level of the class being ranked in (not necessarily the student's
+        // class today — after a promotion this is last year's class).
         $student = Database::query(
             'SELECT s.stream, c.level
-             FROM students s LEFT JOIN classes c ON c.id = s.class_id
+             FROM students s LEFT JOIN classes c ON c.id = ?
              WHERE s.id = ?',
-            [$studentId]
+            [$classId, $studentId]
         )->fetch();
         $level  = trim((string) ($student['level'] ?? ''));
-        $stream = (string) ($student['stream'] ?? 'none');
+        $placement = ClassRoster::placement($studentId, $year);
+        $stream = (string) (($placement['stream'] ?? null) ?: ($student['stream'] ?? 'none'));
         $isUpper = ($level === 'Form 3' || $level === 'Form 4');
 
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
         if ($isUpper && ($stream === 'science' || $stream === 'arts')) {
-            $sql = 'SELECT id FROM students WHERE class_id = ? AND stream = ? ORDER BY id';
-            $peerRows = Database::query($sql, [$classId, $stream])->fetchAll();
+            $sql = "SELECT id FROM students WHERE {$rosterSql} AND stream = ? ORDER BY id";
+            $peerRows = Database::query($sql, array_merge($rosterParams, [$stream]))->fetchAll();
             $cohortLabel = ucfirst($stream) . ' stream';
         } else {
             $peerRows = Database::query(
-                'SELECT id FROM students WHERE class_id = ? ORDER BY id',
-                [$classId]
+                "SELECT id FROM students WHERE {$rosterSql} ORDER BY id",
+                $rosterParams
             )->fetchAll();
             $cohortLabel = 'class';
         }

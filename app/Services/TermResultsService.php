@@ -163,9 +163,12 @@ final class TermResultsService
         $level = trim((string) ($class['level'] ?? ''));
         $isUpper = ($level === 'Form 3' || $level === 'Form 4');
 
+        // The class as it was in $year: after a promotion its current members
+        // are next year's students, not the ones these results belong to.
+        [$rosterSql, $rosterParams] = ClassRoster::where($classId, $year);
         $students = Database::query(
-            'SELECT id, stream FROM students WHERE class_id = ? ORDER BY id',
-            [$classId]
+            "SELECT id, stream FROM students WHERE {$rosterSql} ORDER BY id",
+            $rosterParams
         )->fetchAll();
 
         if (!$students) {

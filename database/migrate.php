@@ -879,6 +879,14 @@ foreach ($perfIndexes as [$tbl, $idx, $cols]) {
     }
 }
 
+/* -- Promotions: class history, promotion log, students.status ---------- */
+try {
+    \App\Services\PromotionService::ensureSchema();
+    $out[] = "  ok  promotions tables and students.status ready";
+} catch (\Throwable $e) {
+    $out[] = "  !!  promotions schema: " . $e->getMessage();
+}
+
 $out[] = "Done.";
 
 /* Output -------------------------------------------------------------- */

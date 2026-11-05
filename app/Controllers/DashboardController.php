@@ -25,9 +25,11 @@ class DashboardController extends Controller
         $schoolId = Auth::schoolId();
         $sf  = $schoolId !== null ? ' AND school_id = ?' : '';
         $sp  = $schoolId !== null ? [$schoolId] : [];
+        // Graduates keep their records but are no longer enrolled students.
+        $af  = \App\Services\PromotionService::hasStatusColumn() ? " AND status = 'active'" : '';
 
         // ---------- Top-line counts ----------
-        $studentsTotal   = (int) (Database::query("SELECT COUNT(*) c FROM students  WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
+        $studentsTotal   = (int) (Database::query("SELECT COUNT(*) c FROM students  WHERE 1=1{$af}{$sf}", $sp)->fetch()['c'] ?? 0);
         $staffTotal      = (int) (Database::query("SELECT COUNT(*) c FROM staff     WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
         $classesTotal    = (int) (Database::query("SELECT COUNT(*) c FROM classes   WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
         $subjectsTotal   = (int) (Database::query("SELECT COUNT(*) c FROM subjects  WHERE 1=1{$sf}", $sp)->fetch()['c'] ?? 0);
@@ -96,13 +98,13 @@ class DashboardController extends Controller
         $streamBreakdown  = ['none' => 0, 'science' => 0, 'arts' => 0];
 
         if ($isAdminish) {
-            foreach (Database::query("SELECT gender,  COUNT(*) c FROM students WHERE 1=1{$sf} GROUP BY gender",  $sp)->fetchAll() as $r) {
+            foreach (Database::query("SELECT gender,  COUNT(*) c FROM students WHERE 1=1{$af}{$sf} GROUP BY gender",  $sp)->fetchAll() as $r) {
                 $genderBreakdown[$r['gender']] = (int) $r['c'];
             }
-            foreach (Database::query("SELECT section, COUNT(*) c FROM students WHERE 1=1{$sf} GROUP BY section", $sp)->fetchAll() as $r) {
+            foreach (Database::query("SELECT section, COUNT(*) c FROM students WHERE 1=1{$af}{$sf} GROUP BY section", $sp)->fetchAll() as $r) {
                 $sectionBreakdown[$r['section']] = (int) $r['c'];
             }
-            foreach (Database::query("SELECT stream,  COUNT(*) c FROM students WHERE 1=1{$sf} GROUP BY stream",  $sp)->fetchAll() as $r) {
+            foreach (Database::query("SELECT stream,  COUNT(*) c FROM students WHERE 1=1{$af}{$sf} GROUP BY stream",  $sp)->fetchAll() as $r) {
                 $streamBreakdown[$r['stream']] = (int) $r['c'];
             }
         }
@@ -160,7 +162,7 @@ class DashboardController extends Controller
                 $sp
             )->fetch()['c'] ?? 0);
             $adminOps['unassigned_students'] = (int) (Database::query(
-                "SELECT COUNT(*) c FROM students WHERE class_id IS NULL{$sf}",
+                "SELECT COUNT(*) c FROM students WHERE class_id IS NULL{$af}{$sf}",
                 $sp
             )->fetch()['c'] ?? 0);
 

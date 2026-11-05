@@ -106,6 +106,10 @@ class Student
                 $d['guardian_name'], $d['guardian_phone'], $d['address'], $id,
             ]
         );
+        // Giving a graduated student a class again makes them an active student.
+        if (!empty($d['class_id']) && \App\Services\PromotionService::hasStatusColumn()) {
+            Database::query("UPDATE students SET status = 'active' WHERE id = ? AND status <> 'active'", [$id]);
+        }
     }
 
     public static function setPhoto(int $id, string $relativePath): void
