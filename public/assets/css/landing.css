@@ -44,10 +44,10 @@
   /* The one warm colour on the page, for the two words the headline turns
      on. Orange cannot be used here: over a sunlit patch of photograph the
      overlay lightens to #5065a4, where #f97316 falls to 2.0:1 and even
-     amber-500 only reaches 2.6:1. This yellow holds 4.25:1 there, against
-     a 3:1 floor for text this size. */
-  --lp-accent:      #fde047;
-  --lp-accent-dark: #facc15;
+     amber-500 only reaches 2.6:1. The emblem yellow holds 3.56:1 there,
+     above the 3:1 floor for text this size. */
+  --lp-accent:      #fec601;  /* SSDACMIS emblem yellow */
+  --lp-accent-dark: #e6b300;
 
   /* Type on the photograph. Nothing lighter than .86: below that a
      caption drops under 4.5:1 against a bright patch of photo. */
@@ -359,8 +359,8 @@ body.landing-page {
    the wrong one: on a blue overlay it reached only 1.08:1 against a
    sunlit patch of photograph behind it. Yellow clears 4.25:1 there.
 
-   The label has to be dark — white on this yellow is 1.32:1. Navy gives
-   13.5:1, and 11.7:1 on the deeper hover yellow.
+   The label has to be dark — white on this yellow is 1.58:1. Navy gives
+   11.3:1, and 9.2:1 on the deeper hover yellow.
 
    Both buttons are opaque, so what the photograph is doing underneath
    them never affects whether their labels can be read. */

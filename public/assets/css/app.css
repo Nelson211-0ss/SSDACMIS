@@ -12,6 +12,21 @@
   --accent-soft:   #eff4ff;
   --accent-rgb:    37, 99, 235;
 
+  /* Brand yellow, sampled from the SSDACMIS emblem (#FEC601). Use the
+     plain value for fills, borders and anything on a dark background; on a
+     light background text/icons need a deeper shade of the same hue:
+     -dark is 3.0:1 on white, -darker 4.2:1. */
+  --brand-yellow:        #fec601;
+  --brand-yellow-rgb:    254, 198, 1;
+  --brand-yellow-hover:  #e6b300;
+  --brand-yellow-dark:   #b88f00;
+  --brand-yellow-darker: #997700;
+  --brand-yellow-soft:   #fff6d6;
+  --brand-yellow-tint:   #fffaeb;
+  /* Bootstrap's own yellow (bg-warning, text-bg-warning, text-warning). */
+  --bs-warning:          #fec601;
+  --bs-warning-rgb:      254, 198, 1;
+
   /* Neutrals */
   --bg:            #f4f5f7;   /* soft off-white page canvas */
   --surface:       #ffffff;   /* cards, sidebar, topbar */
@@ -999,7 +1014,7 @@ html[data-bs-theme="dark"] .app-sidebar__footer {
   letter-spacing: 0;
   background: #2e0f57;
   min-height: 100dvh;
-  --auth-wave-gold: #facc15;
+  --auth-wave-gold: var(--brand-yellow);
   --auth-wave-purple-1: #3b0b6d;
   --auth-wave-purple-2: #5b21b6;
   --auth-wave-purple-3: #4c1d95;
@@ -1521,9 +1536,9 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   font-weight: 600;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #f0c020;
-  background: rgba(240, 192, 32, 0.12);
-  border: 1px solid rgba(240, 192, 32, 0.28);
+  color: var(--brand-yellow);
+  background: rgba(var(--brand-yellow-rgb), 0.12);
+  border: 1px solid rgba(var(--brand-yellow-rgb), 0.28);
   padding: 0.35rem 0.85rem;
   border-radius: 9999px;
   margin: 0 0 1.1rem;
@@ -1543,7 +1558,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .auth-brand__mark:hover { color: #fff; opacity: 0.9; }
 .auth-brand__crown {
-  color: #f0c020;
+  color: var(--brand-yellow);
   display: inline-flex;
   align-items: center;
   line-height: 1;
@@ -1580,7 +1595,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   margin: 0;
   line-height: 0.95;
   padding: 0;
-  color: #f0c020;
+  color: var(--brand-yellow);
   font-weight: 800;
   font-size: clamp(2.6rem, 5.2vw, 4rem);
   letter-spacing: -0.025em;
@@ -1630,11 +1645,11 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   width: 2.1rem;
   height: 2.1rem;
   border-radius: 9999px;
-  background: rgba(240, 192, 32, 0.16);
-  color: #f0c020;
+  background: rgba(var(--brand-yellow-rgb), 0.16);
+  color: var(--brand-yellow);
   flex-shrink: 0;
   font-size: 0.95rem;
-  border: 1px solid rgba(240, 192, 32, 0.28);
+  border: 1px solid rgba(var(--brand-yellow-rgb), 0.28);
 }
 /* Trust / role footnote at the bottom of the brand block */
 .auth-brand__foot {
@@ -1647,13 +1662,13 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: 0.45rem;
   font-weight: 400;
 }
-.auth-brand__foot i { color: #f0c020; font-size: 0.95rem; }
+.auth-brand__foot i { color: var(--brand-yellow); font-size: 0.95rem; }
 .auth-brand__motto { margin: 0.5rem 0 0; }
 .auth-brand__motto-q {
   font-size: 0.86rem;
   font-style: italic;
   color: rgba(255, 255, 255, 0.72);
-  border-left: 2px solid #fbbf24;
+  border-left: 2px solid var(--brand-yellow);
   padding-left: 0.6rem;
   display: inline-block;
   margin: 0;
@@ -1724,7 +1739,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .auth-input-wave:hover { background: #dccfd2; }
 .auth-input-wave:focus-within {
   background: #e8dde0;
-  border-color: rgba(240, 192, 32, 0.55);
+  border-color: rgba(var(--brand-yellow-rgb), 0.55);
 }
 .auth-input-wave__ic {
   display: inline-flex;
@@ -1734,7 +1749,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   height: 2.05rem;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.55);
-  color: #c9971b;
+  color: var(--brand-yellow-dark);
   font-size: 0.95rem;
   flex-shrink: 0;
   margin-right: 0.6rem;
@@ -1765,12 +1780,12 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .auth-forgot {
   font-size: 0.78rem;
-  color: #c9971b;
+  color: var(--brand-yellow-dark);
   text-decoration: none;
   font-weight: 600;
   white-space: nowrap;
 }
-.auth-forgot:hover, .auth-forgot:focus { color: #a37c12; text-decoration: underline; }
+.auth-forgot:hover, .auth-forgot:focus { color: var(--brand-yellow-darker); text-decoration: underline; }
 .auth-form__row {
   margin-top: 0.85rem !important;
   margin-bottom: 0 !important;
@@ -1831,7 +1846,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: 0.35rem;
   flex-wrap: wrap;
 }
-.auth-card.auth-card--wave .auth-card__foot .auth-foot-note i { color: #c9971b; font-size: 0.92rem; }
+.auth-card.auth-card--wave .auth-card__foot .auth-foot-note i { color: var(--brand-yellow-dark); font-size: 0.92rem; }
 .auth-card--wave .auth-alert {
   background: rgba(244, 63, 94, 0.14);
   border: 1px solid rgba(244, 63, 94, 0.28);
@@ -1871,7 +1886,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: 0.35rem;
   color: rgba(255, 255, 255, 0.78);
 }
-.auth-below__hint i { color: #f0c020; font-size: 0.9rem; }
+.auth-below__hint i { color: var(--brand-yellow); font-size: 0.9rem; }
 .auth-below__strong { color: #fff; font-weight: 600; }
 .auth-below a {
   color: #fff;
@@ -2209,11 +2224,11 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #fff;
-  background: #f0bf1f;
+  color: var(--text);   /* white on brand yellow is ~1.6:1 */
+  background: var(--brand-yellow);
   border: 0;
   border-radius: 9999px;
-  box-shadow: 0 10px 22px -10px rgba(240, 191, 31, 0.6);
+  box-shadow: 0 10px 22px -10px rgba(var(--brand-yellow-rgb), 0.6);
   text-shadow: none;
   line-height: 1;
   font-family: var(--font-sans-clean);
@@ -2221,9 +2236,9 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .auth-btn.auth-btn--wave i { font-size: 0.95rem; }
 .auth-btn.auth-btn--wave:hover {
-  background: #e0ad12;
-  color: #fff;
-  box-shadow: 0 16px 32px -10px rgba(240, 191, 31, 0.75);
+  background: var(--brand-yellow-hover);
+  color: var(--text);
+  box-shadow: 0 16px 32px -10px rgba(var(--brand-yellow-rgb), 0.75);
   transform: translateY(-1px);
 }
 .auth-btn.auth-btn--wave:active { transform: translateY(0); }
@@ -5181,7 +5196,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 
 /* Named pastel tones (use these on KPI cards for the academic palette) */
 .kpi-card__icon--orange { background: #ffe5d3; color: #ea7a3d; }
-.kpi-card__icon--yellow { background: #fff1c8; color: #c79412; }
+.kpi-card__icon--yellow { background: var(--brand-yellow-soft); color: var(--brand-yellow-dark); }
 .kpi-card__icon--green  { background: #dcf2e0; color: #2f9e4f; }
 .kpi-card__icon--blue   { background: #e1edff; color: #2f6ed8; }
 .kpi-card__icon--purple { background: #ece8fa; color: #7c5ce5; }
@@ -5189,7 +5204,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .kpi-card__icon--teal   { background: #d6f0ee; color: #0d9488; }
 
 [data-bs-theme="dark"] .kpi-card__icon--orange { background: rgba(234, 122, 61, .18); color: #fbbf6b; }
-[data-bs-theme="dark"] .kpi-card__icon--yellow { background: rgba(199, 148, 18, .20); color: #facc6e; }
+[data-bs-theme="dark"] .kpi-card__icon--yellow { background: rgba(var(--brand-yellow-rgb), .20); color: var(--brand-yellow); }
 [data-bs-theme="dark"] .kpi-card__icon--green  { background: rgba(47, 158, 79, .20);  color: #6dd089; }
 [data-bs-theme="dark"] .kpi-card__icon--blue   { background: rgba(47, 110, 216, .20); color: #7eaaf0; }
 [data-bs-theme="dark"] .kpi-card__icon--purple { background: rgba(124, 92, 229, .20); color: #b4a1f0; }
@@ -5463,7 +5478,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   box-shadow: none;
 }
 .icon-chip--orange  { background: #ffe5d3; color: #ea7a3d; }
-.icon-chip--yellow  { background: #fff1c8; color: #c79412; }
+.icon-chip--yellow  { background: var(--brand-yellow-soft); color: var(--brand-yellow-dark); }
 .icon-chip--green   { background: #dcf2e0; color: #2f9e4f; }
 .icon-chip--blue    { background: #e1edff; color: #2f6ed8; }
 .icon-chip--purple  { background: #ece8fa; color: #7c5ce5; }
@@ -5474,7 +5489,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .icon-chip--info    { background: #e1edff; color: #1d7fb3; }
 [data-bs-theme="dark"] .icon-chip { background: var(--surface-2); }
 [data-bs-theme="dark"] .icon-chip--orange  { background: rgba(234, 122, 61, .18); color: #fbbf6b; }
-[data-bs-theme="dark"] .icon-chip--yellow  { background: rgba(199, 148, 18, .20); color: #facc6e; }
+[data-bs-theme="dark"] .icon-chip--yellow  { background: rgba(var(--brand-yellow-rgb), .20); color: var(--brand-yellow); }
 [data-bs-theme="dark"] .icon-chip--green,
 [data-bs-theme="dark"] .icon-chip--success { background: rgba(47, 158, 79, .20);  color: #6dd089; }
 [data-bs-theme="dark"] .icon-chip--blue    { background: rgba(47, 110, 216, .20); color: #7eaaf0; }
@@ -5535,14 +5550,14 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .card-header-icon--green  { background: #dcf2e0; color: #2f9e4f; }
 .card-header-icon--blue   { background: #e1edff; color: #2f6ed8; }
 .card-header-icon--purple { background: #ece8fa; color: #7c5ce5; }
-.card-header-icon--yellow { background: #fff1c8; color: #c79412; }
+.card-header-icon--yellow { background: var(--brand-yellow-soft); color: var(--brand-yellow-dark); }
 .card-header-icon--pink   { background: #fde2e9; color: #db2777; }
 .card-header-icon--teal   { background: #d6f0ee; color: #0d9488; }
 [data-bs-theme="dark"] .card-header-icon--orange { background: rgba(234, 122, 61, .18); color: #fbbf6b; }
 [data-bs-theme="dark"] .card-header-icon--green  { background: rgba(47, 158, 79, .20);  color: #6dd089; }
 [data-bs-theme="dark"] .card-header-icon--blue   { background: rgba(47, 110, 216, .20); color: #7eaaf0; }
 [data-bs-theme="dark"] .card-header-icon--purple { background: rgba(124, 92, 229, .20); color: #b4a1f0; }
-[data-bs-theme="dark"] .card-header-icon--yellow { background: rgba(199, 148, 18, .20); color: #facc6e; }
+[data-bs-theme="dark"] .card-header-icon--yellow { background: rgba(var(--brand-yellow-rgb), .20); color: var(--brand-yellow); }
 [data-bs-theme="dark"] .card-header-icon--pink   { background: rgba(219, 39, 119, .20); color: #f586b3; }
 [data-bs-theme="dark"] .card-header-icon--teal   { background: rgba(13, 148, 136, .20); color: #5dc8be; }
 
@@ -5551,12 +5566,12 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .form-card__badge--green  { background: #dcf2e0 !important; color: #2f9e4f !important; border: 0 !important; }
 .form-card__badge--blue   { background: #e1edff !important; color: #2f6ed8 !important; border: 0 !important; }
 .form-card__badge--purple { background: #ece8fa !important; color: #7c5ce5 !important; border: 0 !important; }
-.form-card__badge--yellow { background: #fff1c8 !important; color: #c79412 !important; border: 0 !important; }
+.form-card__badge--yellow { background: var(--brand-yellow-soft) !important; color: var(--brand-yellow-dark) !important; border: 0 !important; }
 [data-bs-theme="dark"] .form-card__badge--orange { background: rgba(234, 122, 61, .22) !important; color: #fbbf6b !important; }
 [data-bs-theme="dark"] .form-card__badge--green  { background: rgba(47, 158, 79, .22) !important;  color: #6dd089 !important; }
 [data-bs-theme="dark"] .form-card__badge--blue   { background: rgba(47, 110, 216, .22) !important; color: #7eaaf0 !important; }
 [data-bs-theme="dark"] .form-card__badge--purple { background: rgba(124, 92, 229, .22) !important; color: #b4a1f0 !important; }
-[data-bs-theme="dark"] .form-card__badge--yellow { background: rgba(199, 148, 18, .22) !important; color: #facc6e !important; }
+[data-bs-theme="dark"] .form-card__badge--yellow { background: rgba(var(--brand-yellow-rgb), .22) !important; color: var(--brand-yellow) !important; }
 
 /* ---------- Reports index (/reports, /hod/reports) ---------- */
 .reports-page {
@@ -7483,13 +7498,13 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .app-page .card-header-icon--orange { background: #fff0e5; color: #ea7a3d; }
 .app-page .card-header-icon--purple { background: #f0ecfa; color: #7c5ce5; }
 .app-page .card-header-icon--teal   { background: #e6f5f3; color: #0d9488; }
-.app-page .card-header-icon--yellow { background: #fff8e5; color: #c79412; }
+.app-page .card-header-icon--yellow { background: var(--brand-yellow-tint); color: var(--brand-yellow-dark); }
 [data-bs-theme="dark"] .app-page .card-header-icon--blue   { background: rgba(47, 110, 216, .2); color: #93b4f0; }
 [data-bs-theme="dark"] .app-page .card-header-icon--green  { background: rgba(47, 158, 79, .2); color: #7dd099; }
 [data-bs-theme="dark"] .app-page .card-header-icon--orange { background: rgba(234, 122, 61, .2); color: #f5b07a; }
 [data-bs-theme="dark"] .app-page .card-header-icon--purple { background: rgba(124, 92, 229, .2); color: #c4b5fd; }
 [data-bs-theme="dark"] .app-page .card-header-icon--teal   { background: rgba(13, 148, 136, .2); color: #5eead4; }
-[data-bs-theme="dark"] .app-page .card-header-icon--yellow { background: rgba(199, 148, 18, .2); color: #fcd34d; }
+[data-bs-theme="dark"] .app-page .card-header-icon--yellow { background: rgba(var(--brand-yellow-rgb), .2); color: var(--brand-yellow); }
 
 /* Data tables */
 .app-page .sa-table-wrap,
@@ -8282,7 +8297,7 @@ html[data-bs-theme="dark"] .app-page .card-header-icon--green  { background: rgb
 html[data-bs-theme="dark"] .app-page .card-header-icon--orange { background: rgba(234, 122, 61, .18); color: #fbbf6b; }
 html[data-bs-theme="dark"] .app-page .card-header-icon--purple { background: rgba(124, 92, 229, .20); color: #b4a1f0; }
 html[data-bs-theme="dark"] .app-page .card-header-icon--teal   { background: rgba(13, 148, 136, .20); color: #5dc8be; }
-html[data-bs-theme="dark"] .app-page .card-header-icon--yellow { background: rgba(199, 148, 18, .20); color: #facc6e; }
+html[data-bs-theme="dark"] .app-page .card-header-icon--yellow { background: rgba(var(--brand-yellow-rgb), .20); color: var(--brand-yellow); }
 html[data-bs-theme="dark"] .kpi-card__icon--indigo { background: rgba(79, 70, 229, .22); color: #a5a0f5; }
 html[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-1,
 html[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-2,

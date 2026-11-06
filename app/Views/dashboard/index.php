@@ -1130,7 +1130,7 @@ $greetTone  = $h < 12 ? 'orange'       : ($h < 17 ? 'yellow'         : 'purple')
       var palette = [
         '#3b82f6', // blue
         '#22c55e', // green
-        '#eab308', // yellow
+        '#fec601', // yellow (SSDACMIS emblem)
         '#a855f7', // purple
         '#f97316', // orange
         '#ec4899', // pink
