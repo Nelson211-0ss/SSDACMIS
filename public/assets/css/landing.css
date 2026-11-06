@@ -192,6 +192,7 @@ body.landing-page {
   }
 }
 
+.lp-logo,
 .lp-eyebrow,
 .lp-word,
 .lp-lede,
@@ -201,6 +202,7 @@ body.landing-page {
 }
 
 /* The order things are meant to be read in. */
+.lp-logo         { animation-delay: 0s; }
 .lp-eyebrow      { animation-delay: .10s; }
 .lp-word         { animation-delay: calc(.22s + var(--i) * .065s); }
 .lp-lede         { animation-delay: .72s; }
@@ -229,6 +231,21 @@ body.landing-page {
   margin-inline: auto;
   min-width: 0;
   text-align: center;
+}
+
+/* The brand mark. Its PNG carries a wide transparent glow, so it is sized
+   by height (tied to the viewport like the headline, keeping the page one
+   screen) and pulled in at the bottom where the glow is only light. */
+.lp-logo {
+  margin: 0 0 -.35rem;
+  line-height: 0;
+}
+.lp-logo img {
+  display: inline-block;
+  width: auto;
+  height: clamp(6rem, 24vh, 13rem);
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .lp-eyebrow {
@@ -437,6 +454,7 @@ body.landing-page {
 
 @media (min-width: 576px) and (max-height: 620px) {
   .lp-lede { display: none; }
+  .lp-logo img { height: 18vh; }
 }
 
 @media (min-width: 576px) and (max-height: 520px) {
@@ -521,6 +539,10 @@ body.landing-page {
 }
 
 /* Very narrow phones (320px class). */
+@media (max-width: 575.98px) {
+  .lp-logo img { height: auto; width: min(19rem, 88%); }
+}
+
 @media (max-width: 359.98px) {
   .lp-container { width: calc(100% - 1.75rem); }
   .lp-title { font-size: 1.75rem; }
@@ -536,6 +558,7 @@ body.landing-page {
   .lp-bg,
   .lp-bg__img,
   .lp-bg__img.is-active,
+  .lp-logo,
   .lp-eyebrow,
   .lp-word,
   .lp-lede,
