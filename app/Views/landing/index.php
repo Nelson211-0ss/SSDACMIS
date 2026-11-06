@@ -110,13 +110,13 @@ $doors = [
 
   <main class="lp-main">
     <div class="lp-container lp-copy">
-      <?php /* Transparent cut of the brand mark (glow kept, black removed),
-               so it sits on the photo backdrop without a box around it. */ ?>
+      <?php /* The SSDACMIS emblem (transparent PNG), resized from
+               "SSDACMIS Education Emblem.png" in the same folder. */ ?>
       <div class="lp-logo">
         <picture>
-          <source srcset="<?= View::asset($base, 'assets/img/ssdacmis-logo.webp') ?>" type="image/webp">
-          <img src="<?= View::asset($base, 'assets/img/ssdacmis-logo.png') ?>"
-               alt="SSDACMIS" width="760" height="507" decoding="async" fetchpriority="high">
+          <source srcset="<?= View::asset($base, 'assets/img/ssdacmis-emblem.webp') ?>" type="image/webp">
+          <img src="<?= View::asset($base, 'assets/img/ssdacmis-emblem.png') ?>"
+               alt="SSDACMIS" width="760" height="432" decoding="async" fetchpriority="high">
         </picture>
       </div>
       <p class="lp-eyebrow">School Management System</p>
