@@ -16,6 +16,10 @@ $pageIcon = 'bi-people';
 ob_start();
 ?>
     <?php if (in_array($auth['role'] ?? '', ['admin', 'school_admin'], true)): ?>
+      <a class="btn btn-outline-danger" href="<?= $base ?>/students/no-marks"
+         title="Students with no mid-term or end-of-term marks for a term — review and delete">
+        <i class="bi bi-person-dash"></i> No marks
+      </a>
       <a class="btn btn-outline-danger" href="<?= $base ?>/students/delete-by-class"
          title="Remove every student in one class, or one stream of a Form 3/4 class">
         <i class="bi bi-person-x"></i> Delete by class

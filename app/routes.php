@@ -107,6 +107,9 @@ $router->post('/students/clear-all',  'StudentController@clearAllExecute', [$can
 // static-before-{id} ordering requirement as clear-all above.
 $router->get('/students/delete-by-class',  'StudentController@deleteByClassForm',    [$canImportStudents]);
 $router->post('/students/delete-by-class', 'StudentController@deleteByClassExecute', [$canImportStudents]);
+// Students with no mid-term or end-of-term mark for a term (filter + delete).
+$router->get('/students/no-marks',         'NoMarksController@index',  [$canManageStudents]);
+$router->post('/students/no-marks/delete', 'NoMarksController@delete', [$canManageStudents]);
 // Bulk CSV import — one whole class at a time. Admission/records editing is
 // school-admin territory; staff and HODs enter marks and view students, but
 // do not create, import, or modify student records.
