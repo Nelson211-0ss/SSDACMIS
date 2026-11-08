@@ -8538,3 +8538,16 @@ html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) bright
   .cstats-card { break-inside: avoid; box-shadow: none; }
   .cstats-donut, .cstats-bar span, .cstats-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---- Class analysis (results/analysis.php) ---- */
+.class-analysis-chart canvas { width: 100% !important; height: 100% !important; }
+.class-analysis-chart--grades   { height: 220px; }
+.class-analysis-chart--subjects { height: 320px; }
+.class-analysis-chart--trend    { height: 260px; }
+.class-analysis-boys  { color: #2563eb; font-weight: 600; }
+.class-analysis-girls { color: #db2777; font-weight: 600; }
+[data-bs-theme="dark"] .class-analysis-boys  { color: #93c5fd; }
+[data-bs-theme="dark"] .class-analysis-girls { color: #f9a8d4; }
+@media print {
+  .class-analysis .results-table-panel { break-inside: avoid; }
+}

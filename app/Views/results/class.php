@@ -60,6 +60,10 @@ $subLabel = static function (array $sub): string {
           </div>
           <button type="submit" class="btn btn-outline-primary btn-sm">Reload</button>
         </form>
+        <a class="btn btn-outline-primary btn-sm"
+           href="<?= $base ?><?= $portalPrefix ?>/results/analysis/<?= (int) $class['id'] ?>?<?= View::e($qs) ?>">
+          <i class="bi bi-clipboard-data"></i> Class analysis
+        </a>
         <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print this results sheet">
           <i class="bi bi-printer"></i> Print
         </button>

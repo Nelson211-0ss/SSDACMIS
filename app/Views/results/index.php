@@ -82,16 +82,25 @@ $qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage='
       <div class="small text-muted mb-2 d-print-none">Open a class for full marks breakdown. The class table uses the full width (landscape-style) to reduce sideways scrolling.</div>
       <div class="results-index-screen-list list-group list-group-flush shadow-none border rounded overflow-hidden">
         <?php foreach ($classes as $c): ?>
-          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3"
-             href="<?= $base ?><?= $portalPrefix ?>/results/class/<?= (int) $c['id'] ?>?<?= View::e($qs) ?>">
-            <span>
+          <div class="list-group-item d-flex justify-content-between align-items-center gap-2 py-2">
+            <a class="flex-grow-1 py-2 text-reset text-decoration-none"
+               href="<?= $base ?><?= $portalPrefix ?>/results/class/<?= (int) $c['id'] ?>?<?= View::e($qs) ?>">
               <strong><?= View::e($c['name']) ?></strong>
               <?php if (!empty($c['level'])): ?>
                 <span class="text-muted small ms-1"><?= View::e($c['level']) ?></span>
               <?php endif; ?>
-            </span>
-            <i class="bi bi-chevron-right text-muted"></i>
-          </a>
+            </a>
+            <a class="btn btn-outline-primary btn-sm"
+               href="<?= $base ?><?= $portalPrefix ?>/results/analysis/<?= (int) $c['id'] ?>?<?= View::e($qs) ?>"
+               title="Boys and girls analysis for <?= View::e($c['name']) ?>">
+              <i class="bi bi-clipboard-data"></i> Analysis
+            </a>
+            <a class="btn btn-outline-secondary btn-sm"
+               href="<?= $base ?><?= $portalPrefix ?>/results/class/<?= (int) $c['id'] ?>?<?= View::e($qs) ?>"
+               aria-label="Results for <?= View::e($c['name']) ?>">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </div>
         <?php endforeach; ?>
       </div>
     </div>

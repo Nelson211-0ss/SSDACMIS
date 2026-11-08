@@ -196,6 +196,10 @@ $gap = ($boysTotal['avg'] !== null && $girlsTotal['avg'] !== null)
                 <?php if (!empty($row['level'])): ?>
                   <span class="text-muted small ms-1"><?= View::e($row['level']) ?></span>
                 <?php endif; ?>
+                <a class="ms-2 small d-print-none" title="Full boys and girls analysis for <?= View::e($row['name']) ?>"
+                   href="<?= $base ?><?= $portalPrefix ?>/results/analysis/<?= (int) $classId ?>?<?= View::e($qs) ?>">
+                  <i class="bi bi-clipboard-data"></i> Analysis
+                </a>
               </td>
               <td class="text-center"><?= (int) $b['n'] ?></td>
               <td class="text-center"><?= $fmtPct($b['avg']) ?></td>

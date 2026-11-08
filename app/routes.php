@@ -198,9 +198,11 @@ $router->post('/hod/marks/autosave-cell', 'MarksController@autosaveCell', [$canE
 $router->get('/results',              'ResultsController@index',      [$canViewResults]);
 $router->get('/results/class/{id}', 'ResultsController@classView',   [$canViewResults]);
 $router->get('/results/gender',     'ResultsController@genderPerformance', [$canViewResults]);
+$router->get('/results/analysis/{id}', 'ResultsController@classAnalysis', [$canViewResults]);
 $router->get('/hod/results',              'ResultsController@index',      [$canViewResults]);
 $router->get('/hod/results/class/{id}', 'ResultsController@classView',   [$canViewResults]);
 $router->get('/hod/results/gender', 'ResultsController@genderPerformance', [$canViewResults]);
+$router->get('/hod/results/analysis/{id}', 'ResultsController@classAnalysis', [$canViewResults]);
 
 // Subject performance analytics (per-subject ranking, per class and school-wide)
 $router->get('/analytics',     'AnalyticsController@index', [$canViewAnalytics]);

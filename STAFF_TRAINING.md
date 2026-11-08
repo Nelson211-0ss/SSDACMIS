@@ -81,6 +81,7 @@ Staff enter marks for the subjects and classes they teach. A Head of Department 
 
 - **Marks entry** is scoped to what you teach — you won't see, or accidentally edit, another teacher's subject.
 - **Results roll up automatically** — class standings and a gender performance breakdown, with no manual tallying.
+- **Class analysis** — for any class and term (Results → Analysis): boys vs girls averages, pass rates, grade distribution, subject-by-subject means, term-by-term trend and the best boys and girls, ready to print.
 
 ---
 
