@@ -8683,7 +8683,7 @@ html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) bright
 }
 
 /* ==========================================================================
-   Marks entry picker (marks/index.php) — flat, card-free, one screen.
+   Marks entry picker (marks/index.php) — flat class cards, one screen.
    On desktop the page never scrolls: the board fills the main area and, if
    a school has more classes than fit, only that form's column scrolls.
    ========================================================================== */
@@ -8704,25 +8704,29 @@ html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) bright
 .marks-board__hint i { font-size: .75rem; }
 .marks-board__empty { margin: 1rem 0; color: var(--text-muted); }
 
-/* Four forms side by side, separated by hairlines — no boxes. */
+/* Four forms side by side; each class inside is a flat card. */
 .marks-board__forms {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem;
 }
 .marks-form { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.marks-form + .marks-form { border-left: 1px solid var(--border); }
 .marks-form__head {
-  margin: 0; padding: .45rem .75rem; font-size: .85rem; font-weight: 700; color: var(--text);
+  margin: 0 0 .4rem; padding: 0 .1rem .3rem; font-size: .85rem; font-weight: 700; color: var(--text);
   display: flex; align-items: baseline; justify-content: space-between; gap: .5rem;
-  border-bottom: 1px solid var(--border); background: var(--surface-2);
+  border-bottom: 2px solid var(--accent);
 }
 .marks-form__meta { font-size: .72rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
-.marks-form__body { padding: .25rem .75rem .5rem; }
+.marks-form__body { display: flex; flex-direction: column; gap: .5rem; padding: 0 0 .25rem; }
 .marks-form__empty { margin: .5rem 0; font-size: .78rem; color: var(--text-muted); }
 
-.marks-class { padding: .45rem 0; }
-.marks-class + .marks-class { border-top: 1px dashed var(--border); }
-.marks-class__head { display: flex; align-items: center; gap: .4rem; margin-bottom: .25rem; }
+.marks-class {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: .45rem .6rem .55rem; transition: border-color .15s;
+}
+.marks-class:hover { border-color: var(--border-strong); }
+.marks-class__head {
+  display: flex; align-items: center; gap: .4rem;
+  margin: 0 0 .35rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border);
+}
 .marks-class__name { font-weight: 700; font-size: .85rem; color: var(--text); }
 .marks-class__count {
   font-size: .68rem; font-weight: 600; color: var(--text-muted);
@@ -8760,18 +8764,16 @@ html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) bright
   margin: 0; padding: .35rem 0; font-size: .85rem; font-weight: 700; color: var(--text);
   border-bottom: 1px solid var(--border);
 }
-.marks-assign { columns: 3 20rem; column-gap: 1.5rem; padding-top: .25rem; }
-.marks-assign__row { break-inside: avoid; padding: .2rem 0; margin: 0; }
-.marks-assign__class { font-weight: 700; font-size: .8rem; margin-right: .25rem; min-width: 5.5rem; }
+.marks-assign {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: .5rem; align-content: start; padding-top: .5rem;
+}
 
 @media (max-width: 1199.98px) {
   .marks-board__forms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .marks-form:nth-child(3) { border-left: 0; }
-  .marks-form:nth-child(n+3) { border-top: 1px solid var(--border); }
 }
 @media (max-width: 575.98px) {
   .marks-board__forms { grid-template-columns: 1fr; }
-  .marks-form + .marks-form { border-left: 0; border-top: 1px solid var(--border); }
 }
 
 /* Fit to the screen on desktop: the same chain the report page uses. */

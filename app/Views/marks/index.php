@@ -6,7 +6,8 @@ $title = 'Marks';
 /*
  * Marks entry picker. Built to fit one screen on a laptop/desktop: a single
  * header row (title + period), then the four forms side by side, each class
- * as a few dense lines of subject links. No cards, no hero, no gradients.
+ * a flat card (hairline border, no shadow) holding a few dense lines of
+ * subject links. No hero, no gradients.
  * If a school has more classes than fit, only the form column scrolls —
  * never the page (see .marks-board in app.css).
  */
@@ -162,10 +163,12 @@ $hasDept = !empty($departments);
       </h3>
       <div class="marks-assign">
         <?php foreach ($assignByClass as $cid => $grp): ?>
-          <div class="marks-class__row marks-assign__row">
-            <span class="marks-assign__class">
-              <?= View::e($grp['name']) ?> <span class="marks-class__count" title="Students"><?= (int) $grp['count'] ?></span>
-            </span>
+          <div class="marks-class marks-assign__card">
+            <div class="marks-class__head">
+              <span class="marks-class__name"><?= View::e($grp['name']) ?></span>
+              <span class="marks-class__count" title="Students"><?= (int) $grp['count'] ?></span>
+            </div>
+            <div class="marks-class__row">
             <?php foreach ($grp['subjects'] as $a):
               $url = $base . $portalPrefix . '/marks/entry?class_id=' . (int) $a['class_id']
                    . '&subject_id=' . (int) $a['subject_id'] . $periodQs;
@@ -176,6 +179,7 @@ $hasDept = !empty($departments);
                 <?= View::e($subLabel($a['subject_code'] ?? null, (string) $a['subject_name'])) ?>
               </a>
             <?php endforeach; ?>
+            </div>
           </div>
         <?php endforeach; ?>
       </div>
