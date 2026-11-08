@@ -35,6 +35,7 @@ $hodNav = [
     ['Department Marks',  'bi-pencil-square',     '/hod/marks',         ['staff','hod'], '/hod/marks'],
     ['Department Reports','bi-file-earmark-text', '/hod/reports',       ['staff','hod'], '/hod/reports'],
     ['Results',           'bi-graph-up-arrow',    '/hod/results',       ['staff','hod'], '/hod/results'],
+    ['Class Performance', 'bi-bar-chart-steps',   '/hod/results/gender', ['staff','hod'], '/hod/results/gender'],
     ['Analytics',         'bi-bar-chart-line',    '/hod/analytics',     ['staff','hod'], '/hod/analytics'],
     ['Announcements',     'bi-megaphone',         '/hod/announcements', ['staff','hod'], '/hod/announcements'],
 ];
@@ -90,6 +91,7 @@ $mainNav = [
     ]],
 
     ['kind' => 'group', 'label' => 'Insights', 'icon' => 'bi-bar-chart-line', 'items' => [
+        ['Class Performance', 'bi-bar-chart-steps', '/results/gender', ['admin','school_admin','staff'], '/results/gender', 'results.view'],
         ['Analytics', 'bi-bar-chart-line',    '/analytics', ['admin','school_admin','staff'],           '/analytics', 'analytics.view'],
         ['Class Statistics', 'bi-pie-chart',  '/class-statistics', ['school_admin'],                 '/class-statistics'],
         ['Reports',   'bi-file-earmark-text', '/reports',   ['admin','school_admin','staff','student'], '/reports',   'reports.view'],
@@ -134,9 +136,29 @@ $navVisible = static function (array $item) use ($role): bool {
     $perm = $item[5] ?? null;
     return $perm === null || Permission::allows($perm);
 };
-$navIsActive = static function (array $item) use ($relPath): bool {
-    return $relPath === $item[2]
-        || str_starts_with($relPath, rtrim($item[4], '/') . '/');
+// Every menu prefix, so an entry stays unlit when a longer one also matches
+// (/results/gender lights "Class Performance", not "Results" as well).
+$navPrefixes = [];
+foreach ($mainNav as $navEntry) {
+    $navItems = ($navEntry['kind'] ?? '') === 'link' ? [$navEntry['item']] : ($navEntry['items'] ?? []);
+    foreach ($navItems as $navItem) {
+        $navPrefixes[] = rtrim($navItem[4], '/');
+    }
+}
+$navIsActive = static function (array $item) use ($relPath, $navPrefixes): bool {
+    if ($relPath === $item[2]) {
+        return true;
+    }
+    $p = rtrim($item[4], '/');
+    if (!str_starts_with($relPath, $p . '/')) {
+        return false;
+    }
+    foreach ($navPrefixes as $q) {
+        if (strlen($q) > strlen($p) && ($relPath === $q || str_starts_with($relPath, $q . '/'))) {
+            return false;
+        }
+    }
+    return true;
 };
 
 $navTree = [];

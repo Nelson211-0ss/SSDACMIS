@@ -25,7 +25,7 @@ $qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage='
     </div>
     <div class="d-flex flex-wrap gap-2">
       <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results/gender?<?= View::e($qs) ?>">
-        <i class="bi bi-bar-chart-steps"></i> Gender performance
+        <i class="bi bi-bar-chart-steps"></i> Performance by class &amp; gender
       </a>
       <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print this page">
         <i class="bi bi-printer"></i> Print

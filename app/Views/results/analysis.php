@@ -93,7 +93,7 @@ $gap = ($b['avg'] !== null && $g['avg'] !== null) ? $g['avg'] - $b['avg'] : null
         <i class="bi bi-table"></i> Class results sheet
       </a>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results/gender?<?= View::e($qs) ?>">
-        <i class="bi bi-bar-chart-steps"></i> All classes
+        <i class="bi bi-bar-chart-steps"></i> All classes by gender
       </a>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results?<?= View::e($qs) ?>">
         <i class="bi bi-arrow-left"></i> Classes

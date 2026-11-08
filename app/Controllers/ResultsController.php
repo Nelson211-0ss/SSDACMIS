@@ -8,6 +8,7 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Core\SchoolIdentity;
 use App\Services\AcademicMarking;
+use App\Services\ClassRoster;
 use App\Services\TermResultsService;
 
 /**
@@ -311,25 +312,8 @@ class ResultsController extends Controller
 
         TermResultsService::ensureTables();
 
-        // Grading tiers once, highest first; grading every score through
-        // AcademicMarking::letterGrade() would re-read settings per call.
-        $tiers = AcademicMarking::gradingTiers();
-        usort($tiers, static fn ($a, $b) => $b['min'] <=> $a['min']);
-        $gradeLabels = array_values(array_unique(array_map(static fn ($t) => (string) $t['label'], $tiers)));
-        $gradeOf = static function (float $pct) use ($tiers): string {
-            foreach ($tiers as $t) {
-                if ($pct >= $t['min'] && $pct <= $t['max']) {
-                    return (string) $t['label'];
-                }
-            }
-
-            return '';
-        };
-        $empty = static fn (): array => [
-            'male'   => self::emptyStats($gradeLabels),
-            'female' => self::emptyStats($gradeLabels),
-            'all'    => self::emptyStats($gradeLabels),
-        ];
+        [$gradeLabels, $gradeOf] = self::gradeResolver();
+        $empty = static fn (): array => self::emptyGroups($gradeLabels);
 
         // ---- Students and their overall averages -------------------------
         $students = Database::query(
@@ -526,9 +510,46 @@ class ResultsController extends Controller
     }
 
     /**
-     * Boys-vs-girls performance breakdown: student counts, average %, and
-     * pass rate (>= 50%), aggregated per class and — for the super admin,
-     * who is not scoped to a single school — per school as well.
+     * Grade labels (highest first) and a pct -> label function. Tiers are
+     * read once; AcademicMarking::letterGrade() re-reads settings per call.
+     *
+     * @return array{0:list<string>,1:callable(float):string}
+     */
+    private static function gradeResolver(): array
+    {
+        $tiers = AcademicMarking::gradingTiers();
+        usort($tiers, static fn ($a, $b) => $b['min'] <=> $a['min']);
+        $labels = array_values(array_unique(array_map(static fn ($t) => (string) $t['label'], $tiers)));
+        $gradeOf = static function (float $pct) use ($tiers): string {
+            foreach ($tiers as $t) {
+                if ($pct >= $t['min'] && $pct <= $t['max']) {
+                    return (string) $t['label'];
+                }
+            }
+
+            return '';
+        };
+
+        return [$labels, $gradeOf];
+    }
+
+    /** Boys / girls / everyone, each an empty stats bucket. */
+    private static function emptyGroups(array $gradeLabels): array
+    {
+        return [
+            'male'   => self::emptyStats($gradeLabels),
+            'female' => self::emptyStats($gradeLabels),
+            'all'    => self::emptyStats($gradeLabels),
+        ];
+    }
+
+    /**
+     * Performance statistics class by class, boys and girls: enrolled, sat,
+     * not sat, average, highest, lowest, passed, failed, pass rate and grade
+     * spread — for every class, the whole school, and (super admin, who is
+     * not scoped to one school) each school.
+     *
+     * GET /results/gender?year=&term=&stage=
      */
     public function genderPerformance(): string
     {
@@ -540,12 +561,16 @@ class ResultsController extends Controller
         }
 
         TermResultsService::ensureTables();
+        [$gradeLabels, $gradeOf] = self::gradeResolver();
+        $noEnrolment = ['male' => 0, 'female' => 0, 'all' => 0];
 
-        $classIds = $this->visibleClassIds();
-        $byClass  = [];
-        $totals   = ['male' => self::emptyGenderBucket(), 'female' => self::emptyGenderBucket()];
-        $bySchool = [];
+        $classIds   = $this->visibleClassIds();
+        $byClass    = [];
+        $totals     = self::emptyGroups($gradeLabels);
+        $totalsEnrolled = $noEnrolment;
+        $bySchool   = [];
         $otherCount = 0;
+        $superAdmin = Auth::schoolId() === null;
 
         if ($classIds !== []) {
             $ph = implode(',', array_fill(0, count($classIds), '?'));
@@ -555,124 +580,94 @@ class ResultsController extends Controller
                 $classIds
             )->fetchAll();
             foreach ($classRows as $c) {
-                $byClass[(int) $c['id']] = [
-                    'name'  => $c['name'],
-                    'level' => $c['level'],
-                    'male'   => self::emptyGenderBucket(),
-                    'female' => self::emptyGenderBucket(),
+                $cid = (int) $c['id'];
+                $byClass[$cid] = [
+                    'name'     => $c['name'],
+                    'level'    => $c['level'],
+                    'stats'    => self::emptyGroups($gradeLabels),
+                    'enrolled' => $noEnrolment,
                 ];
-            }
 
-            $params = array_merge($classIds, [$year, $term, $stage]);
-
-            $classGender = Database::query(
-                "SELECT tsr.class_id, s.gender,
-                        COUNT(*) AS n,
-                        AVG(tsr.average_percentage) AS avg_pct,
-                        SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
-                 FROM term_student_results tsr
-                 JOIN students s ON s.id = tsr.student_id
-                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
-                       AND s.gender IN ('male','female')
-                 GROUP BY tsr.class_id, s.gender",
-                $params
-            )->fetchAll();
-            foreach ($classGender as $r) {
-                $cid = (int) $r['class_id'];
-                if (!isset($byClass[$cid])) {
-                    continue;
-                }
-                $byClass[$cid][$r['gender']] = self::genderBucketFromRow($r);
-            }
-
-            $overall = Database::query(
-                "SELECT s.gender,
-                        COUNT(*) AS n,
-                        AVG(tsr.average_percentage) AS avg_pct,
-                        SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
-                 FROM term_student_results tsr
-                 JOIN students s ON s.id = tsr.student_id
-                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
-                       AND s.gender IN ('male','female')
-                 GROUP BY s.gender",
-                $params
-            )->fetchAll();
-            foreach ($overall as $r) {
-                $totals[$r['gender']] = self::genderBucketFromRow($r);
-            }
-
-            $otherCount = (int) (Database::query(
-                "SELECT COUNT(*) AS n
-                 FROM term_student_results tsr
-                 JOIN students s ON s.id = tsr.student_id
-                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
-                       AND s.gender = 'other'",
-                $params
-            )->fetch()['n'] ?? 0);
-
-            // Per-school breakdown only makes sense for the super admin, who
-            // isn't already scoped to one school — everyone else's "totals"
-            // above already ARE their one school's numbers.
-            if (Auth::schoolId() === null) {
-                $schoolRows = Database::query(
-                    "SELECT sch.id AS school_id, sch.name AS school_name, s.gender,
-                            COUNT(*) AS n,
-                            AVG(tsr.average_percentage) AS avg_pct,
-                            SUM(CASE WHEN tsr.average_percentage >= 50 THEN 1 ELSE 0 END) AS passed
-                     FROM term_student_results tsr
-                     JOIN students s ON s.id = tsr.student_id
-                     JOIN schools sch ON sch.id = s.school_id
-                     WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
-                           AND s.gender IN ('male','female')
-                     GROUP BY sch.id, sch.name, s.gender
-                     ORDER BY sch.name",
-                    $params
+                // Enrolment as the class stood that year (see ClassRoster),
+                // so "not sat" stays right for a past term after promotions.
+                [$rosterSql, $rosterParams] = ClassRoster::where($cid, $year, 's');
+                $enrolRows = Database::query(
+                    "SELECT s.gender, COUNT(*) AS n FROM students s WHERE {$rosterSql} GROUP BY s.gender",
+                    $rosterParams
                 )->fetchAll();
-                foreach ($schoolRows as $r) {
-                    $sid = (int) $r['school_id'];
-                    if (!isset($bySchool[$sid])) {
-                        $bySchool[$sid] = [
-                            'name'   => $r['school_name'],
-                            'male'   => self::emptyGenderBucket(),
-                            'female' => self::emptyGenderBucket(),
-                        ];
+                foreach ($enrolRows as $e) {
+                    foreach (self::bucketsFor((string) $e['gender']) as $b) {
+                        $byClass[$cid]['enrolled'][$b] += (int) $e['n'];
+                        $totalsEnrolled[$b] += (int) $e['n'];
                     }
-                    $bySchool[$sid][$r['gender']] = self::genderBucketFromRow($r);
                 }
             }
+
+            $rows = Database::query(
+                "SELECT tsr.class_id, tsr.average_percentage, s.gender, s.school_id,
+                        sch.name AS school_name
+                 FROM term_student_results tsr
+                 JOIN students s ON s.id = tsr.student_id
+                 LEFT JOIN schools sch ON sch.id = s.school_id
+                 WHERE tsr.class_id IN ($ph) AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
+                   AND tsr.average_percentage IS NOT NULL",
+                array_merge($classIds, [$year, $term, $stage])
+            )->fetchAll();
+
+            foreach ($rows as $r) {
+                $cid    = (int) $r['class_id'];
+                $avg    = (float) $r['average_percentage'];
+                $grade  = $gradeOf($avg);
+                $gender = (string) $r['gender'];
+                if ($gender !== 'male' && $gender !== 'female') {
+                    $otherCount++;
+                }
+                $sid = (int) $r['school_id'];
+                if ($superAdmin && !isset($bySchool[$sid])) {
+                    $bySchool[$sid] = [
+                        'name'  => (string) ($r['school_name'] ?? ('School #' . $sid)),
+                        'stats' => self::emptyGroups($gradeLabels),
+                    ];
+                }
+                foreach (self::bucketsFor($gender) as $b) {
+                    if (isset($byClass[$cid])) {
+                        self::addScore($byClass[$cid]['stats'][$b], $avg, $grade);
+                    }
+                    self::addScore($totals[$b], $avg, $grade);
+                    if ($superAdmin) {
+                        self::addScore($bySchool[$sid]['stats'][$b], $avg, $grade);
+                    }
+                }
+            }
+
+            foreach ($byClass as &$row) {
+                $row['stats'] = array_map([self::class, 'finishStats'], $row['stats']);
+            }
+            unset($row);
+            foreach ($bySchool as &$row) {
+                $row['stats'] = array_map([self::class, 'finishStats'], $row['stats']);
+            }
+            unset($row);
+            uasort($bySchool, static fn ($x, $y) => strcmp($x['name'], $y['name']));
         }
+        $totals = array_map([self::class, 'finishStats'], $totals);
 
         return $this->view('results/gender', [
-            'year'       => $year,
-            'term'       => $term,
-            'terms'      => self::TERMS,
-            'years'      => self::selectableYears(),
-            'stage'      => $stage,
-            'stages'     => AcademicMarking::stages(),
-            'stageLabel' => AcademicMarking::stageLabel($stage),
-            'byClass'    => $byClass,
-            'bySchool'   => $bySchool,
-            'totals'     => $totals,
-            'otherCount' => $otherCount,
-            'schoolName' => SchoolIdentity::name() ?: App::config('app.name'),
+            'year'           => $year,
+            'term'           => $term,
+            'terms'          => self::TERMS,
+            'years'          => self::selectableYears(),
+            'stage'          => $stage,
+            'stages'         => AcademicMarking::stages(),
+            'stageLabel'     => AcademicMarking::stageLabel($stage),
+            'gradeLabels'    => $gradeLabels,
+            'byClass'        => $byClass,
+            'bySchool'       => count($bySchool) > 1 ? $bySchool : [],
+            'totals'         => $totals,
+            'totalsEnrolled' => $totalsEnrolled,
+            'otherCount'     => $otherCount,
+            'passMark'       => self::PASS_MARK,
+            'schoolName'     => SchoolIdentity::name() ?: App::config('app.name'),
         ]);
-    }
-
-    /** @return array{n:int,avg:?float,passed:int,passPct:?float} */
-    private static function emptyGenderBucket(): array
-    {
-        return ['n' => 0, 'avg' => null, 'passed' => 0, 'passPct' => null];
-    }
-
-    /** @return array{n:int,avg:?float,passed:int,passPct:?float} */
-    private static function genderBucketFromRow(array $r): array
-    {
-        $n = (int) $r['n'];
-        return [
-            'n'       => $n,
-            'avg'     => $r['avg_pct'] !== null ? (float) $r['avg_pct'] : null,
-            'passed'  => (int) $r['passed'],
-            'passPct' => $n > 0 ? ((float) $r['passed'] / $n) * 100 : null,
-        ];
     }
 }

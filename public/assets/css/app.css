@@ -8551,3 +8551,19 @@ html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) bright
 @media print {
   .class-analysis .results-table-panel { break-inside: avoid; }
 }
+
+/* ---- Performance by class and gender (results/gender.php) ---- */
+.perf-stats-table tbody.perf-class { border-top: 2px solid var(--border, #dee2e6); }
+.perf-stats-table .perf-class__name { min-width: 8.5rem; background: var(--surface-2, #f8f9fa); }
+.perf-stats-table .perf-group { font-weight: 600; white-space: nowrap; }
+.perf-stats-table .perf-group--male   { color: #2563eb; }
+.perf-stats-table .perf-group--female { color: #db2777; }
+.perf-stats-table tr:has(.perf-group--all) td { background: rgba(100, 116, 139, .07); }
+.perf-stats-table .perf-class--school .perf-class__name { font-weight: 700; }
+[data-bs-theme="dark"] .perf-stats-table .perf-class__name { background: rgba(255, 255, 255, .04); }
+[data-bs-theme="dark"] .perf-stats-table .perf-group--male   { color: #93c5fd; }
+[data-bs-theme="dark"] .perf-stats-table .perf-group--female { color: #f9a8d4; }
+@media print {
+  .perf-stats-table tbody.perf-class { break-inside: avoid; }
+  .perf-stats-table { font-size: 9pt; }
+}
