@@ -10,11 +10,13 @@ $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true)
 $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
 <div class="msheet-header">
-  <h4 class="mb-0"><i class="bi bi-pencil-square"></i>
-    <?= View::e($subject['name']) ?>
-    <span class="text-muted fw-normal">&middot;</span>
-    <?= View::e($class['name']) ?>
-  </h4>
+  <div class="msheet-title">
+    <span class="msheet-title__icon"><i class="bi bi-pencil-square"></i></span>
+    <div class="msheet-title__text">
+      <h4 class="mb-0"><?= View::e($subject['name']) ?></h4>
+      <div class="msheet-title__sub"><?= View::e($class['name']) ?> &middot; <?= View::e($term) ?>, <?= View::e($year) ?></div>
+    </div>
+  </div>
   <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/marks?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
     <i class="bi bi-arrow-left"></i> Back
   </a>
@@ -48,7 +50,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
     </select>
   </label>
   <button class="btn btn-outline-secondary btn-sm msheet-period__reload" title="Reload with the selected period">
-    <i class="bi bi-arrow-clockwise"></i><span class="d-none d-sm-inline"> Reload</span>
+    <i class="bi bi-arrow-clockwise"></i> Reload
   </button>
 </form>
 
@@ -102,18 +104,17 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
         </div>
       </div>
       <div class="marks-sheet-scroll">
-        <table class="marks-sheet">
+        <table class="marks-sheet marks-sheet--entry">
           <thead>
             <tr>
               <th class="msheet-sticky-1">#</th>
-              <th class="msheet-sticky-2">Admission</th>
-              <th class="msheet-sticky-3">Student</th>
-              <th class="text-center" title="Mid-term (max 30)">MT</th>
-              <th class="text-center">Gr</th>
-              <th class="text-center" title="End of term (max 70)">EOT</th>
-              <th class="text-center">Gr</th>
-              <th class="text-center">Total</th>
-              <th class="text-center">Gr</th>
+              <th class="msheet-sticky-name">Student</th>
+              <th class="msheet-score-col">Mid-term <span class="msheet-max">/30</span></th>
+              <th class="msheet-grade-col">Grade</th>
+              <th class="msheet-score-col">End of term <span class="msheet-max">/70</span></th>
+              <th class="msheet-grade-col">Grade</th>
+              <th class="msheet-score-col">Total <span class="msheet-max">/100</span></th>
+              <th class="msheet-grade-col">Grade</th>
             </tr>
           </thead>
           <tbody>
@@ -125,9 +126,11 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
               <tr data-row="<?= $i ?>"
                   data-search="<?= View::e(mb_strtolower($st['first_name'] . ' ' . $st['last_name'] . ' ' . $st['admission_no'])) ?>">
                 <td class="msheet-sticky-1 msheet-row-num"><?= $i + 1 ?></td>
-                <td class="msheet-sticky-2 font-monospace small"><?= View::e($st['admission_no']) ?></td>
-                <td class="msheet-sticky-3"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
-                <td>
+                <td class="msheet-sticky-name">
+                  <span class="msheet-student__name"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></span>
+                  <span class="msheet-student__adm"><?= View::e($st['admission_no']) ?></span>
+                </td>
+                <td class="msheet-score-col">
                   <input type="text" inputmode="decimal" autocomplete="off"
                          class="msheet-input score-mid"
                          data-row="<?= $i ?>" data-col="mid"
@@ -137,8 +140,8 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                          placeholder="—" aria-label="Mid-term mark, max 30">
                   <span class="msheet-cell-err"></span>
                 </td>
-                <td class="text-center"><span class="badge bg-secondary grade-mid">—</span></td>
-                <td>
+                <td class="msheet-grade-col"><span class="badge bg-secondary grade-mid">—</span></td>
+                <td class="msheet-score-col">
                   <input type="text" inputmode="decimal" autocomplete="off"
                          class="msheet-input score-end"
                          data-row="<?= $i ?>" data-col="end"
@@ -148,9 +151,9 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                          placeholder="—" aria-label="End of term mark, max 70">
                   <span class="msheet-cell-err"></span>
                 </td>
-                <td class="text-center"><span class="badge bg-secondary grade-end">—</span></td>
-                <td class="text-center font-monospace small"><span class="score-total-val">—</span></td>
-                <td class="text-center"><span class="badge bg-secondary grade-total">—</span></td>
+                <td class="msheet-grade-col"><span class="badge bg-secondary grade-end">—</span></td>
+                <td class="msheet-score-col msheet-total"><span class="score-total-val">—</span></td>
+                <td class="msheet-grade-col"><span class="badge bg-secondary grade-total">—</span></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -171,7 +174,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
           <button type="submit" class="btn btn-primary ms-auto" data-sheet-submit><i class="bi bi-save"></i> Save marks</button>
         </div>
         <div class="marks-sheet-footer__row marks-sheet-footer__row--hint">
-          MT &le; 30 &middot; EOT &le; 70 &middot; saves automatically as you type &middot; leave blank to skip &middot; &uarr;&darr; or Enter moves rows
+          Mid-term out of 30 &middot; End of term out of 70 &middot; saves automatically as you type &middot; leave blank to skip &middot; &uarr;&darr; or Enter moves rows
         </div>
       </div>
     </div>
@@ -226,14 +229,13 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
         </div>
       </div>
       <div class="marks-sheet-scroll">
-        <table class="marks-sheet">
+        <table class="marks-sheet marks-sheet--entry">
           <thead>
             <tr>
               <th class="msheet-sticky-1">#</th>
-              <th class="msheet-sticky-2">Admission</th>
-              <th class="msheet-sticky-3">Student</th>
-              <th class="text-center">Score (max <?= (int) $examMax ?>)</th>
-              <th class="text-center">Grade</th>
+              <th class="msheet-sticky-name">Student</th>
+              <th class="msheet-score-col"><?= View::e($exams[$examType]) ?> <span class="msheet-max">/<?= (int) $examMax ?></span></th>
+              <th class="msheet-grade-col">Grade</th>
             </tr>
           </thead>
           <tbody>
@@ -243,9 +245,11 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
               <tr data-row="<?= $i ?>"
                   data-search="<?= View::e(mb_strtolower($st['first_name'] . ' ' . $st['last_name'] . ' ' . $st['admission_no'])) ?>">
                 <td class="msheet-sticky-1 msheet-row-num"><?= $i + 1 ?></td>
-                <td class="msheet-sticky-2 font-monospace small"><?= View::e($st['admission_no']) ?></td>
-                <td class="msheet-sticky-3"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></td>
-                <td>
+                <td class="msheet-sticky-name">
+                  <span class="msheet-student__name"><?= View::e($st['first_name'] . ' ' . $st['last_name']) ?></span>
+                  <span class="msheet-student__adm"><?= View::e($st['admission_no']) ?></span>
+                </td>
+                <td class="msheet-score-col">
                   <input type="text" inputmode="decimal" autocomplete="off"
                          class="msheet-input score-input"
                          data-row="<?= $i ?>" data-col="score"
@@ -256,7 +260,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
                          placeholder="—" aria-label="<?= View::e($examHint) ?>">
                   <span class="msheet-cell-err"></span>
                 </td>
-                <td class="text-center"><span class="badge bg-secondary grade-badge">—</span></td>
+                <td class="msheet-grade-col"><span class="badge bg-secondary grade-badge">—</span></td>
               </tr>
             <?php endforeach; ?>
           </tbody>

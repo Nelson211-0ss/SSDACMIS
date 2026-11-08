@@ -6164,6 +6164,12 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   padding: .6rem 1rem;
 }
 .marks-sheet-toolbar__row--primary { justify-content: space-between; }
+/* Keep search + "Missing marks" on one line instead of the chip dropping
+   under the search box while the row still has room. */
+@media (min-width: 768px) {
+  .marks-sheet-toolbar__row--primary > :first-child { flex: 1 1 auto; flex-wrap: nowrap !important; }
+  .marks-sheet-toolbar__row--primary .marks-sheet-search { flex: 0 1 20rem; }
+}
 .marks-sheet-toolbar__row + .marks-sheet-toolbar__row {
   border-top: 1px dashed var(--border);
 }
@@ -6184,15 +6190,19 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .marks-sheet-search i.bi-search {
   position: absolute;
-  left: .65rem;
+  left: .75rem;
+  z-index: 1;
   color: var(--text-muted);
-  font-size: .8rem;
+  font-size: .85rem;
   pointer-events: none;
 }
-.marks-sheet-search input {
+/* The enterprise shell's generic `.form-control` padding outranks a plain
+   `.marks-sheet-search input`, which put the placeholder under the icon. */
+.marks-sheet-search input,
+.app-shell .marks-sheet-search input.form-control {
   width: 100%;
-  padding-left: 1.85rem;
-  padding-right: 1.85rem;
+  padding-left: 2.1rem;
+  padding-right: 2rem;
 }
 .marks-sheet-search__clear {
   position: absolute;
@@ -6307,10 +6317,10 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   gap: .4rem;
 }
 .marks-sheet-fill__label { font-size: .78rem; color: var(--text-muted); white-space: nowrap; }
-.marks-sheet-fill input.form-control {
-  width: 5rem;
-  padding-top: .25rem;
-  padding-bottom: .25rem;
+.marks-sheet-fill input.form-control,
+.app-shell .marks-sheet-fill input.form-control {
+  width: 5.5rem;
+  padding: .3rem .6rem;
 }
 
 /*
@@ -6365,12 +6375,14 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .marks-sheet tbody tr:hover .msheet-sticky-1,
 .marks-sheet tbody tr:hover .msheet-sticky-2,
-.marks-sheet tbody tr:hover .msheet-sticky-3 {
+.marks-sheet tbody tr:hover .msheet-sticky-3,
+.marks-sheet tbody tr:hover .msheet-sticky-name {
   background: #f8fafc;
 }
 [data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-1,
 [data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-2,
-[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-3 {
+[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-3,
+[data-bs-theme="dark"] .marks-sheet tbody tr:hover .msheet-sticky-name {
   background: var(--surface-2);
 }
 .marks-sheet thead .msheet-sticky-1,
@@ -6383,9 +6395,61 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 .marks-sheet .msheet-sticky-2 { left: 2.4rem; width: 7.5rem; min-width: 7.5rem; }
 .marks-sheet .msheet-sticky-3 { left: 9.9rem; min-width: 8.5rem; }
 
+/* ---------- Enter Marks sheet (single subject) ----------
+   Two frozen columns instead of three: the admission number sits under the
+   student's name rather than in its own column, which leaves room for the
+   score columns on narrow screens. Each score is grouped with its grade by
+   a divider, and headers spell out the exam and its maximum. */
+.marks-sheet--entry .msheet-sticky-name {
+  position: sticky;
+  left: 2.4rem;
+  z-index: 1;
+  min-width: 13rem;
+  background: var(--surface);
+  box-shadow: 1px 0 0 var(--border);
+}
+.marks-sheet--entry thead .msheet-sticky-name { z-index: 5; background: var(--surface-2); }
+.marks-sheet--entry tbody td { padding: .45rem .6rem; }
+.marks-sheet--entry .msheet-score-col { text-align: center; border-left: 1px solid var(--border); }
+.marks-sheet--entry .msheet-grade-col { text-align: center; width: 4.5rem; }
+.marks-sheet--entry thead .msheet-score-col,
+.marks-sheet--entry thead .msheet-grade-col { text-align: center; }
+.marks-sheet--entry .msheet-max {
+  color: var(--text-subtle);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.marks-sheet--entry .badge {
+  min-width: 2rem;
+  padding: .4em .55em;
+  font-size: .78rem;
+}
+.msheet-student__name {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.msheet-student__adm {
+  display: block;
+  font-size: .74rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.msheet-total .score-total-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Capped and centred: stretched to the full cell, a 2-digit mark sat in a
+   box hundreds of pixels wide and pushed its grade far off to the side. */
 .msheet-input {
+  display: block;
   width: 100%;
   min-width: 4rem;
+  max-width: 6.5rem;
+  margin-inline: auto;
   text-align: center;
   font-variant-numeric: tabular-nums;
   min-height: 2.3rem;
@@ -6465,6 +6529,46 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 .msheet-period__field .form-select { width: auto; }
 .msheet-period__reload { flex-shrink: 0; margin-left: auto; }
+/* The global `.form-select { background: ... }` shorthand drops Bootstrap's
+   chevron, so these read as plain text boxes. Put the arrow back here. */
+.app-shell .msheet-period .form-select,
+.app-shell .marks-sheet-fill .form-select {
+  background-image: var(--bs-form-select-bg-img);
+  background-repeat: no-repeat;
+  background-position: right .6rem center;
+  background-size: 14px 10px;
+  padding-right: 2rem;
+}
+@media (min-width: 576px) {
+  .app-shell .msheet-period .form-select {
+    font-size: .875rem;
+    padding-top: .35rem;
+    padding-bottom: .35rem;
+    padding-left: .7rem;
+    border-radius: var(--radius-sm);
+  }
+}
+
+.msheet-title {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+}
+.msheet-title__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  background: rgba(var(--accent-rgb), .1);
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+.msheet-title__text { min-width: 0; }
+.msheet-title h4 { font-size: 1.2rem; line-height: 1.25; }
+.msheet-title__sub { font-size: .82rem; color: var(--text-muted); }
 
 .marks-sheet-footer {
   display: flex;
@@ -6485,8 +6589,18 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
 }
 
 @media (max-width: 575.98px) {
-  .msheet-period { justify-content: space-between; }
-  .msheet-period__reload { margin-left: 0; }
+  .msheet-period { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .msheet-period__field { flex-direction: column; align-items: stretch; gap: .2rem; }
+  .msheet-period__field .form-select { width: 100%; }
+  .msheet-period__field:nth-of-type(3) { grid-column: 1 / -1; }
+  .msheet-period__reload { grid-column: 1 / -1; margin-left: 0; min-height: 38px; }
+  .marks-sheet-toolbar__status { justify-content: space-between; flex-wrap: nowrap; }
+  .marks-sheet-progress__bar { width: 2.5rem; }
+  .marks-sheet--entry .msheet-sticky-name { min-width: 8.5rem; max-width: 10rem; }
+  .marks-sheet--entry .msheet-student__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .marks-sheet--entry .msheet-grade-col { width: 3.25rem; }
+  .marks-sheet--entry tbody td { padding: .4rem .4rem; }
+  .marks-sheet--entry .msheet-input { max-width: 4.75rem; }
   .marks-sheet-footer__row { justify-content: space-between; }
   .marks-sheet-footer__row .btn.ms-auto { margin-left: 0 !important; width: 100%; }
 }
