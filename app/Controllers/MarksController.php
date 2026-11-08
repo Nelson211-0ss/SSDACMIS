@@ -89,7 +89,7 @@ class MarksController extends Controller
             return Database::query(
                 "SELECT ta.id, ta.class_id, ta.subject_id, ta.staff_id,
                         c.name AS class_name,
-                        sub.name AS subject_name, sub.category,
+                        sub.name AS subject_name, sub.code AS subject_code, sub.category,
                         s.first_name, s.last_name,
                         (SELECT COUNT(*) FROM students st WHERE st.class_id = ta.class_id) AS student_count
                  FROM teaching_assignments ta
@@ -106,7 +106,7 @@ class MarksController extends Controller
         return Database::query(
             "SELECT ta.id, ta.class_id, ta.subject_id, ta.staff_id,
                     c.name AS class_name,
-                    sub.name AS subject_name, sub.category,
+                    sub.name AS subject_name, sub.code AS subject_code, sub.category,
                     (SELECT COUNT(*) FROM students st WHERE st.class_id = ta.class_id) AS student_count
              FROM teaching_assignments ta
              JOIN classes  c   ON c.id   = ta.class_id
@@ -240,7 +240,7 @@ class MarksController extends Controller
         $sf = $schoolId !== null ? ' AND sub.school_id = ?' : '';
         $sp = $schoolId !== null ? [$schoolId] : [];
         return Database::query(
-            "SELECT sub.id, sub.name, sub.category
+            "SELECT sub.id, sub.name, sub.code, sub.category
              FROM subjects sub
              WHERE sub.category IN ($place) AND sub.is_offered = 1{$sf}
              ORDER BY sub.category, sub.name",

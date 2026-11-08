@@ -8681,3 +8681,125 @@ html[data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) bright
   .perf-stats-table tbody.perf-class { break-inside: avoid; }
   .perf-stats-table { font-size: 9pt; }
 }
+
+/* ==========================================================================
+   Marks entry picker (marks/index.php) — flat, card-free, one screen.
+   On desktop the page never scrolls: the board fills the main area and, if
+   a school has more classes than fit, only that form's column scrolls.
+   ========================================================================== */
+.marks-board { display: flex; flex-direction: column; gap: .5rem; }
+
+.marks-board__bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+  padding-bottom: .5rem; border-bottom: 1px solid var(--border);
+}
+.marks-board__title {
+  margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: .45rem;
+}
+.marks-board__title i { color: var(--accent); }
+.marks-board__period { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; }
+.marks-board__period .form-select { width: auto; min-width: 7rem; }
+.marks-board__hint { margin: 0; font-size: .8rem; color: var(--text-muted); }
+.marks-board__hint i { font-size: .75rem; }
+.marks-board__empty { margin: 1rem 0; color: var(--text-muted); }
+
+/* Four forms side by side, separated by hairlines — no boxes. */
+.marks-board__forms {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+}
+.marks-form { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.marks-form + .marks-form { border-left: 1px solid var(--border); }
+.marks-form__head {
+  margin: 0; padding: .45rem .75rem; font-size: .85rem; font-weight: 700; color: var(--text);
+  display: flex; align-items: baseline; justify-content: space-between; gap: .5rem;
+  border-bottom: 1px solid var(--border); background: var(--surface-2);
+}
+.marks-form__meta { font-size: .72rem; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+.marks-form__body { padding: .25rem .75rem .5rem; }
+.marks-form__empty { margin: .5rem 0; font-size: .78rem; color: var(--text-muted); }
+
+.marks-class { padding: .45rem 0; }
+.marks-class + .marks-class { border-top: 1px dashed var(--border); }
+.marks-class__head { display: flex; align-items: center; gap: .4rem; margin-bottom: .25rem; }
+.marks-class__name { font-weight: 700; font-size: .85rem; color: var(--text); }
+.marks-class__count {
+  font-size: .68rem; font-weight: 600; color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 .4rem; line-height: 1.35;
+}
+.marks-class__report { margin-left: auto; color: var(--text-muted); font-size: .85rem; padding: 0 .2rem; }
+.marks-class__report:hover { color: var(--accent); }
+.marks-class__row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .2rem; }
+
+/* Category = open the whole category on one sheet. Flat tint, no gradient. */
+.marks-cat {
+  display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .7rem; font-weight: 700; text-decoration: none;
+  padding: .12rem .45rem; border-radius: var(--radius-sm);
+  background: var(--cat-optional-bg); color: var(--cat-optional-fg);
+}
+.marks-cat i { font-size: .65rem; }
+.marks-cat--core     { background: var(--cat-core-bg);     color: var(--cat-core-fg); }
+.marks-cat--science  { background: var(--cat-science-bg);  color: var(--cat-science-fg); }
+.marks-cat--arts     { background: var(--cat-arts-bg);     color: var(--cat-arts-fg); }
+.marks-cat:hover { filter: brightness(.95); text-decoration: underline; }
+
+/* One subject = one sheet. Plain outlined text link. */
+.marks-sub {
+  font-size: .72rem; font-weight: 500; text-decoration: none; color: var(--text);
+  padding: .1rem .4rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.marks-sub:hover, .marks-sub:focus-visible { border-color: var(--accent); color: var(--accent); }
+.marks-sub--core     { border-left: 3px solid var(--cat-core-fg); }
+.marks-sub--science  { border-left: 3px solid var(--cat-science-fg); }
+.marks-sub--arts     { border-left: 3px solid var(--cat-arts-fg); }
+
+.marks-board__section-head {
+  margin: 0; padding: .35rem 0; font-size: .85rem; font-weight: 700; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.marks-assign { columns: 3 20rem; column-gap: 1.5rem; padding-top: .25rem; }
+.marks-assign__row { break-inside: avoid; padding: .2rem 0; margin: 0; }
+.marks-assign__class { font-weight: 700; font-size: .8rem; margin-right: .25rem; min-width: 5.5rem; }
+
+@media (max-width: 1199.98px) {
+  .marks-board__forms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .marks-form:nth-child(3) { border-left: 0; }
+  .marks-form:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
+@media (max-width: 575.98px) {
+  .marks-board__forms { grid-template-columns: 1fr; }
+  .marks-form + .marks-form { border-left: 0; border-top: 1px solid var(--border); }
+}
+
+/* Fit to the screen on desktop: the same chain the report page uses. */
+@media (min-width: 992px) {
+  .app-shell:has(.marks-board) {
+    height: 100dvh; min-height: 100dvh;
+    grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  }
+  .app-shell:has(.marks-board) .app-main {
+    min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column;
+    padding: 1rem 1.5rem;
+  }
+  .app-main:has(.marks-board) > .alert { flex-shrink: 0; }
+  .app-main:has(.marks-board) > .app-page {
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  }
+  .marks-board { flex: 1 1 auto; min-height: 0; }
+  .marks-board__bar, .marks-board__hint { flex-shrink: 0; }
+  .marks-board__forms { flex: 1 1 auto; min-height: 0; }
+  .marks-form__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .marks-board__assign { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .marks-board__assign .marks-assign { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  /* Department grid and assignments together: the grid gets the room. */
+  .marks-board--both .marks-board__forms { flex: 3 1 0; }
+  .marks-board--both .marks-board__assign { flex: 1 1 0; }
+}
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  /* Two rows of forms: each row shares the height. */
+  .marks-board__forms { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+}

@@ -9,6 +9,7 @@ $subjectCat = (string) ($subject['category'] ?? '');
 $streamScoped = $isUpperForm && in_array($subjectCat, ['science', 'arts'], true);
 $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
+<div class="msheet-page">
 <div class="msheet-header">
   <div class="msheet-title">
     <span class="msheet-title__icon"><i class="bi bi-pencil-square"></i></span>
@@ -17,42 +18,41 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
       <div class="msheet-title__sub"><?= View::e($class['name']) ?> &middot; <?= View::e($term) ?>, <?= View::e($year) ?></div>
     </div>
   </div>
-  <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/marks?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
+  <form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/entry" class="msheet-period" data-sheet-reload data-auto-reload>
+    <input type="hidden" name="class_id"   value="<?= (int) $class['id'] ?>">
+    <input type="hidden" name="subject_id" value="<?= (int) $subject['id'] ?>">
+    <label class="msheet-period__field">
+      <span>Year</span>
+      <select name="year" class="form-select form-select-sm" required>
+        <?php foreach ($years as $y): ?>
+          <option value="<?= View::e($y) ?>" <?= $y === $year ? 'selected' : '' ?>><?= View::e($y) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <label class="msheet-period__field">
+      <span>Term</span>
+      <select name="term" class="form-select form-select-sm" required>
+        <?php foreach ($terms as $t): ?>
+          <option <?= $t === $term ? 'selected' : '' ?>><?= View::e($t) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <label class="msheet-period__field">
+      <span>Exam</span>
+      <select name="exam_type" class="form-select form-select-sm">
+        <?php foreach ($exams as $k => $label): ?>
+          <option value="<?= $k ?>" <?= $k === $examType ? 'selected' : '' ?>><?= View::e($label) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <button class="btn btn-outline-secondary btn-sm msheet-period__reload" title="Reload with the selected period">
+      <i class="bi bi-arrow-clockwise"></i> Reload
+    </button>
+  </form>
+  <a class="btn btn-outline-secondary btn-sm msheet-back" href="<?= $base ?><?= $portalPrefix ?>/marks?year=<?= rawurlencode($year) ?>&term=<?= rawurlencode($term) ?>">
     <i class="bi bi-arrow-left"></i> Back
   </a>
 </div>
-
-<form method="get" action="<?= $base ?><?= $portalPrefix ?>/marks/entry" class="msheet-period" data-sheet-reload data-auto-reload>
-  <input type="hidden" name="class_id"   value="<?= (int) $class['id'] ?>">
-  <input type="hidden" name="subject_id" value="<?= (int) $subject['id'] ?>">
-  <label class="msheet-period__field">
-    <span>Year</span>
-    <select name="year" class="form-select form-select-sm" required>
-      <?php foreach ($years as $y): ?>
-        <option value="<?= View::e($y) ?>" <?= $y === $year ? 'selected' : '' ?>><?= View::e($y) ?></option>
-      <?php endforeach; ?>
-    </select>
-  </label>
-  <label class="msheet-period__field">
-    <span>Term</span>
-    <select name="term" class="form-select form-select-sm" required>
-      <?php foreach ($terms as $t): ?>
-        <option <?= $t === $term ? 'selected' : '' ?>><?= View::e($t) ?></option>
-      <?php endforeach; ?>
-    </select>
-  </label>
-  <label class="msheet-period__field">
-    <span>Exam</span>
-    <select name="exam_type" class="form-select form-select-sm">
-      <?php foreach ($exams as $k => $label): ?>
-        <option value="<?= $k ?>" <?= $k === $examType ? 'selected' : '' ?>><?= View::e($label) ?></option>
-      <?php endforeach; ?>
-    </select>
-  </label>
-  <button class="btn btn-outline-secondary btn-sm msheet-period__reload" title="Reload with the selected period">
-    <i class="bi bi-arrow-clockwise"></i> Reload
-  </button>
-</form>
 
 <?php if ($streamScoped): ?>
   <div class="msheet-stream-note">
@@ -73,7 +73,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
     <input type="hidden" name="term"          value="<?= View::e($term) ?>">
     <input type="hidden" name="dual_exam"     value="1">
 
-    <div class="card border-0 shadow-sm marks-sheet-card">
+    <div class="marks-sheet-card">
       <div class="marks-sheet-toolbar">
         <div class="marks-sheet-toolbar__row marks-sheet-toolbar__row--primary">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="min-width:0;">
@@ -159,7 +159,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
           </tbody>
         </table>
       </div>
-      <div class="card-footer marks-sheet-footer">
+      <div class="marks-sheet-footer">
         <div class="marks-sheet-footer__row">
           <div class="marks-sheet-fill">
             <span class="marks-sheet-fill__label">Fill blank</span>
@@ -198,7 +198,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
     <input type="hidden" name="term"       value="<?= View::e($term) ?>">
     <input type="hidden" name="exam_type"  value="<?= View::e($examType) ?>">
 
-    <div class="card border-0 shadow-sm marks-sheet-card">
+    <div class="marks-sheet-card">
       <div class="marks-sheet-toolbar">
         <div class="marks-sheet-toolbar__row marks-sheet-toolbar__row--primary">
           <div class="d-flex align-items-center gap-2 flex-wrap" style="min-width:0;">
@@ -266,7 +266,7 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
           </tbody>
         </table>
       </div>
-      <div class="card-footer marks-sheet-footer">
+      <div class="marks-sheet-footer">
         <div class="marks-sheet-footer__row">
           <div class="marks-sheet-fill">
             <span class="marks-sheet-fill__label">Fill blank cells with</span>
@@ -290,3 +290,4 @@ $tiersJson = json_encode($gradingTiers ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON
   });
   </script>
 <?php endif; ?>
+</div>
