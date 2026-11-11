@@ -15,7 +15,7 @@ $actionBadge = [
 ];
 
 $pageTitle    = 'Activity Log';
-$pageSubtitle = 'Who did what, when — across ' . ($isSuperAdmin ? 'every school' : 'your school') . '.';
+$pageSubtitle = 'Who did what, when — across ' . ($isSuperAdmin ? 'every school' : 'your school') . '. Entries older than one month are deleted automatically.';
 $pageIcon     = 'bi-clock-history';
 include dirname(__DIR__) . '/_partials/app_page_header.php';
 ?>

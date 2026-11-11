@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Core\ActivityLog;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
@@ -14,6 +15,9 @@ class ActivityLogController extends Controller
 
     public function index(): string
     {
+        // Drop anything older than a month before listing (daily, see ActivityLog).
+        ActivityLog::pruneOld();
+
         $isSuper    = Auth::role() === 'admin';
         // Only the global super admin ever sees across schools. Anyone else
         // is pinned to their own school — and an account that somehow has no
