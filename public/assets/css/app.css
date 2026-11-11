@@ -2792,6 +2792,14 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   text-transform: uppercase;
   letter-spacing: .06em;
 }
+/* Report card: square corners on everything boxy — the card itself, the
+   marks and summary tables and their cells, the grading-key panel and the
+   photo frame. Only the small grade badges keep their rounding. Last in the
+   cascade (with !important) so the per-cell radius rules above can't win. */
+.report-page--student,
+.report-page--student *:not(.report-grade-pill) {
+  border-radius: 0 !important;
+}
 /* Report card: three signatures plus the authentication seal at the right. */
 .report-signature-row--sealed {
   grid-template-columns: repeat(3, 1fr) auto;

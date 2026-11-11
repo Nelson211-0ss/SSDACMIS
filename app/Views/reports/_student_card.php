@@ -82,9 +82,9 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
     <div class="report-student__photo" style="flex: 0 0 auto;">
       <?php if ($photo !== ''): ?>
         <img src="<?= View::e($base . '/' . ltrim($photo, '/')) ?>" alt=""
-             style="width: 92px; height: 120px; object-fit: cover; border: 1px solid #1f2937; border-radius: 4px; background: #f1f5f9;">
+             style="width: 92px; height: 120px; object-fit: cover; border: 1px solid #1f2937; background: #f1f5f9;">
       <?php else: ?>
-        <div style="width: 92px; height: 120px; border: 1px dashed #94a3b8; border-radius: 4px;
+        <div style="width: 92px; height: 120px; border: 1px dashed #94a3b8;
                     display: flex; align-items: center; justify-content: center;
                     color: #64748b; font-size: 0.7rem; text-align: center; padding: 4px;
                     background: #f8fafc;">
