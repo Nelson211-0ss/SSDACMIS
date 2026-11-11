@@ -2910,6 +2910,12 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   /* Class matrix: print in A4 landscape with tighter margins so every
      subject column lands on the sheet. */
   @page landscape { size: A4 landscape; margin: 8mm 10mm; }
+
+  /* Student report card: its own page with a wider 18mm margin all round,
+     so the card sits smaller and centred on the sheet with clear white
+     space on every side. Scoped to the card so other printouts keep 12mm. */
+  @page report-card { size: A4 portrait; margin: 18mm; }
+  .report-page--student { page: report-card; }
   .report-page--print-landscape { page: landscape; }
   .report-page--print-landscape .report-table { font-size: 9pt; }
   .report-page--print-landscape .report-matrix th,
@@ -2990,8 +2996,8 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
     print-color-adjust: exact !important;
   }
   /* ---- Card height budget -------------------------------------------
-     One student card must fit ONE A4 sheet: at 12mm margins that's 273mm
-     ≈ 1032px of printable height. A card that overflows even slightly is
+     One student card must fit ONE A4 sheet: at 18mm margins that's 261mm
+     ≈ 986px of printable height. A card that overflows even slightly is
      the worst outcome — the fragmentation engine drops the unsatisfiable
      `break-inside: avoid` and splits wherever it likes, which is what put
      the summary and signatures on a second, header-less sheet.

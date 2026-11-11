@@ -73,7 +73,8 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
     .rc-sheet {
       width: 210mm;
       min-height: 297mm;
-      padding: 11mm 12mm;
+      /* 18mm white margin on every side, same as a single printed card. */
+      padding: 18mm;
       margin: 0 auto 14px;
       background: #fff;
       position: relative;
@@ -92,6 +93,10 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
        not applied its print metrics and every card would be shrunk to fit a
        height it never has on paper. */
     .rc-sheet .report-page--student { zoom: var(--rc-zoom, 1); }
+    /* app.css puts a single card on its own 18mm-margin "report-card" page;
+       here the sheet already carries that margin as padding on a
+       zero-margin page, so stay on the sheet's page. */
+    .rc-sheet .report-page--student { page: auto; }
 
     /* ...and fill the sheet when there's room to spare. Rather than scaling
        the type up (which quickly looks cartoonish on a short curriculum),
@@ -218,7 +223,7 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
      * Measured against Chromium with app.css's print metrics: a card costs
      * roughly 385px of fixed furniture (letterhead, student meta, summary,
      * signatures, footer) plus ~23px per subject row. The budget is held
-     * at 980px rather than the ~1040px an A4 sheet actually offers at 12mm
+     * at 935px rather than the ~986px an A4 sheet actually offers at 18mm
      * margins, because the browser's print dialog overrides the page
      * margins and a user may pick wider ones — the slack absorbs that.
      * Anything at or under the budget prints at full size; only genuinely
@@ -232,8 +237,8 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
 
     $zoom = 1;
     $rowExtra = 0;
-    if ($estimatedHeight > 980) {
-        $zoom = max(0.55, round(980 / $estimatedHeight, 3));
+    if ($estimatedHeight > 935) {
+        $zoom = max(0.55, round(935 / $estimatedHeight, 3));
     } elseif ($rowCount > 0) {
         // Spare height goes into the subject rows — half above, half below
         // the text — so a short curriculum reads as a full, deliberately
@@ -242,7 +247,7 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
         // look like a spreadsheet with the wrong line height, and it is
         // better to leave the remainder as breathing space above the
         // signature block, which the flex rule pins to the foot of the page.
-        $rowExtra = min(16.0, round((980 - $estimatedHeight) / $rowCount / 2, 2));
+        $rowExtra = min(16.0, round((935 - $estimatedHeight) / $rowCount / 2, 2));
         $rowExtra = max(0.0, $rowExtra);
     }
 
