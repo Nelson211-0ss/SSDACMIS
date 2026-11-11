@@ -146,7 +146,14 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
            push a near-blank second sheet after every card. 99 rather than
            100 leaves a hair of slack for sub-pixel rounding. */
         min-height: 99vh;
+        /* 99vh leaves 1vh (~3mm) unused at the foot of the page, which would
+           make the bottom margin wider than the top. Take it back out of the
+           bottom padding so all four margins are exactly 18mm. */
+        padding-bottom: calc(18mm - 1vh);
       }
+      /* The sheet sizes the card here; app.css's single-card 260mm minimum
+         would overflow the padded sheet and push a blank page. */
+      .rc-sheet .report-page--student { min-height: 0; }
     }
   </style>
 </head>

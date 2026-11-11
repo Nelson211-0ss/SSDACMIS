@@ -2916,6 +2916,24 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
      space on every side. Scoped to the card so other printouts keep 12mm. */
   @page report-card { size: A4 portrait; margin: 18mm; }
   .report-page--student { page: report-card; }
+
+  /* Centre the card on the sheet: equal white space on all four sides.
+     Left/right already match (the card fills the width between the page
+     margins). Top/bottom only match if the card also fills the height, so
+     it is stretched to the printable area (297 - 2x18 = 261mm, less 1mm of
+     slack so rounding never spills a blank second sheet) and the signatures
+     + footer are pinned to its foot. A short curriculum then leaves its
+     spare room above the signatures instead of as a deep bottom margin. */
+  .report-page--student {
+    display: flex !important;
+    flex-direction: column;
+    min-height: 260mm;
+    width: 100% !important;
+    margin: 0 auto !important;
+  }
+  .report-page--student > *,
+  .report-page--student > .report-table { width: 100%; flex-shrink: 0; }
+  .report-page--student > .report-signature-row { margin-top: auto !important; }
   .report-page--print-landscape { page: landscape; }
   .report-page--print-landscape .report-table { font-size: 9pt; }
   .report-page--print-landscape .report-matrix th,
