@@ -228,7 +228,7 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
     </table>
   <?php endif; ?>
 
-  <div class="report-signature-row">
+  <div class="report-signature-row report-signature-row--sealed">
     <div>
       <div class="report-signature-line"></div>
       <div class="report-signature-lbl">Class teacher</div>
@@ -246,6 +246,22 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
     <div>
       <div class="report-signature-line"></div>
       <div class="report-signature-lbl">Parent / Guardian</div>
+    </div>
+    <?php /* Authentication seal: right-hand end of the signature row, between
+             the summary above and the grading key below. Inline SVG rather
+             than an icon font so it prints crisp and in colour. The card's
+             reference number sits under it so the seal ties to this card. */ ?>
+    <div class="report-seal" title="Authenticated report card · REF <?= View::e($refCode) ?>">
+      <svg class="report-seal__shield" viewBox="0 0 48 56" aria-hidden="true" focusable="false">
+        <path d="M24 2 L44 9 V26 C44 39 35.5 48.5 24 54 C12.5 48.5 4 39 4 26 V9 Z"
+              fill="#fff6d6" stroke="#1e3a8a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M24 7.5 L39.5 13 V26 C39.5 36.5 33 44.2 24 48.8 C15 44.2 8.5 36.5 8.5 26 V13 Z"
+              fill="none" stroke="#fec601" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M15.5 27.5 L21.5 33.5 L33 21.5"
+              fill="none" stroke="#1e3a8a" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="report-seal__lbl">Authenticated</div>
+      <div class="report-seal__ref"><?= View::e($refCode) ?></div>
     </div>
   </div>
 
