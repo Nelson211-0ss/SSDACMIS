@@ -12,13 +12,13 @@ namespace App\Core;
 class ActivityLog
 {
     /** Entries older than this are deleted automatically (MySQL interval). */
-    public const RETENTION = '1 MONTH';
+    public const RETENTION = '7 DAY';
 
     /** Guard so a request never prunes twice, even if the marker can't be written. */
     private static bool $prunedThisRequest = false;
 
     /**
-     * Delete activity older than one month.
+     * Delete activity older than one week.
      *
      * There is no cron on the server, so this rides on normal traffic: it is
      * called after every log write and when the Activity Log page opens, but
@@ -37,7 +37,7 @@ class ActivityLog
         self::$prunedThisRequest = true;
 
         $marker = dirname(__DIR__, 2) . '/storage/logs/activity-prune.txt';
-        $today  = date('Y-m-d');
+        $today  = date('Y-m-d') . ' ' . self::RETENTION; // a retention change re-runs at once
         if (is_file($marker) && trim((string) @file_get_contents($marker)) === $today) {
             return 0;
         }

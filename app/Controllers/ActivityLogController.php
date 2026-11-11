@@ -15,7 +15,7 @@ class ActivityLogController extends Controller
 
     public function index(): string
     {
-        // Drop anything older than a month before listing (daily, see ActivityLog).
+        // Drop anything older than a week before listing (daily, see ActivityLog).
         ActivityLog::pruneOld();
 
         $isSuper    = Auth::role() === 'admin';
