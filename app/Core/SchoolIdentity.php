@@ -21,8 +21,8 @@ use Throwable;
  */
 final class SchoolIdentity
 {
-    /** @var array<string,string>|null */
-    private static ?array $cache = null;
+    /** @var array<int,array<string,string|null>> resolved bags, keyed by school id (0 = none) */
+    private static array $cache = [];
 
     /**
      * Return the full resolved identity bag.
@@ -37,8 +37,24 @@ final class SchoolIdentity
      */
     public static function all(): array
     {
-        if (self::$cache !== null) {
-            return self::$cache;
+        return self::forSchool(Auth::schoolId());
+    }
+
+    /**
+     * The identity of a specific school, whoever is signed in.
+     *
+     * Documents about a student (report cards, admission letters) must carry
+     * THAT student's school's head teacher and signature. The super admin
+     * belongs to no school, so all() would hand them the global settings
+     * identity and a signature uploaded under Schools → Edit would never
+     * appear on what they print. Pass the student's school_id here instead.
+     * null resolves exactly as all() does for the super admin.
+     */
+    public static function forSchool(?int $schoolId): array
+    {
+        $key = $schoolId ?? 0;
+        if (isset(self::$cache[$key])) {
+            return self::$cache[$key];
         }
 
         $s = Settings::all();
@@ -57,8 +73,7 @@ final class SchoolIdentity
             'school_headteacher_signature' => Settings::headteacherSignatureUrl(),
         ];
 
-        // Overlay per-school details when the user belongs to a specific school.
-        $schoolId = Auth::schoolId();
+        // Overlay per-school details for a specific school.
         if ($schoolId !== null) {
             try {
                 // The global `settings` identity predates multi-tenancy and
@@ -141,7 +156,7 @@ final class SchoolIdentity
             }
         }
 
-        return self::$cache = $bag;
+        return self::$cache[$key] = $bag;
     }
 
     public static function get(string $key): ?string
@@ -152,7 +167,7 @@ final class SchoolIdentity
     /** Flush the per-request cache (useful after settings or school updates). */
     public static function flush(): void
     {
-        self::$cache = null;
+        self::$cache = [];
     }
 
     /* ------------------------------------------------------------------ */
@@ -204,6 +219,18 @@ final class SchoolIdentity
     public static function headteacherSignatureUrl(): ?string
     {
         return self::all()['school_headteacher_signature'];
+    }
+
+    /** Head teacher's signature for a given school (see forSchool()). */
+    public static function headteacherSignatureUrlFor(?int $schoolId): ?string
+    {
+        return self::forSchool($schoolId)['school_headteacher_signature'] ?? null;
+    }
+
+    /** Head teacher's name for a given school (see forSchool()). */
+    public static function headteacherNameFor(?int $schoolId): string
+    {
+        return (string) (self::forSchool($schoolId)['school_headteacher_name'] ?? '');
     }
 
     /**

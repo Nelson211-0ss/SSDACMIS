@@ -377,6 +377,15 @@ $classLabel = function (array $s): string {
     <button class="no-print" onclick="window.close()">Close</button>
   </div>
 <?php else: foreach ($letters as $s):
+  // Sign each letter with the head teacher of the STUDENT's school, so a
+  // letter printed by the super admin (no school of their own) still shows
+  // the signature uploaded for that school.
+  if (!empty($s['school_id'])) {
+      $sid = (int) $s['school_id'];
+      $htSignature = SchoolIdentity::headteacherSignatureUrlFor($sid);
+      $htName      = SchoolIdentity::headteacherNameFor($sid);
+      $htTitle     = (string) (SchoolIdentity::forSchool($sid)['school_headteacher_title'] ?? $htTitle) ?: $htTitle;
+  }
   $studentName = trim((string) $s['first_name'] . ' ' . (string) $s['last_name']);
   $recipient = trim((string) ($s['guardian_name'] ?? ''));
   if ($recipient === '') $recipient = 'The Parent / Guardian of ' . $studentName;

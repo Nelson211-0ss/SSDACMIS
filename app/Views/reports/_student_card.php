@@ -12,9 +12,14 @@ use App\Core\View;
 use App\Core\SchoolIdentity;
 use App\Services\AcademicMarking;
 
-// Head-teacher details for the signature slot on each report card.
-$htSignature = SchoolIdentity::headteacherSignatureUrl();
-$htName      = SchoolIdentity::headteacherName();
+// Head-teacher details for the signature slot on each report card — always
+// the STUDENT's school, so a card printed by the super admin (who has no
+// school) still carries the signature uploaded for that school.
+$cardSchoolId = isset($student['school_id']) && (int) $student['school_id'] > 0
+    ? (int) $student['school_id']
+    : \App\Core\Auth::schoolId();
+$htSignature = SchoolIdentity::headteacherSignatureUrlFor($cardSchoolId);
+$htName      = SchoolIdentity::headteacherNameFor($cardSchoolId);
 
 // The sheet already knows which stage it was built for; the view variable is
 // only a fallback for callers that render a card without one.

@@ -3106,7 +3106,7 @@ body.auth-page .auth-credit__sep { color: rgba(255, 255, 255, 0.3); }
   .report-page--student .report-seal__lbl { font-size: 6.5pt; }
   .report-page--student .report-seal__ref { font-size: 6pt; }
   .report-page--student .report-signature-line,
-  .report-page--student .report-signature-img { height: 18px; }
+  .report-page--student .report-signature-img { height: 28px; }
   .report-page--student .report-signature-lbl { font-size: 7.5pt; }
   .report-page--student .report-student__foot-block { padding: 6px 12px 7px; margin-top: 8px; }
   .report-page--student .report-student__foot-block .report-footer { margin-bottom: 3px; font-size: 7.5pt; }

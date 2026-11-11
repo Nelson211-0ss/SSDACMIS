@@ -84,6 +84,7 @@ class StudentController extends Controller
         $letterhead       = [
             'logo' => null, 'motto' => '', 'address' => '',
             'headteacher_name' => '', 'headteacher_title' => '',
+            'headteacher_signature' => null,
         ];
 
         if ($isSuperAdmin) {
@@ -116,6 +117,7 @@ class StudentController extends Controller
                 $letterhead['address']            = (string) ($row['address'] ?? '');
                 $letterhead['headteacher_name']    = (string) ($row['headteacher_name'] ?? '');
                 $letterhead['headteacher_title']   = (string) ($row['headteacher_title'] ?? '');
+                $letterhead['headteacher_signature'] = SchoolIdentity::headteacherSignatureUrlFor($selectedSchoolId);
             } else {
                 $selectedSchoolId = null;
                 $schoolName       = 'All schools';
@@ -128,6 +130,7 @@ class StudentController extends Controller
                 'address'           => SchoolIdentity::address(),
                 'headteacher_name'  => SchoolIdentity::headteacherName(),
                 'headteacher_title' => SchoolIdentity::headteacherTitle(),
+                'headteacher_signature' => SchoolIdentity::headteacherSignatureUrl(),
             ];
         }
 

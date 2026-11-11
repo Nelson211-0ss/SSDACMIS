@@ -108,6 +108,16 @@ $totalBal    = max(0.0, $totalBilled - $totalPaid);
       </div>
     </div>
     <div>
+      <?php
+        // The bursar is always scoped to one school, so the signed-in
+        // identity is the right head teacher here.
+        $htSigUrl = \App\Core\View::publicAsset($base, \App\Core\SchoolIdentity::headteacherSignatureUrl());
+      ?>
+      <?php if ($htSigUrl !== ''): ?>
+        <img src="<?= htmlspecialchars($htSigUrl, ENT_QUOTES) ?>" alt=""
+             style="display:block; height:36px; max-width:220px; object-fit:contain; margin:0 auto 2px;
+                    -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+      <?php endif; ?>
       <div style="border-top: 1px solid #1f2937; padding-top: 4px; min-width: 220px;">
         Head Teacher / Principal
       </div>

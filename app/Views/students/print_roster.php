@@ -15,6 +15,7 @@ $motto  = trim((string) ($letterhead['motto']  ?? ''));
 $addr   = trim((string) ($letterhead['address'] ?? ''));
 $htName = trim((string) ($letterhead['headteacher_name']  ?? ''));
 $htTitle = trim((string) ($letterhead['headteacher_title'] ?? '')) ?: 'Head Teacher';
+$htSignatureUrl = View::publicAsset($base, $letterhead['headteacher_signature'] ?? '');
 ?>
 <div class="student-roster-print results-print-area report-page--print-landscape">
   <div class="page-header student-roster-page-head d-print-none">
@@ -225,7 +226,11 @@ $htTitle = trim((string) ($letterhead['headteacher_title'] ?? '')) ?: 'Head Teac
           <div class="report-signature-lbl">Prepared by (Registrar / Class teacher)</div>
         </div>
         <div>
-          <div class="report-signature-line"></div>
+          <?php if ($htSignatureUrl !== ''): ?>
+            <img class="report-signature-img" src="<?= View::e($htSignatureUrl) ?>" alt="">
+          <?php else: ?>
+            <div class="report-signature-line"></div>
+          <?php endif; ?>
           <div class="report-signature-lbl">
             Verified by<?= $htName !== '' ? ' &middot; <strong>' . View::e($htName) . '</strong> (' . View::e($htTitle) . ')' : ' (' . View::e($htTitle) . ')' ?>
           </div>
