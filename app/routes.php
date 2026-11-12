@@ -199,10 +199,12 @@ $router->post('/hod/marks/autosave-cell', 'MarksController@autosaveCell', [$canE
 
 // Results (computed averages & positions — Mid ×/30 + End ×/70)
 $router->get('/results',              'ResultsController@index',      [$canViewResults]);
+$router->get('/results/download.csv', 'ResultsController@downloadCsv', [$canViewResults]);
 $router->get('/results/class/{id}', 'ResultsController@classView',   [$canViewResults]);
 $router->get('/results/gender',     'ResultsController@genderPerformance', [$canViewResults]);
 $router->get('/results/analysis/{id}', 'ResultsController@classAnalysis', [$canViewResults]);
 $router->get('/hod/results',              'ResultsController@index',      [$canViewResults]);
+$router->get('/hod/results/download.csv', 'ResultsController@downloadCsv', [$canViewResults]);
 $router->get('/hod/results/class/{id}', 'ResultsController@classView',   [$canViewResults]);
 $router->get('/hod/results/gender', 'ResultsController@genderPerformance', [$canViewResults]);
 $router->get('/hod/results/analysis/{id}', 'ResultsController@classAnalysis', [$canViewResults]);
@@ -299,7 +301,8 @@ $router->post('/hod/announcements', 'AnnouncementController@store', [$canPostNot
 $router->get('/settings',  'SettingsController@index',  [$canManageSettings]);
 $router->post('/settings', 'SettingsController@update', [$canManageSettings]);
 
-$router->get('/activity-log', 'ActivityLogController@index', [$canViewActivity]);
+// Activity log switched off for now (see ActivityLog::ENABLED).
+// $router->get('/activity-log', 'ActivityLogController@index', [$canViewActivity]);
 
 // ============================================================
 // User management & permissions.

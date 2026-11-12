@@ -27,6 +27,16 @@ $qs = 'year=' . rawurlencode($year) . '&term=' . rawurlencode($term) . '&stage='
       <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/results/gender?<?= View::e($qs) ?>">
         <i class="bi bi-bar-chart-steps"></i> Performance by class &amp; gender
       </a>
+      <a class="btn btn-success btn-sm"
+         href="<?= $base ?><?= $portalPrefix ?>/results/download.csv?<?= View::e($qs) ?>"
+         title="Every class's results for this term in one Excel-ready file">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Download all results
+      </a>
+      <a class="btn btn-outline-success btn-sm"
+         href="<?= $base ?><?= $portalPrefix ?>/reports/booklet?<?= View::e($qs) ?>&amp;class_id=0"
+         title="Every student's report card for this term — print or save as PDF">
+        <i class="bi bi-file-earmark-pdf"></i> All report cards
+      </a>
       <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print this page">
         <i class="bi bi-printer"></i> Print
       </button>

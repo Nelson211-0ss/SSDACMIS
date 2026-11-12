@@ -208,6 +208,10 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
   <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" <?= $n === 0 ? 'disabled' : '' ?>>
     <i class="bi bi-printer"></i> Print <?= (int) $n ?> card<?= $n === 1 ? '' : 's' ?>
   </button>
+  <button type="button" class="btn btn-success btn-sm" id="rcPdfBtn" <?= $n === 0 ? 'disabled' : '' ?>
+          data-filename="<?= View::e(preg_replace('/[^A-Za-z0-9._-]+/', '-', 'report-cards-' . $scopeLabel . '-' . $term . '-' . $year . '-' . $stage)) ?>.pdf">
+    <i class="bi bi-file-earmark-pdf"></i> <span>Download PDF</span>
+  </button>
   <a class="btn btn-outline-secondary btn-sm" href="<?= $base ?><?= $portalPrefix ?>/reports?<?= View::e($qs()) ?>">Back</a>
 </div>
 
@@ -267,6 +271,60 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
     </section>
   <?php endforeach; ?>
 <?php endif; ?>
+
+<script>
+/* Download every card on this page as one A4 PDF, one card per page.
+   Each .rc-sheet is drawn to a canvas and placed on its own page, scaled
+   to fit inside A4 and centred. Libraries load only when asked for. */
+(function () {
+  var btn = document.getElementById('rcPdfBtn');
+  if (!btn) return;
+  var label = btn.querySelector('span');
+
+  function load(src) {
+    return new Promise(function (ok, fail) {
+      var s = document.createElement('script');
+      s.src = src; s.onload = ok; s.onerror = function () { fail(new Error('Could not load ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  btn.addEventListener('click', async function () {
+    var sheets = Array.prototype.slice.call(document.querySelectorAll('.rc-sheet'));
+    if (!sheets.length) return;
+    btn.disabled = true;
+    try {
+      label.textContent = 'Preparing…';
+      if (!window.html2canvas) await load('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      if (!window.jspdf)       await load('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+      var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+      var pageW = 210, pageH = 297;
+      for (var i = 0; i < sheets.length; i++) {
+        label.textContent = 'Card ' + (i + 1) + ' of ' + sheets.length + '…';
+        var sheet = sheets[i];
+        var shadow = sheet.style.boxShadow;
+        sheet.style.boxShadow = 'none';
+        var canvas = await window.html2canvas(sheet, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+        sheet.style.boxShadow = shadow;
+
+        var ratio = canvas.width / canvas.height;
+        var w = pageW, h = pageW / ratio;
+        if (h > pageH) { h = pageH; w = pageH * ratio; }
+        if (i > 0) pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', (pageW - w) / 2, (pageH - h) / 2, w, h);
+      }
+      label.textContent = 'Saving…';
+      pdf.save(btn.getAttribute('data-filename') || 'report-cards.pdf');
+    } catch (e) {
+      alert('The PDF could not be created (' + e.message + '). You can still use Print and choose "Save as PDF".');
+    } finally {
+      label.textContent = 'Download PDF';
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
 
 </body>
 </html>

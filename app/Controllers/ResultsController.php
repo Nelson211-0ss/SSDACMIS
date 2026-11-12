@@ -260,6 +260,164 @@ class ResultsController extends Controller
         ]);
     }
 
+    /**
+     * Whole-term results as one spreadsheet (CSV, opens in Excel): every
+     * class the user can see, or one class, for the chosen year, term and
+     * assessment. One row per student with each subject's mark and grade,
+     * the overall average, grade and class position.
+     *
+     * Reads the published tables, so it matches the results pages exactly.
+     *
+     * GET /results/download.csv?year=&term=&stage=&class_id=
+     */
+    public function downloadCsv(): string
+    {
+        $year  = AcademicYear::resolve((string) $this->input('year', ''));
+        $term  = (string) ($this->input('term') ?: 'Term 1');
+        $stage = $this->stage();
+        if (!in_array($term, self::TERMS, true)) {
+            $term = 'Term 1';
+        }
+
+        $visible = $this->visibleClassIds();
+        $classId = (int) $this->input('class_id', 0);
+        if ($classId > 0) {
+            if (!in_array($classId, $visible, true)) {
+                http_response_code(403);
+
+                return $this->view('errors/403');
+            }
+            $scopeIds = [$classId];
+        } else {
+            $scopeIds = $visible;
+        }
+
+        TermResultsService::ensureTables();
+
+        $classes = [];
+        if ($scopeIds !== []) {
+            $ph = implode(',', array_fill(0, count($scopeIds), '?'));
+            $classes = Database::query(
+                "SELECT c.id, c.name, c.level, sc.name AS school_name
+                 FROM classes c
+                 LEFT JOIN schools sc ON sc.id = c.school_id
+                 WHERE c.id IN ($ph)
+                 ORDER BY sc.name, c.level, c.name",
+                $scopeIds
+            )->fetchAll();
+        }
+
+        // Subject columns by NAME, so the super admin's multi-school file
+        // gets one "Mathematics" column rather than one per school.
+        $subjectNames = [];
+        foreach (AcademicMarking::offeredSubjectsForSchoolReport() as $sub) {
+            $subjectNames[(string) $sub['name']] = true;
+        }
+        $subjectNames = array_keys($subjectNames);
+
+        [, $gradeOf] = self::gradeResolver();
+        $spansSchools = Auth::schoolId() === null;
+        $stageLabel   = AcademicMarking::stageLabel($stage);
+        $max          = AcademicMarking::stageSubjectMax($stage);
+
+        $scopeName = 'all-classes';
+        if ($classId > 0 && $classes !== []) {
+            $scopeName = (string) $classes[0]['name'];
+        }
+        $filename = preg_replace('/[^A-Za-z0-9._-]+/', '-',
+            'results-' . $year . '-' . $term . '-' . $stage . '-' . $scopeName) . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF"); // BOM so Excel reads UTF-8 names correctly.
+        $csv = static function (array $line) use ($out): void {
+            fputcsv($out, $line, ',', '"', '');
+        };
+
+        $csv([(SchoolIdentity::name() ?: (string) App::config('app.name')) . ' — ' . $stageLabel
+            . ' results, ' . $term . ' ' . $year . ' (each subject out of ' . $max . ')']);
+
+        $head = ['Class', 'Level', 'Position', 'Out of', 'Admission No', 'First name', 'Last name', 'Gender', 'Stream'];
+        foreach ($subjectNames as $name) {
+            $head[] = $name;
+            $head[] = $name . ' grade';
+        }
+        array_push($head, 'Subjects', 'Average %', 'Grade');
+        if ($spansSchools) {
+            array_unshift($head, 'School');
+        }
+        $csv($head);
+
+        foreach ($classes as $class) {
+            $cid = (int) $class['id'];
+
+            $rows = Database::query(
+                "SELECT tsr.student_id, tsr.average_percentage, tsr.class_position, tsr.rank_cohort,
+                        tsr.subjects_with_totals,
+                        s.admission_no, s.first_name, s.last_name, s.gender, s.stream
+                 FROM term_student_results tsr
+                 JOIN students s ON s.id = tsr.student_id
+                 WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?
+                 ORDER BY
+                   CASE WHEN tsr.class_position IS NULL THEN 1 ELSE 0 END,
+                   tsr.class_position ASC, s.first_name, s.last_name",
+                [$cid, $year, $term, $stage]
+            )->fetchAll();
+            if ($rows === []) {
+                continue;
+            }
+
+            $cells = [];
+            $sr = Database::query(
+                'SELECT tsr.student_id, sub.name AS subject_name, tsr.total_marks, tsr.letter_grade
+                 FROM term_subject_results tsr
+                 JOIN subjects sub ON sub.id = tsr.subject_id
+                 WHERE tsr.class_id = ? AND tsr.academic_year = ? AND tsr.term = ? AND tsr.stage = ?',
+                [$cid, $year, $term, $stage]
+            )->fetchAll();
+            foreach ($sr as $r) {
+                $cells[(int) $r['student_id']][(string) $r['subject_name']] = $r;
+            }
+
+            foreach ($rows as $r) {
+                $sid = (int) $r['student_id'];
+                $avg = $r['average_percentage'] !== null ? (float) $r['average_percentage'] : null;
+                $stream = (string) ($r['stream'] ?? '');
+                $line = [
+                    (string) $class['name'],
+                    (string) ($class['level'] ?? ''),
+                    $r['class_position'] !== null ? (string) (int) $r['class_position'] : '',
+                    $r['rank_cohort'] !== null ? (string) (int) $r['rank_cohort'] : '',
+                    (string) ($r['admission_no'] ?? ''),
+                    (string) ($r['first_name'] ?? ''),
+                    (string) ($r['last_name'] ?? ''),
+                    ucfirst((string) ($r['gender'] ?? '')),
+                    ($stream === '' || $stream === 'none') ? '' : ucfirst($stream),
+                ];
+                foreach ($subjectNames as $name) {
+                    $c = $cells[$sid][$name] ?? null;
+                    $line[] = ($c !== null && $c['total_marks'] !== null)
+                        ? rtrim(rtrim(number_format((float) $c['total_marks'], 1, '.', ''), '0'), '.')
+                        : '';
+                    $line[] = $c !== null ? (string) ($c['letter_grade'] ?? '') : '';
+                }
+                $line[] = (string) (int) ($r['subjects_with_totals'] ?? 0);
+                $line[] = $avg !== null ? number_format($avg, 1, '.', '') : '';
+                $line[] = $avg !== null ? $gradeOf($avg) : '';
+                if ($spansSchools) {
+                    array_unshift($line, (string) ($class['school_name'] ?? ''));
+                }
+                $csv($line);
+            }
+        }
+        fclose($out);
+
+        return '';
+    }
+
     /** An average (or subject percentage) at or above this is a pass. */
     private const PASS_MARK = 50.0;
 

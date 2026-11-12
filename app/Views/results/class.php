@@ -64,6 +64,11 @@ $subLabel = static function (array $sub): string {
            href="<?= $base ?><?= $portalPrefix ?>/results/analysis/<?= (int) $class['id'] ?>?<?= View::e($qs) ?>">
           <i class="bi bi-clipboard-data"></i> Class analysis
         </a>
+        <a class="btn btn-success btn-sm"
+           href="<?= $base ?><?= $portalPrefix ?>/results/download.csv?<?= View::e($qs) ?>&amp;class_id=<?= (int) $class['id'] ?>"
+           title="This class's results in an Excel-ready file">
+          <i class="bi bi-file-earmark-spreadsheet"></i> Download
+        </a>
         <button type="button" class="btn btn-primary btn-sm" onclick="window.print()" title="Print this results sheet">
           <i class="bi bi-printer"></i> Print
         </button>
