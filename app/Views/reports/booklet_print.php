@@ -250,17 +250,12 @@ $qs = static function (array $over = []) use ($year, $term, $stage, $classId): s
     $rowExtra = 0;
     if ($estimatedHeight > 935) {
         $zoom = max(0.55, round(935 / $estimatedHeight, 3));
-    } elseif ($rowCount > 0) {
-        // Spare height goes into the subject rows — half above, half below
-        // the text — so a short curriculum reads as a full, deliberately
-        // spaced table rather than a small one adrift at the top of the
-        // sheet. Capped at roughly a 55px row: past that the bands start to
-        // look like a spreadsheet with the wrong line height, and it is
-        // better to leave the remainder as breathing space above the
-        // signature block, which the flex rule pins to the foot of the page.
-        $rowExtra = min(16.0, round((935 - $estimatedHeight) / $rowCount / 2, 2));
-        $rowExtra = max(0.0, $rowExtra);
     }
+    // Spare height is NOT spread into the subject rows: the table keeps the
+    // same compact rows as a single printed card, and the leftover space
+    // opens up between the table and the signatures / marks key, which the
+    // flex rule pins to the foot of the page — the same look as printing
+    // one card from the report dashboard.
 
     $sheetStyle = [];
     if ($zoom < 1)    { $sheetStyle[] = '--rc-zoom: ' . $zoom; }
