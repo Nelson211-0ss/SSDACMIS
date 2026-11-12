@@ -390,6 +390,12 @@ final class AcademicMarking
             } else {
                 $sql .= " AND category NOT IN ('science','arts')";
             }
+            // Agriculture is taken only by the Science stream in Form 3/4,
+            // whatever category a school has filed it under — so every
+            // report card and print-out drops it for arts students.
+            if ($stream !== 'science') {
+                $sql .= " AND name <> 'Agriculture'";
+            }
         }
         $sql .= " ORDER BY FIELD(category, 'core','science','arts','optional'), name";
 
