@@ -247,7 +247,7 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
         <tbody>
           <tr class="report-student__summary-row">
             <th style="width: 30%; text-align: left;">Overall comment</th>
-            <td><strong><?= $isPromoted ? 'Promoted to S4' : 'Not promoted to S4' ?></strong></td>
+            <td><strong><?= $isPromoted ? 'Promoted to S4' : 'Advised to repeat S3' ?></strong></td>
           </tr>
         </tbody>
       </table>
