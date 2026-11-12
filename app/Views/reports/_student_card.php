@@ -231,6 +231,27 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
         </tr>
       </tbody>
     </table>
+
+    <?php
+      // Promotion comment — S3 (Form 3) only, on the end-of-year card
+      // (Term 3, end of term). An overall average of 35% or more is
+      // promoted to S4.
+      $promoMin   = 35.0;
+      $promoLevel = trim((string) ($sheet['level'] ?? ($student['class_level'] ?? '')));
+      $showPromo  = $promoLevel === 'Form 3' && !$cardIsMid
+          && (string) $term === 'Term 3' && $sheet['average'] !== null;
+      if ($showPromo):
+          $isPromoted = (float) $sheet['average'] >= $promoMin;
+    ?>
+      <table class="report-table report-student__summary report-student__comment">
+        <tbody>
+          <tr class="report-student__summary-row">
+            <th style="width: 30%; text-align: left;">Overall comment</th>
+            <td><strong><?= $isPromoted ? 'Promoted to S4' : 'Not promoted to S4' ?></strong></td>
+          </tr>
+        </tbody>
+      </table>
+    <?php endif; ?>
   <?php endif; ?>
 
   <div class="report-signature-row report-signature-row--sealed">
