@@ -108,7 +108,8 @@ $mainNav = [
     ['kind' => 'group', 'label' => 'Administration', 'icon' => 'bi-sliders2', 'items' => [
         ['Schools',      'bi-building-gear', '/schools',      ['admin'],                '/schools',      'schools.manage'],
         ['Settings',     'bi-gear',          '/settings',     ['admin'],                '/settings',     'settings.manage'],
-        ['Activity Log', 'bi-clock-history', '/activity-log', ['admin','school_admin'], '/activity-log', 'activity.view'],
+        // Activity Log switched off for now (see ActivityLog::ENABLED).
+        // ['Activity Log', 'bi-clock-history', '/activity-log', ['admin','school_admin'], '/activity-log', 'activity.view'],
     ]],
 ];
 

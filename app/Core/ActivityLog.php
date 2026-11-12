@@ -14,6 +14,14 @@ class ActivityLog
     /** Entries older than this are deleted automatically (MySQL interval). */
     public const RETENTION = '7 DAY';
 
+    /**
+     * Activity logging is switched off for now: record() writes nothing and
+     * the Activity Log page and menu item are removed. Set back to true (and
+     * restore the route in routes.php and the nav item in layouts/app.php)
+     * to turn it on again. Existing rows are left untouched.
+     */
+    public const ENABLED = false;
+
     /** Guard so a request never prunes twice, even if the marker can't be written. */
     private static bool $prunedThisRequest = false;
 
@@ -61,6 +69,9 @@ class ActivityLog
         ?array $actor = null,
         ?int $schoolId = null
     ): void {
+        if (!self::ENABLED) {
+            return;
+        }
         try {
             $user     = $actor ?? Auth::user();
             $schoolId = $schoolId ?? ($actor !== null
