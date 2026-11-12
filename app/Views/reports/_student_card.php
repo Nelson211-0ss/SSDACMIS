@@ -171,13 +171,13 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
         ?>
         <tr class="report-student__marks-row">
           <td><?= View::e($r['subject']) ?></td>
-          <td class="t-num"><?= $r['midterm'] !== null ? number_format((float) $r['midterm'], 1) : '—' ?></td>
+          <td class="t-num"><?= View::e(\App\Services\AcademicMarking::formatMark($r['midterm'] !== null ? (float) $r['midterm'] : null)) ?></td>
           <?php if (!$cardIsMid): ?>
-            <td class="t-num"><?= $r['endterm'] !== null ? number_format((float) $r['endterm'], 1) : '—' ?></td>
+            <td class="t-num"><?= View::e(\App\Services\AcademicMarking::formatMark($r['endterm'] !== null ? (float) $r['endterm'] : null)) ?></td>
           <?php endif; ?>
           <td class="t-num">
             <?php if ($r['average'] !== null): ?>
-              <strong><?= number_format((float) $r['average'], 1) ?></strong><?php if (!empty($r['max'])): ?><span class="text-muted">/<?= (int) $r['max'] ?></span><?php endif; ?>
+              <strong><?= View::e(\App\Services\AcademicMarking::formatMark((float) $r['average'])) ?></strong><?php if (!empty($r['max'])): ?><span class="text-muted">/<?= (int) $r['max'] ?></span><?php endif; ?>
             <?php else: ?>
               —
             <?php endif; ?>

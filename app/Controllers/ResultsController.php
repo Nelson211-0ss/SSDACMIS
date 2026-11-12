@@ -400,7 +400,7 @@ class ResultsController extends Controller
                 foreach ($subjectNames as $name) {
                     $c = $cells[$sid][$name] ?? null;
                     $line[] = ($c !== null && $c['total_marks'] !== null)
-                        ? rtrim(rtrim(number_format((float) $c['total_marks'], 1, '.', ''), '0'), '.')
+                        ? ((float) $c['total_marks'] == 0.0 ? '0' : rtrim(rtrim(number_format((float) $c['total_marks'], 1, '.', ''), '0'), '.'))
                         : '';
                     $line[] = $c !== null ? (string) ($c['letter_grade'] ?? '') : '';
                 }

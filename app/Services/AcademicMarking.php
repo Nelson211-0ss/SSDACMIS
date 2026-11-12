@@ -158,6 +158,38 @@ final class AcademicMarking
     }
 
     /**
+     * School rule: a mark that was never entered counts as 00.
+     *
+     * Mark entry may be left blank (nothing is stored), but every report
+     * card and results sheet treats the missing mark as zero — it is shown
+     * as 00, graded, and counted in the total, average and position. Only
+     * the components that belong to the stage are filled: a mid-term sheet
+     * still has no end-of-term mark at all.
+     *
+     * @return array{0:float,1:?float}
+     */
+    public static function componentsWithZeros(?float $mid, ?float $end, ?string $stage): array
+    {
+        [$mid, $end] = self::componentsForStage($mid, $end, $stage);
+        $isMid = self::normalizeStage($stage) === self::STAGE_MID;
+
+        return [$mid ?? 0.0, $isMid ? null : ($end ?? 0.0)];
+    }
+
+    /** A mark for display: zero (entered or missing) reads "00". */
+    public static function formatMark(?float $value, int $decimals = 1): string
+    {
+        if ($value === null) {
+            return '—';
+        }
+        if (abs($value) < 0.005) {
+            return '00';
+        }
+
+        return number_format($value, $decimals);
+    }
+
+    /**
      * @return list<array{label:string,min:float,max:float}>
      */
     public static function defaultGradingTiers(): array
@@ -466,8 +498,12 @@ final class AcademicMarking
 
         foreach ($subjects as $sub) {
             $sid = (int) $sub['id'];
-            $mid = $byId[$sid]['midterm'] ?? null;
-            $end = $byId[$sid]['endterm'] ?? null;
+            // A subject with no mark entered counts as 00 (see componentsWithZeros()).
+            [$mid, $end] = self::componentsWithZeros(
+                $byId[$sid]['midterm'] ?? null,
+                $byId[$sid]['endterm'] ?? null,
+                $stage
+            );
             $total = self::subjectTotal($mid, $end, $stage);
             $max   = self::subjectMax($mid, $end, $stage);
             $pct   = self::subjectPercentage($mid, $end, $stage);

@@ -70,6 +70,47 @@ final class TermResultsService
         } catch (\Throwable $e) {
             // migrations handle installs
         }
+
+        self::refreshAllOnce();
+    }
+
+    /** Bump to make every stored result set recompute once after a rule change. */
+    private const RULES_VERSION = 'zero-fill-1';
+
+    private static bool $refreshChecked = false;
+
+    /**
+     * Recompute every class + period already published, once per rules
+     * version. The stored tables only refresh when marks are saved, so
+     * without this a rule change (e.g. missing marks now counting as 00)
+     * would only reach a class the next time someone entered a mark.
+     * The marker is claimed before the work starts, so concurrent requests
+     * don't all run it. Best-effort: a failure is logged, never shown.
+     */
+    private static function refreshAllOnce(): void
+    {
+        if (self::$refreshChecked) {
+            return;
+        }
+        self::$refreshChecked = true;
+
+        $marker = dirname(__DIR__, 2) . '/storage/logs/results-rules.txt';
+        if (is_file($marker) && trim((string) @file_get_contents($marker)) === self::RULES_VERSION) {
+            return;
+        }
+        @file_put_contents($marker, self::RULES_VERSION, LOCK_EX);
+
+        try {
+            @set_time_limit(0);
+            $periods = Database::query(
+                'SELECT DISTINCT class_id, academic_year, term FROM term_student_results'
+            )->fetchAll();
+            foreach ($periods as $p) {
+                self::syncClass((int) $p['class_id'], (string) $p['academic_year'], (string) $p['term']);
+            }
+        } catch (\Throwable $e) {
+            \App\Core\ErrorHandler::log($e);
+        }
     }
 
     /**
@@ -239,11 +280,9 @@ final class TermResultsService
                     $end = isset($bySub[$bid]['endterm']) ? (float) $bySub[$bid]['endterm'] : null;
                     // Mid-term rows carry no end-of-term mark at all, so this
                     // stage's stored totals never move once end-term marks land.
-                    [$mid, $end] = AcademicMarking::componentsForStage($mid, $end, $stage);
-
-                    if ($mid === null && $end === null) {
-                        continue;
-                    }
+                    // A mark never entered counts as 00, so every subject in
+                    // the curriculum is stored and counted.
+                    [$mid, $end] = AcademicMarking::componentsWithZeros($mid, $end, $stage);
 
                     $midSql = $mid !== null ? round($mid, 2) : null;
                     $endSql = $end !== null ? round($end, 2) : null;
