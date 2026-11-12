@@ -37,7 +37,7 @@ class SubjectController extends Controller
         ['Commerce',              'COM',   'arts'],
         ['Arabic',                'ARAB',  'optional'],
         ['French',                'FREN',  'optional'],
-        ['Agriculture',           'AGRI',  'optional'],
+        ['Agriculture',           'AGRI',  'science'],
         ['ICT',                   'ICT',   'optional'],
         ['Accounting',            'ACC',   'optional'],
         ['Additional Mathematics','AMATH', 'optional'],

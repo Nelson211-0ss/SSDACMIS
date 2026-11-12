@@ -75,7 +75,7 @@ final class TermResultsService
     }
 
     /** Bump to make every stored result set recompute once after a rule change. */
-    private const RULES_VERSION = 'zero-fill-1';
+    private const RULES_VERSION = 'agri-science-1';
 
     private static bool $refreshChecked = false;
 
@@ -102,6 +102,12 @@ final class TermResultsService
 
         try {
             @set_time_limit(0);
+            // Agriculture is a Science-stream subject in Form 3/4: arts
+            // students don't take it. Done here as well as in migrate.php so
+            // the results recomputed below already follow it.
+            Database::query(
+                "UPDATE subjects SET category = 'science' WHERE name = 'Agriculture' AND category = 'optional'"
+            );
             $periods = Database::query(
                 'SELECT DISTINCT class_id, academic_year, term FROM term_student_results'
             )->fetchAll();

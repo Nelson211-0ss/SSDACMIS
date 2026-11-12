@@ -545,7 +545,7 @@ INSERT IGNORE INTO subjects (school_id, name, code, category) VALUES
   (1, 'Commerce',                   'COM',   'arts'),
   (1, 'Arabic',                     'ARAB',  'optional'),
   (1, 'French',                     'FREN',  'optional'),
-  (1, 'Agriculture',                'AGRI',  'optional'),
+  (1, 'Agriculture',                'AGRI',  'science'),
   (1, 'ICT',                        'ICT',   'optional'),
   (1, 'Accounting',                 'ACC',   'optional'),
   (1, 'Additional Mathematics',     'AMATH', 'optional'),
