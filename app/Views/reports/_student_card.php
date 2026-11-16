@@ -234,9 +234,10 @@ $genderDisplay = trim((string) ($student['gender'] ?? '')) !== ''
 
     <?php
       // Promotion comment — S3 (Form 3) only, on the end-of-year card
-      // (Term 3, end of term). An overall average of 35% or more is
-      // promoted to S4.
-      $promoMin   = 35.0;
+      // (Term 3, end of term). An overall average at or above the
+      // student's school's pass mark (Settings → S3 promotion; 35% unless
+      // the school changed it) is promoted to S4.
+      $promoMin   = SchoolIdentity::s3PromotionPassMark($cardSchoolId);
       $promoLevel = trim((string) ($sheet['level'] ?? ($student['class_level'] ?? '')));
       $showPromo  = $promoLevel === 'Form 3' && !$cardIsMid
           && (string) $term === 'Term 3' && $sheet['average'] !== null;

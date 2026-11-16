@@ -168,6 +168,55 @@ final class SchoolIdentity
     public static function flush(): void
     {
         self::$cache = [];
+        self::$passMarkCache = [];
+    }
+
+    /** Fallback S3 → S4 pass mark when nothing has been configured. */
+    public const DEFAULT_S3_PASS_MARK = 35.0;
+
+    /** @var array<int,float> resolved pass marks, keyed by school id (0 = none) */
+    private static array $passMarkCache = [];
+
+    /**
+     * Overall Term 3 average (%) an S3 student of the given school needs to
+     * be promoted to S4. The school's own value wins; a school that has not
+     * set one follows the global setting, then the 35% default.
+     */
+    public static function s3PromotionPassMark(?int $schoolId): float
+    {
+        $key = $schoolId ?? 0;
+        if (isset(self::$passMarkCache[$key])) {
+            return self::$passMarkCache[$key];
+        }
+
+        $mark = null;
+        if ($schoolId !== null) {
+            try {
+                $row = Database::query(
+                    'SELECT s3_promotion_pass_mark FROM schools WHERE id = ? LIMIT 1',
+                    [$schoolId]
+                )->fetch();
+                $v = $row['s3_promotion_pass_mark'] ?? null;
+                if ($v !== null && $v !== '' && is_numeric($v)) {
+                    $mark = (float) $v;
+                }
+            } catch (Throwable $e) {
+                // Column not migrated yet — fall through to the global value.
+            }
+        }
+
+        if ($mark === null) {
+            $g = Settings::get('s3_promotion_pass_mark');
+            $mark = ($g !== null && is_numeric($g)) ? (float) $g : self::DEFAULT_S3_PASS_MARK;
+        }
+
+        return self::$passMarkCache[$key] = max(0.0, min(100.0, $mark));
+    }
+
+    /** Format a pass mark for display: 35 → "35", 37.5 → "37.5". */
+    public static function formatPassMark(float $mark): string
+    {
+        return rtrim(rtrim(number_format($mark, 2, '.', ''), '0'), '.');
     }
 
     /* ------------------------------------------------------------------ */

@@ -11,6 +11,7 @@ $current     = $settings ?? [];
    show what is actually in effect. */
 $themeKey    = $themeKey ?? ($current['theme_accent'] ?? 'blue');
 $themeScope  = $themeScope ?? 'global';
+$s3PassMark  = $s3PassMark ?? '35';
 $schoolName  = $current['school_name'] ?? '';
 $schoolMotto = $current['school_motto'] ?? '';
 $logoPath    = $current['school_logo'] ?? '';
@@ -266,6 +267,42 @@ $themesJson = json_encode(
       </div>
     </div>
 
+  </div>
+
+  <!-- ===================== S3 promotion ===================== -->
+  <div class="card mt-3">
+    <div class="card-header d-flex align-items-center">
+      <span class="card-header-icon card-header-icon--teal me-2" aria-hidden="true"><i class="bi bi-mortarboard"></i></span>
+      <strong class="mb-0">S3 promotion</strong>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label" for="s3_promotion_pass_mark">Pass mark for promotion to S4 (%)</label>
+          <div class="input-group">
+            <input id="s3_promotion_pass_mark"
+                   name="s3_promotion_pass_mark"
+                   type="number"
+                   class="form-control"
+                   min="0" max="100" step="0.5"
+                   value="<?= View::e($s3PassMark) ?>">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <p class="text-muted small mb-0">
+            On the Term 3 end-of-term report card, S3 students whose overall average is at or above
+            this mark read <strong>&ldquo;Promoted to S4&rdquo;</strong>; those below it read
+            <strong>&ldquo;Advised to repeat S3&rdquo;</strong>.
+            <?php if ($themeScope === 'school'): ?>
+              Applies to <strong><?= View::e($schoolName !== '' ? $schoolName : 'your school') ?></strong> only.
+            <?php else: ?>
+              This is the default for every school that has not set its own.
+            <?php endif; ?>
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===================== Live preview ===================== -->

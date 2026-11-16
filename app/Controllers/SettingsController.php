@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\SchoolIdentity;
 use App\Core\Settings;
 
 class SettingsController extends Controller
@@ -45,6 +46,9 @@ class SettingsController extends Controller
             // the global default it overrides.
             'themeKey'   => Settings::activeThemeKey(),
             'themeScope' => Auth::schoolId() === null ? 'global' : 'school',
+            's3PassMark' => SchoolIdentity::formatPassMark(
+                SchoolIdentity::s3PromotionPassMark(Auth::schoolId())
+            ),
         ]);
     }
 
@@ -94,6 +98,34 @@ class SettingsController extends Controller
             Settings::set('theme_accent', $themeKey);
         }
         Settings::flushTheme();
+
+        // S3 → S4 promotion pass mark (overall Term 3 average, in %). Same
+        // scoping as the theme: a school admin sets their own school's
+        // mark; the super admin sets the default for schools without one.
+        $passRaw = trim((string) $this->input('s3_promotion_pass_mark'));
+        if ($passRaw !== '') {
+            if (!is_numeric($passRaw) || (float) $passRaw < 0 || (float) $passRaw > 100) {
+                Flash::set('danger', 'S3 promotion pass mark must be a number between 0 and 100.');
+                $this->redirect('/settings');
+                return '';
+            }
+            $passMark = round((float) $passRaw, 2);
+            if ($themeSchoolId !== null) {
+                try {
+                    Database::query(
+                        'UPDATE schools SET s3_promotion_pass_mark = ? WHERE id = ?',
+                        [$passMark, $themeSchoolId]
+                    );
+                } catch (\Throwable $e) {
+                    Flash::set('danger', 'Could not save the S3 promotion pass mark. Run database/migrate.php and try again.');
+                    $this->redirect('/settings');
+                    return '';
+                }
+            } else {
+                Settings::set('s3_promotion_pass_mark', (string) $passMark);
+            }
+            SchoolIdentity::flush();
+        }
 
         // Optional: clear current logo before doing anything else.
         if ($this->input('remove_logo') === '1') {
