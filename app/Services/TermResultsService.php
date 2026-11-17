@@ -75,7 +75,7 @@ final class TermResultsService
     }
 
     /** Bump to make every stored result set recompute once after a rule change. */
-    private const RULES_VERSION = 'agri-science-1';
+    private const RULES_VERSION = 'stream-subjects-1';
 
     private static bool $refreshChecked = false;
 

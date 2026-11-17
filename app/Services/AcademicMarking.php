@@ -381,29 +381,96 @@ final class AcademicMarking
         $sql = 'SELECT id, name, code, category FROM subjects WHERE is_offered = 1';
         $params = [];
         if ($schoolId !== null) { $sql .= ' AND school_id = ?'; $params[] = $schoolId; }
-        $isUpper = ($level === 'Form 3' || $level === 'Form 4');
-        if ($isUpper) {
-            if ($stream === 'science') {
-                $sql .= " AND category <> 'arts'";
-            } elseif ($stream === 'arts') {
-                $sql .= " AND category <> 'science'";
-            } else {
-                $sql .= " AND category NOT IN ('science','arts')";
-            }
-            // Agriculture is taken only by the Science stream in Form 3/4,
-            // whatever category a school has filed it under — so every
-            // report card and print-out drops it for arts students.
-            if ($stream !== 'science') {
-                $sql .= " AND name <> 'Agriculture'";
-            }
-        }
-        $sql .= " ORDER BY FIELD(category, 'core','science','arts','optional'), name";
 
         return [
             'level'    => $level,
             'stream'   => $stream,
-            'subjects' => Database::query($sql, $params)->fetchAll(),
+            'subjects' => self::filterSubjectsForStream(
+                Database::query($sql, $params)->fetchAll(),
+                $level,
+                $stream
+            ),
         ];
+    }
+
+    /**
+     * Subjects that belong to one stream in Form 3/4 by their name, whatever
+     * category a school has filed them under. A Science student never gets
+     * an Arts subject on a report card and vice versa — unless the school
+     * has made it compulsory (category 'core').
+     */
+    private const SCIENCE_SUBJECT_NAMES = [
+        'biology', 'chemistry', 'physics', 'agriculture', 'additional mathematics',
+    ];
+    private const ARTS_SUBJECT_NAMES = [
+        'geography', 'history', 'commerce', 'literature in english', 'literature', 'fine art',
+    ];
+
+    /**
+     * Which stream a subject belongs to: 'science', 'arts', or null for a
+     * subject every student may take (compulsory core, languages, ICT …).
+     *
+     * @param array<string,mixed> $sub row with at least `name` and `category`
+     */
+    public static function subjectStream(array $sub): ?string
+    {
+        $name = strtolower(trim((string) ($sub['name'] ?? '')));
+        $cat  = (string) ($sub['category'] ?? '');
+
+        // Agriculture is Science-only in Form 3/4 even when filed as core.
+        if ($name === 'agriculture') {
+            return 'science';
+        }
+        // Compulsory subjects appear for every stream.
+        if ($cat === 'core') {
+            return null;
+        }
+        if (in_array($name, self::SCIENCE_SUBJECT_NAMES, true)) {
+            return 'science';
+        }
+        if (in_array($name, self::ARTS_SUBJECT_NAMES, true)) {
+            return 'arts';
+        }
+        return in_array($cat, ['science', 'arts'], true) ? $cat : null;
+    }
+
+    /**
+     * Trim a subject list to what a student of this level and stream takes.
+     * Form 1/2 take everything. In Form 3/4 a Science student drops Arts
+     * subjects and an Arts student drops Science subjects (compulsory ones
+     * stay); a student with no stream yet gets neither.
+     *
+     * Stream subjects a school filed under another category are regrouped
+     * under their stream, so Geography filed as "optional" still prints in
+     * the Arts block rather than "Optional & Additional".
+     *
+     * @param list<array<string,mixed>> $subjects
+     * @return list<array<string,mixed>>
+     */
+    public static function filterSubjectsForStream(array $subjects, string $level, string $stream): array
+    {
+        $isUpper = ($level === 'Form 3' || $level === 'Form 4');
+        $out = [];
+        foreach ($subjects as $sub) {
+            if ($isUpper) {
+                $subStream = self::subjectStream($sub);
+                if ($subStream !== null) {
+                    if ($subStream !== $stream) {
+                        continue;
+                    }
+                    $sub['category'] = $subStream;
+                }
+            }
+            $out[] = $sub;
+        }
+
+        $rank = ['core' => 0, 'science' => 1, 'arts' => 2, 'optional' => 3];
+        usort($out, static function ($a, $b) use ($rank) {
+            $ra = $rank[(string) ($a['category'] ?? '')] ?? 4;
+            $rb = $rank[(string) ($b['category'] ?? '')] ?? 4;
+            return $ra <=> $rb ?: strcmp((string) $a['name'], (string) $b['name']);
+        });
+        return $out;
     }
 
     /**

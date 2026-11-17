@@ -146,12 +146,12 @@ $nMatrix = count($matrixPeers);
       if (empty($groupStudents)) continue;
 
       // Restrict subject columns for streamed groups: Form 3/4 Science groups
-      // hide Arts subject columns and vice versa (core+optional always shown).
+      // hide Arts subject columns and vice versa (compulsory subjects always
+      // shown) — the same rule as the report cards.
       if (!empty($isUpperForm) && in_array($groupKey, ['science', 'arts'], true)) {
           $sectionSubjects = array_values(array_filter($subjects, function ($sub) use ($groupKey) {
-              $cat = (string) ($sub['category'] ?? '');
-              if ($cat === $groupKey) return true;
-              return !in_array($cat, ['science', 'arts'], true);
+              $s = \App\Services\AcademicMarking::subjectStream($sub);
+              return $s === null || $s === $groupKey;
           }));
       } else {
           $sectionSubjects = $subjects;

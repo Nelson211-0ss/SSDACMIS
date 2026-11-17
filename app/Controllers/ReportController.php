@@ -321,20 +321,14 @@ class ReportController extends Controller
         $sql = "SELECT id, name, code, category FROM subjects WHERE is_offered = 1";
         $schoolId = Auth::schoolId();
         if ($schoolId !== null) { $sql .= ' AND school_id = ?'; }
-        $isUpper = ($level === 'Form 3' || $level === 'Form 4');
-        if ($isUpper) {
-            if ($stream === 'science') {
-                $sql .= " AND category <> 'arts'";
-            } elseif ($stream === 'arts') {
-                $sql .= " AND category <> 'science'";
-            } else {
-                $sql .= " AND category NOT IN ('science','arts')";
-            }
-        }
         $sql .= " ORDER BY FIELD(category, 'core','science','arts','optional'), name";
         $params = [];
         if ($schoolId !== null) $params[] = $schoolId;
-        return Database::query($sql, $params)->fetchAll();
+        return AcademicMarking::filterSubjectsForStream(
+            Database::query($sql, $params)->fetchAll(),
+            $level,
+            $stream
+        );
     }
 
     /**
