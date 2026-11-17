@@ -45,10 +45,6 @@ class Settings
         // admission letters, exam permits and report cards. Falls back
         // to the cursive name styling when blank.
         'school_headteacher_signature' => '',
-        // Overall Term 3 average (%) an S3 student needs to be promoted to
-        // S4. The global default; each school can set its own on
-        // schools.s3_promotion_pass_mark (see SchoolIdentity).
-        's3_promotion_pass_mark' => '35',
     ];
 
     /**

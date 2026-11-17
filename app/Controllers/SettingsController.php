@@ -99,30 +99,26 @@ class SettingsController extends Controller
         }
         Settings::flushTheme();
 
-        // S3 → S4 promotion pass mark (overall Term 3 average, in %). Same
-        // scoping as the theme: a school admin sets their own school's
-        // mark; the super admin sets the default for schools without one.
+        // S3 → S4 promotion pass mark (overall Term 3 average, in %). Each
+        // school's admin decides their own; the super admin has no say, so
+        // the field is ignored for an account without a school.
         $passRaw = trim((string) $this->input('s3_promotion_pass_mark'));
-        if ($passRaw !== '') {
+        if ($passRaw !== '' && $themeSchoolId !== null) {
             if (!is_numeric($passRaw) || (float) $passRaw < 0 || (float) $passRaw > 100) {
                 Flash::set('danger', 'S3 promotion pass mark must be a number between 0 and 100.');
                 $this->redirect('/settings');
                 return '';
             }
             $passMark = round((float) $passRaw, 2);
-            if ($themeSchoolId !== null) {
-                try {
-                    Database::query(
-                        'UPDATE schools SET s3_promotion_pass_mark = ? WHERE id = ?',
-                        [$passMark, $themeSchoolId]
-                    );
-                } catch (\Throwable $e) {
-                    Flash::set('danger', 'Could not save the S3 promotion pass mark. Run database/migrate.php and try again.');
-                    $this->redirect('/settings');
-                    return '';
-                }
-            } else {
-                Settings::set('s3_promotion_pass_mark', (string) $passMark);
+            try {
+                Database::query(
+                    'UPDATE schools SET s3_promotion_pass_mark = ? WHERE id = ?',
+                    [$passMark, $themeSchoolId]
+                );
+            } catch (\Throwable $e) {
+                Flash::set('danger', 'Could not save the S3 promotion pass mark. Run database/migrate.php and try again.');
+                $this->redirect('/settings');
+                return '';
             }
             SchoolIdentity::flush();
         }

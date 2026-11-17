@@ -270,6 +270,8 @@ $themesJson = json_encode(
   </div>
 
   <!-- ===================== S3 promotion ===================== -->
+  <?php /* Each school's admin sets its own pass mark; the super admin does not. */ ?>
+  <?php if ($themeScope === 'school'): ?>
   <div class="card mt-3">
     <div class="card-header d-flex align-items-center">
       <span class="card-header-icon card-header-icon--teal me-2" aria-hidden="true"><i class="bi bi-mortarboard"></i></span>
@@ -294,16 +296,13 @@ $themesJson = json_encode(
             On the Term 3 end-of-term report card, S3 students whose overall average is at or above
             this mark read <strong>&ldquo;Promoted to S4&rdquo;</strong>; those below it read
             <strong>&ldquo;Advised to repeat S3&rdquo;</strong>.
-            <?php if ($themeScope === 'school'): ?>
-              Applies to <strong><?= View::e($schoolName !== '' ? $schoolName : 'your school') ?></strong> only.
-            <?php else: ?>
-              This is the default for every school that has not set its own.
-            <?php endif; ?>
+            Applies to <strong><?= View::e($schoolName !== '' ? $schoolName : 'your school') ?></strong> only.
           </p>
         </div>
       </div>
     </div>
   </div>
+  <?php endif; ?>
 
   <!-- ===================== Live preview ===================== -->
   <div class="card mt-3">

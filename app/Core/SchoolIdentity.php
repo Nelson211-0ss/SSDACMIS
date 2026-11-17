@@ -179,8 +179,8 @@ final class SchoolIdentity
 
     /**
      * Overall Term 3 average (%) an S3 student of the given school needs to
-     * be promoted to S4. The school's own value wins; a school that has not
-     * set one follows the global setting, then the 35% default.
+     * be promoted to S4, as set by that school's admin. A school that has
+     * not set one uses 35%.
      */
     public static function s3PromotionPassMark(?int $schoolId): float
     {
@@ -206,8 +206,7 @@ final class SchoolIdentity
         }
 
         if ($mark === null) {
-            $g = Settings::get('s3_promotion_pass_mark');
-            $mark = ($g !== null && is_numeric($g)) ? (float) $g : self::DEFAULT_S3_PASS_MARK;
+            $mark = self::DEFAULT_S3_PASS_MARK;
         }
 
         return self::$passMarkCache[$key] = max(0.0, min(100.0, $mark));

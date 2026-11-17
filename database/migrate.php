@@ -687,9 +687,8 @@ foreach ($schoolIdCardCols as $col => $sql) {
 }
 
 /* -- Per-school S3 promotion pass mark ---------------------------------
-   Overall Term 3 average (%) an S3 student needs to be promoted to S4.
-   Left NULL, the school follows the global `s3_promotion_pass_mark`
-   setting (35 by default). */
+   Overall Term 3 average (%) an S3 student needs to be promoted to S4,
+   set by each school's admin under Settings. Left NULL, 35% applies. */
 if (!$columnExists('schools', 's3_promotion_pass_mark')) {
     $run(
         "ALTER TABLE schools ADD COLUMN s3_promotion_pass_mark DECIMAL(5,2) NULL AFTER theme_accent",
