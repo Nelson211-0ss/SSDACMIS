@@ -58,6 +58,36 @@ $yearQs           = 'year=' . rawurlencode($year);
   </div>
 </div>
 
+<?php if (!empty($canSetPassMark)): ?>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <h3 class="h6 fw-semibold mb-3"><i class="bi bi-mortarboard"></i> S3 promotion pass mark</h3>
+    <form method="post" action="<?= $base ?>/promotions/pass-mark" class="row g-3 align-items-end">
+      <input type="hidden" name="_csrf" value="<?= $csrf ?>">
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="s3_promotion_pass_mark">Pass mark for promotion to S4 (%)</label>
+        <div class="input-group">
+          <input id="s3_promotion_pass_mark" name="s3_promotion_pass_mark" type="number"
+                 class="form-control" min="0" max="100" step="0.5" required
+                 value="<?= View::e((string) ($s3PassMark ?? '35')) ?>">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+      <div class="col-sm-auto">
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+      <div class="col-lg">
+        <p class="text-muted small mb-0">
+          On the Term 3 end-of-term report card, S3 students whose overall average is at or above this mark
+          read <strong>&ldquo;Promoted to S4&rdquo;</strong>; those below it read
+          <strong>&ldquo;Advised to repeat S3&rdquo;</strong>. Applies to your school only.
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header bg-transparent fw-semibold">Classes</div>
   <div class="table-responsive">

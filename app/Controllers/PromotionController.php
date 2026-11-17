@@ -7,6 +7,7 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
+use App\Core\SchoolIdentity;
 use App\Services\PromotionService;
 
 /**
@@ -51,9 +52,58 @@ class PromotionController extends Controller
         $batches = PromotionService::recentBatches($schoolId);
         $years = AcademicYear::options();
 
+        // S3 → S4 pass mark: each school's admin sets their own.
+        $canSetPassMark = Auth::role() === 'school_admin' && Auth::schoolId() !== null;
+        $s3PassMark = SchoolIdentity::formatPassMark(
+            SchoolIdentity::s3PromotionPassMark(Auth::schoolId())
+        );
+
         return $this->view('promotions/index', compact(
-            'classes', 'doneByClass', 'batches', 'year', 'years', 'schools', 'selectedSchoolId'
+            'classes', 'doneByClass', 'batches', 'year', 'years', 'schools', 'selectedSchoolId',
+            'canSetPassMark', 's3PassMark'
         ));
+    }
+
+    /**
+     * POST /promotions/pass-mark — the overall Term 3 average (%) an S3
+     * student needs to be promoted to S4. School admins only, for their own
+     * school; the super admin cannot change it.
+     */
+    public function passMark(): string
+    {
+        $this->validateCsrf();
+        $schoolId = Auth::schoolId();
+        if (Auth::role() !== 'school_admin' || $schoolId === null) {
+            Flash::set('danger', 'Only a school admin can set the S3 promotion pass mark.');
+            $this->redirect('/promotions');
+            return '';
+        }
+
+        $raw = trim((string) $this->input('s3_promotion_pass_mark'));
+        if ($raw === '' || !is_numeric($raw) || (float) $raw < 0 || (float) $raw > 100) {
+            Flash::set('danger', 'S3 promotion pass mark must be a number between 0 and 100.');
+            $this->redirect('/promotions');
+            return '';
+        }
+        $mark = round((float) $raw, 2);
+
+        try {
+            Database::query(
+                'UPDATE schools SET s3_promotion_pass_mark = ? WHERE id = ?',
+                [$mark, $schoolId]
+            );
+        } catch (\Throwable $e) {
+            Flash::set('danger', 'Could not save the S3 promotion pass mark. Run database/migrate.php and try again.');
+            $this->redirect('/promotions');
+            return '';
+        }
+        SchoolIdentity::flush();
+
+        $shown = SchoolIdentity::formatPassMark($mark);
+        ActivityLog::record('update', 'school', $schoolId, "Set S3 promotion pass mark to {$shown}%");
+        Flash::set('success', "S3 promotion pass mark set to {$shown}%.");
+        $this->redirect('/promotions');
+        return '';
     }
 
     public function classForm(string $id): string

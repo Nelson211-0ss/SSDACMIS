@@ -121,6 +121,7 @@ $router->post('/students',             'StudentController@store',  [$canManageSt
 // doesn't swallow them (Router matches GET routes in insertion order).
 // End-of-year promotions: promote / repeat / demote / graduate, per class or student.
 $router->get('/promotions',                 'PromotionController@index',      [$canManageStudents]);
+$router->post('/promotions/pass-mark',      'PromotionController@passMark',   [$canManageStudents]);
 $router->get('/promotions/class/{id}',      'PromotionController@classForm',  [$canManageStudents]);
 $router->post('/promotions/class/{id}',     'PromotionController@classStore', [$canManageStudents]);
 $router->post('/promotions/undo/{batch}',   'PromotionController@undo',       [$canManageStudents]);

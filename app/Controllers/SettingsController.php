@@ -6,7 +6,6 @@ use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Flash;
-use App\Core\SchoolIdentity;
 use App\Core\Settings;
 
 class SettingsController extends Controller
@@ -46,9 +45,6 @@ class SettingsController extends Controller
             // the global default it overrides.
             'themeKey'   => Settings::activeThemeKey(),
             'themeScope' => Auth::schoolId() === null ? 'global' : 'school',
-            's3PassMark' => SchoolIdentity::formatPassMark(
-                SchoolIdentity::s3PromotionPassMark(Auth::schoolId())
-            ),
         ]);
     }
 
@@ -98,30 +94,6 @@ class SettingsController extends Controller
             Settings::set('theme_accent', $themeKey);
         }
         Settings::flushTheme();
-
-        // S3 → S4 promotion pass mark (overall Term 3 average, in %). Each
-        // school's admin decides their own; the super admin has no say, so
-        // the field is ignored for an account without a school.
-        $passRaw = trim((string) $this->input('s3_promotion_pass_mark'));
-        if ($passRaw !== '' && $themeSchoolId !== null) {
-            if (!is_numeric($passRaw) || (float) $passRaw < 0 || (float) $passRaw > 100) {
-                Flash::set('danger', 'S3 promotion pass mark must be a number between 0 and 100.');
-                $this->redirect('/settings');
-                return '';
-            }
-            $passMark = round((float) $passRaw, 2);
-            try {
-                Database::query(
-                    'UPDATE schools SET s3_promotion_pass_mark = ? WHERE id = ?',
-                    [$passMark, $themeSchoolId]
-                );
-            } catch (\Throwable $e) {
-                Flash::set('danger', 'Could not save the S3 promotion pass mark. Run database/migrate.php and try again.');
-                $this->redirect('/settings');
-                return '';
-            }
-            SchoolIdentity::flush();
-        }
 
         // Optional: clear current logo before doing anything else.
         if ($this->input('remove_logo') === '1') {
